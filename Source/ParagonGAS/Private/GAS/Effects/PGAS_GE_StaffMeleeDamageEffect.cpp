@@ -16,7 +16,7 @@
  */
 
 #include "GAS/Effects/PGAS_GE_StaffMeleeDamageEffect.h"
-#include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
+#include <GAS/AttributeSets/EnemyAttributeSet.h>
 
 UPGAS_GE_StaffMeleeDamageEffect::UPGAS_GE_StaffMeleeDamageEffect()
 {
@@ -33,7 +33,7 @@ UPGAS_GE_StaffMeleeDamageEffect::UPGAS_GE_StaffMeleeDamageEffect()
 
     // Damage modifier for Health (SETUP THIS WAY)
     FGameplayModifierInfo ModifierInfo;
-    ModifierInfo.Attribute = UPlayerCharacterAttributeSet::GetHealthAttribute();
+    ModifierInfo.Attribute = UEnemyAttributeSet::GetHealthAttribute();
     ModifierInfo.ModifierOp = EGameplayModOp::Additive;
 
     FSetByCallerFloat SetByCaller;

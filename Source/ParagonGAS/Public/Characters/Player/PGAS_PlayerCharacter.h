@@ -47,6 +47,15 @@ public:
     APGAS_PlayerCharacter();
 
     /**
+     * Activates the character's melee ability
+     * This function checks if the character can activate the melee ability and performs the activation.
+     * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
+    */
+    UFUNCTION(BlueprintCallable, Category = "Character|Abilities|Melee",
+        meta = (DisplayName = "Activate Melee Ability", ToolTip = "Activates the character's melee ability. This function checks if the character can activate the melee ability and performs the activation."))
+    bool ActivateMeleeAbility(bool AllowRemoteActivation = true);
+
+    /**
      * Returns the Player Attribute Set for this character.
      * This function retrieves the Player Attribute Set associated with the character's Ability System Component.
      */
@@ -226,9 +235,16 @@ public:
     */
     virtual void HandleCharacterLevelUp();
 
-    /*
-    * Properties
-    */
+    UFUNCTION(BlueprintCallable, Category = "Player|Combat",
+        meta = (AllowPrivateAccess = "true",
+            DisplayName = "Weapon Trace",
+            Keywords = "combat trace weapon hit detection",
+            Tooltip = "Performs a weapon trace to detect hits."))
+    void WeaponTrace();
+
+    // Sets up default abilities for the enemy character.
+    // This function can be used to set up default abilities for the enemy character.
+    virtual void SetupDefaultAbilities() override;
 
 protected:
     /*
@@ -251,6 +267,11 @@ protected:
      * override SetupPlayerInputComponent and bind your actions here.
     */
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+    // Handles the montage state notify events.
+    // This function is called when a montage state notify event occurs.
+    UFUNCTION()
+    void HandleMontageStateNotify(FGameplayTag NotifyTag, FGameplayEventData EventData);
 
     /** Called by the IA_Move input action to handle movement. */
     UFUNCTION()
@@ -291,6 +312,11 @@ protected:
     // Reference to the current PlayerController, exposed to Blueprints
     UPROPERTY(BlueprintReadOnly, Category = "Player|HUD")
     TObjectPtr<APGAS_HUD> MyPlayerHUD;
+
+    // Melee ability class to be used by the character.
+    // This is typically set in the editor or loaded in code.
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Abilities|Melee")
+    TSubclassOf<class UGameplayAbility> MeleeAbility;
 
     /**
      * The Input Action asset for moving the character (e.g. "IA_Move").
@@ -338,8 +364,22 @@ private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UPlayerCharacterAttributeSet> AttributeSet;
 
+    UPROPERTY()
+    FGameplayAbilitySpecHandle MeleeAbilitySpecHandle;
+
+    /**
+     * Set of actors that have already been hit by the weapon trace
+     * This is used to prevent hitting the same actor multiple times in a single trace.
+     * It is a transient property, meaning it will not be saved or replicated.
+    */
+    UPROPERTY(Transient)
+    TSet<TWeakObjectPtr<AActor>> AlreadyHitActors;
+
     FName WeaponStaffStartSocketName = "staff_start"; // The name of the weapon staff start socket.
     FName WeaponStaffEndSocketName = "staff_end"; // The name of the weapon staff end socket.
+
+    // Timer handle for the weapon trace timer.
+    FTimerHandle WeaponTraceTimerHandle;
 
     /*
     * Functions
@@ -348,10 +388,6 @@ private:
     // Sets up the default gameplay tags for this character.
     // This is typically called in the constructor or BeginPlay.
     void SetupDefaultGameplayTags();
-
-    // // Sets up the default attributes for this character.
-    // // This is typically called in the PossessedBy or OnRep_PlayerState.
-    // void SetupDefaultAttributes();
 
     FVector GetStaffStartSocketLocation() const
     {

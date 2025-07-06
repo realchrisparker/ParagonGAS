@@ -18,12 +18,12 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
 #include "Abilities/GameplayAbility.h"
-// #include <Enums/PGAS_ComboStep.h>
+#include <Enums/PGAS_ComboStep.h>
 #include "PGAS_AbilitySystemComponent.generated.h"
 
 /**
  *
- */
+*/
 UCLASS()
 class PARAGONGAS_API UPGAS_AbilitySystemComponent : public UAbilitySystemComponent
 {
@@ -42,11 +42,11 @@ public:
     */
 
     /** The current step in the combo sequence */
-    // UPROPERTY(BlueprintReadWrite, Category = "Combo")
-    // EPGASComboStep CurrentComboStep;
+    UPROPERTY(BlueprintReadWrite, Category = "Combo")
+    EPGASComboStep CurrentComboStep;
 
     /** The last activated ability */
-    UPROPERTY(BlueprintReadOnly, Category = "Abilities")
+    UPROPERTY(BlueprintReadOnly, Category = "Abilities", meta=(DisplayName = "Last Activated Ability"))
     UGameplayAbility* LastActivatedAbility;
 
 private:

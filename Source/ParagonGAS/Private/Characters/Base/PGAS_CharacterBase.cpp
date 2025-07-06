@@ -121,8 +121,10 @@ bool APGAS_CharacterBase::ActivateAbilitiesWithTags(FGameplayTagContainer Abilit
 void APGAS_CharacterBase::ApplyDefaultAttributeEffects()
 {
 	// Initialize the ability system component when the character is possessed
-	if (AbilitySystemComponent)
+	if (AbilitySystemComponent && HasAuthority())
 	{
+		// Loop through the DefaultAttributeEffects array and apply each effect
+		// This ensures that effects are only applied once, even if this function is called multiple times
 		for (TSubclassOf<class UGameplayEffect>& Effect : DefaultAttributeEffects)
 		{
 			if (Effect)
@@ -134,6 +136,36 @@ void APGAS_CharacterBase::ApplyDefaultAttributeEffects()
 				{
 					FActiveGameplayEffectHandle ActiveEffect = AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 				}
+			}
+		}
+	}
+}
+
+// Sets up default abilities for the enemy character.
+// This function can be used to set up default abilities for the enemy character.
+void APGAS_CharacterBase::SetupDefaultAbilities()
+{
+	if (AbilitySystemComponent && HasAuthority())
+	{
+		// Look through the DefaultAbilities array and grant each ability if it hasn't already been granted
+		// This ensures that abilities are only granted once, even if this function is called multiple times
+		for (const TSubclassOf<UGameplayAbility>& AbilityClass : DefaultAbilities)
+		{
+			if (!AbilityClass)
+				continue;
+
+			bool bAlreadyGranted = false;
+			for (const FGameplayAbilitySpec& Spec : AbilitySystemComponent->GetActivatableAbilities())
+			{
+				if (Spec.Ability && Spec.Ability->GetClass() == AbilityClass)
+				{
+					bAlreadyGranted = true;
+					break;
+				}
+			}
+			if (!bAlreadyGranted)
+			{
+				AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, 0));
 			}
 		}
 	}
