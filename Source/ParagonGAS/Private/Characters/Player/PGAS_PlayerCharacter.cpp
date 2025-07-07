@@ -82,6 +82,22 @@ void APGAS_PlayerCharacter::BeginPlay()
     {
         GetMesh()->SetForcedLOD(1);  // 0 = Auto, 1 = LOD0, 2 = LOD1, etc.
     }
+
+    UpdateInGameHUD(); // Update the in-game HUD with the current player status
+    // Call UpdateInGameHUD every 1/3 second
+    GetWorldTimerManager().SetTimer(
+        HUDUpdateTimerHandle,
+        this,
+        &APGAS_PlayerCharacter::UpdateInGameHUD,
+        0.33f, // interval in seconds
+        true  // looping
+    );
+}
+
+void APGAS_PlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+    GetWorldTimerManager().ClearTimer(HUDUpdateTimerHandle);
 }
 
 // Called every frame
@@ -475,5 +491,20 @@ void APGAS_PlayerCharacter::HandleMontageStateNotify(FGameplayTag NotifyTag, FGa
     {
         // Stop tracing by clearing the timer
         GetWorldTimerManager().ClearTimer(WeaponTraceTimerHandle);
+    }
+}
+
+/**
+ * Update the in-game HUD with the current player status.
+ * This function is called to update the in-game HUD with the current player status.
+*/
+void APGAS_PlayerCharacter::UpdateInGameHUD()
+{
+    if (MyPlayerHUD)
+    {
+        MyPlayerHUD->GetInGameHUDWidget()->UpdateHealthValue(GetHealth(), GetMaxHealth());
+        MyPlayerHUD->GetInGameHUDWidget()->UpdateStaminaValue(GetStamina(), GetMaxStamina());
+        MyPlayerHUD->GetInGameHUDWidget()->UpdateAdrenalineValue(GetAdrenaline(), GetMaxAdrenaline());
+        // MyPlayerHUD->GetInGameHUDWidget()->UpdateExperienceValue(GetExperiencePoints(), GetMaxExperiencePoints());
     }
 }

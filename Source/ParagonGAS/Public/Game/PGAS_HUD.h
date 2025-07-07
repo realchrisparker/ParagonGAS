@@ -17,8 +17,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
-// #include <Interfaces/IHUD.h>
-// #include <UserWidgets/PGAS_HUDUserWidgetBase.h>
+#include <Interfaces/IHUD.h>
+#include <UserWidgets/PGAS_InGame_HUD.h>
 #include "PGAS_HUD.generated.h"
 
 /**
@@ -40,10 +40,10 @@ public:
 	virtual void BeginPlay() override;
 
 	/*
-	 * Get HUD Widget
-	 * Returns the HUD widget in use.
+	 * Get In-Game HUD Widget
+	 * Returns the In-Game HUD widget in use.
 	*/
-	// UPGAS_HUDUserWidgetBase* GetHUDWidget() const { return HUDWidget; }
+	UPGAS_InGame_HUD* GetInGameHUDWidget() const { return InGameHUDWidget; }
 
 	// Override functions from IIHUD interface
 	// virtual float UpdateHealthBar(float NewPercentage) const override;
@@ -56,6 +56,6 @@ private:
 	 * Properties
 	*/
 
-	// HUD Widget Class
-	// UPGAS_HUDUserWidgetBase* HUDWidget = nullptr;
+	// In-Game HUD Widget Class
+	UPGAS_InGame_HUD* InGameHUDWidget = nullptr;
 };

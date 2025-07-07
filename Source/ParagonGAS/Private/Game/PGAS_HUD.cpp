@@ -39,17 +39,17 @@ void APGAS_HUD::BeginPlay()
     if (APlayerController* PC = GetOwningPlayerController())
     {
         // Static load: safer than ConstructorHelpers for game widgets
-        // TSubclassOf<UUserWidget> HUDWidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/Game/_Game/UI/WBP_HUD.WBP_HUD_C"));
-        // if (HUDWidgetClass)
-        // {
-        //     // Create the HUD widget and add it to the viewport
-        //     HUDWidget = CreateWidget<UPGAS_HUDUserWidgetBase>(PC, HUDWidgetClass);
-        //     if (HUDWidget)
-        //     {
-        //         HUDWidget->AddToViewport(); // Add the widget to the viewport
-        //         HUDWidget->SetVisibility(ESlateVisibility::Visible); // Ensure it's visible
-        //     }
-        // }
+        TSubclassOf<UUserWidget> HUDWidget = LoadClass<UUserWidget>(nullptr, TEXT("/Game/_Game/UI/WBP_InGame_HUD.WBP_InGame_HUD_C"));
+        if (HUDWidget)
+        {
+            // Create the HUD widget and add it to the viewport
+            InGameHUDWidget = CreateWidget<UPGAS_InGame_HUD>(PC, HUDWidget);
+            if (InGameHUDWidget)
+            {
+                InGameHUDWidget->AddToViewport(); // Add the widget to the viewport
+                InGameHUDWidget->SetVisibility(ESlateVisibility::Visible); // Ensure it's visible
+            }
+        }
     }
 }
 

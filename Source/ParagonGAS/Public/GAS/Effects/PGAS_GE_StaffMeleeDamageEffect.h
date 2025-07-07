@@ -38,7 +38,7 @@ public:
 
     /** Amount of base damage this effect applies. */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage")
-    float BaseDamage = 5.0f; // default value, can be overridden in instances
+    float BaseDamage = 20.0f; // default value, can be overridden in instances
 
     /** Whether this staff attack can crit. */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage|Critical")

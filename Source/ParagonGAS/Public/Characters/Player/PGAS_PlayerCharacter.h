@@ -246,12 +246,18 @@ public:
     // This function can be used to set up default abilities for the enemy character.
     virtual void SetupDefaultAbilities() override;
 
+    /** Update the in-game HUD with the current player status. */
+    void UpdateInGameHUD();
+
 protected:
     /*
     * Functions
     */
     // Called when the game starts or when spawned
     virtual void BeginPlay() override;
+
+    // Called when the game stops or when the actor is destroyed
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
     // Called every frame
     virtual void Tick(float DeltaTime) override;
@@ -380,6 +386,9 @@ private:
 
     // Timer handle for the weapon trace timer.
     FTimerHandle WeaponTraceTimerHandle;
+
+    // Timer handle for the HUD update timer.
+    FTimerHandle HUDUpdateTimerHandle;
 
     /*
     * Functions

@@ -111,6 +111,8 @@ private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UEnemyAttributeSet> AttributeSet;
 
+    FName HealthbarSocketName = "healthbar_Socket"; // The name of the health bar socket.
+
     /*
     * Functions
     */
@@ -118,4 +120,24 @@ private:
     // Sets up the default gameplay tags for this character.
     // This is typically called in the constructor or BeginPlay.
     void SetupDefaultGameplayTags();
+
+    FVector GetHealthbarSocketLocation() const
+    {
+        // Make sure we have a valid mesh and the socket exists before trying to get the location.
+        if (!GetMesh())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("GetMesh() returned nullptr in GetHealthbarSocketLocation()"));
+            return FVector::ZeroVector; // Return zero vector if mesh is not valid.
+        }
+
+        // Check if the socket exists before trying to get its location.
+        if (!GetMesh()->DoesSocketExist(HealthbarSocketName))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Socket '%s' does not exist on the mesh in GetHealthbarSocketLocation()"), *HealthbarSocketName.ToString());
+            return FVector::ZeroVector; // Return zero vector if socket does not exist.
+        }
+
+        // Get the location of the health bar socket on the character's mesh. In world location.
+        return GetMesh()->GetSocketLocation(HealthbarSocketName);
+    }
 };
