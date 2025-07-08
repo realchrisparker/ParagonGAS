@@ -61,6 +61,7 @@ void APGAS_EnemyCharacter::SetupDefaultGameplayTags()
 {
     AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Type.Enemy")));
     AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.State.Alive")));
+    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove")));
 }
 
 // Handles changes to the character's health attribute

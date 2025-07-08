@@ -104,6 +104,17 @@ void APGAS_PlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void APGAS_PlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    // Only track idle if we're not already playing idle anim
+    if (!bIdleAnimationPlayed)
+    {
+        IdleTime += DeltaTime;
+        if (IdleTime >= 30.f)
+        {
+            PlayIdleBreakMontage();
+            bIdleAnimationPlayed = true;
+        }
+    }
 }
 
 // Called when the player has been possessed by a controller
@@ -181,6 +192,11 @@ void APGAS_PlayerCharacter::MoveStartedAction(const FInputActionInstance& Value)
 */
 void APGAS_PlayerCharacter::MoveAction(const FInputActionInstance& Value)
 {
+    if (HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))) == false)
+    {
+        return;
+    }
+
     // The input value is expected to be a Vector2D: X (strafe), Y (forward).
     FInputActionValue ActionValue = Value.GetValue();
     const FVector2D MovementVector = ActionValue.Get<FVector2D>();
@@ -206,6 +222,10 @@ void APGAS_PlayerCharacter::MoveAction(const FInputActionInstance& Value)
         AddMovementInput(DirectionRight, MovementVector.X);
 
     }
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
 }
 
 /*
@@ -234,6 +254,10 @@ void APGAS_PlayerCharacter::LookAction(const FInputActionValue& Value)
         // Add pitch input (vertical look).
         AddControllerPitchInput(LookAxisValue.Y);
     }
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
 }
 
 /*
@@ -250,6 +274,10 @@ void APGAS_PlayerCharacter::JumpAction(const FInputActionValue& Value)
 
     // Otherwise, we're on the ground, so jump now.
     Jump();
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
 }
 
 /*
@@ -283,6 +311,10 @@ void APGAS_PlayerCharacter::PrimaryAttackAction(const FInputActionValue& Value)
     {
         SetIsAttacking(true); // Set the attacking flag to true
     }
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
 }
 
 /*
@@ -293,6 +325,7 @@ void APGAS_PlayerCharacter::SetupDefaultGameplayTags()
 {
     AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Type.Player")));
     AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.State.Alive")));
+    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove")));
 }
 
 /*
@@ -508,3 +541,4 @@ void APGAS_PlayerCharacter::UpdateInGameHUD()
         // MyPlayerHUD->GetInGameHUDWidget()->UpdateExperienceValue(GetExperiencePoints(), GetMaxExperiencePoints());
     }
 }
+

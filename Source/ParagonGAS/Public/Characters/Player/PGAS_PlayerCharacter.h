@@ -42,7 +42,7 @@ public:
     /*
     * Functions
     */
-
+        
     // Constructor
     APGAS_PlayerCharacter();
 
@@ -249,6 +249,18 @@ public:
     /** Update the in-game HUD with the current player status. */
     void UpdateInGameHUD();
 
+    // Gets the current idle time of the character.
+    UFUNCTION(BlueprintCallable, Category = "Player|Camera")
+    float GetIdleTime() const { return IdleTime; }
+
+    /*
+    * Properties
+    */
+
+    /** Animation Montage for idle state */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Animations|Idle")
+    TObjectPtr<UAnimMontage> IdleMontage;
+
 protected:
     /*
     * Functions
@@ -390,6 +402,9 @@ private:
     // Timer handle for the HUD update timer.
     FTimerHandle HUDUpdateTimerHandle;
 
+    float IdleTime = 0.0f; // The time the character has been idle.
+    bool bIdleAnimationPlayed = false; // Whether the idle animation has been played or not.
+
     /*
     * Functions
     */
@@ -435,5 +450,15 @@ private:
         }
 
         return GetMesh()->GetSocketLocation(WeaponStaffEndSocketName);
+    }
+
+    UFUNCTION(BlueprintCallable, Category = "Player|Animations|Idle")
+    void PlayIdleBreakMontage()
+    {
+        // Play the idle animation montage here. Use Montage_Play, GAS, or any system you prefer.
+        if (IdleMontage && GetMesh())
+        {
+            GetMesh()->GetAnimInstance()->Montage_Play(IdleMontage);
+        }
     }
 };
