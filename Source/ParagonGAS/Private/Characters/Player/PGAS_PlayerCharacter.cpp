@@ -106,13 +106,14 @@ void APGAS_PlayerCharacter::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 
     // Only track idle if we're not already playing idle anim
-    if (!bIdleAnimationPlayed)
+    if (bIdleAnimationPlayed == false)
     {
         IdleTime += DeltaTime;
         if (IdleTime >= 30.f)
         {
             PlayIdleBreakMontage();
-            bIdleAnimationPlayed = true;
+            bIdleAnimationPlayed = false;
+            IdleTime = 0.f; // Reset idle time after playing idle animation
         }
     }
 }
@@ -266,6 +267,11 @@ void APGAS_PlayerCharacter::LookAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::JumpAction(const FInputActionValue& Value)
 {
+    if (HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))) == false)
+    {
+        return;
+    }
+
     // Early-out if we're already falling (i.e., in the air).
     if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
     {
