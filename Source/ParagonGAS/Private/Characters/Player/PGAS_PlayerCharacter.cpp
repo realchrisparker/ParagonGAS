@@ -170,6 +170,7 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
         if (IA_Jump)
         {
             EnhancedInputComp->BindAction(IA_Jump, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::JumpAction);
+            EnhancedInputComp->BindAction(IA_Jump, ETriggerEvent::Completed, this, &APGAS_PlayerCharacter::JumpReleaseAction);
         }
         if (IA_PrimaryAttack)
         {
@@ -279,9 +280,26 @@ void APGAS_PlayerCharacter::JumpAction(const FInputActionValue& Value)
     }
 
     // Otherwise, we're on the ground, so jump now.
-    Jump();
+    // Jump();
+
+    // Activate by tag
+    static FGameplayTag JumpAbilityTag = FGameplayTag::RequestGameplayTag(FName("Character.Ability.Jump"));
+    ActivateAbilitiesWithTags(FGameplayTagContainer(JumpAbilityTag), true);
 
     // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+void APGAS_PlayerCharacter::JumpReleaseAction(const FInputActionValue& Value)
+{
+    if (GetAbilitySystemComponent())
+    {
+        // GAS: Tell the ASC that the input was released for this ability (input ID is usually 0 for jump)
+        GetAbilitySystemComponent()->AbilityLocalInputReleased(0); // 0 is the default input ID, use your actual mapping if needed
+    }
+
+    // Reset idle time and animation flag when movement stops
     IdleTime = 0.f;
     bIdleAnimationPlayed = false;
 }
@@ -292,26 +310,6 @@ void APGAS_PlayerCharacter::JumpAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::PrimaryAttackAction(const FInputActionValue& Value)
 {
-    // if (IsAttacking() && bCanComboAttack)
-    // {
-    // 	UPGAS_AbilitySystemComponent* ASC = Cast<UPGAS_AbilitySystemComponent>(GetAbilitySystemComponent());
-    // 	if (ASC)
-    // 	{
-    // 		UPGAS_GameplayAbility_Montage* LastAbility = Cast<UPGAS_GameplayAbility_Montage>(ASC->LastActivatedAbility);
-    // 		if (LastAbility)
-    // 		{
-    // 			// If the character is already attacking, we send input request to the ability to let it know it might need to activate a combo.
-    // 			LastAbility->TryActivateNextCombo();
-    // 		}
-    // 	}
-
-    // 	return;
-    // }
-
-    // Step 1: Listen for melee ability state notify events.
-    // Step 2: Player presses the primary attack button after the ability has been activated we need to check if the combo window is still open.
-    // Step 3: If the combo window is still open, we activate the next combo ability.
-
     // Activate the melee GAS ability.
     if (ActivateMeleeAbility(true))
     {
@@ -351,6 +349,15 @@ void APGAS_PlayerCharacter::SetupDefaultAbilities()
         // Give the player character a melee ability.
         if (MeleeAbility)
             MeleeAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(MeleeAbility, GetCharacterLevel(), INDEX_NONE, this));
+
+        // Give all abilities in DefaultAbilities array, if any (including Jump)
+        for (TSubclassOf<UGameplayAbility> AbilityClass : DefaultAbilities)
+        {
+            if (AbilityClass)
+            {
+                ASC->GiveAbility(FGameplayAbilitySpec(AbilityClass, GetCharacterLevel(), INDEX_NONE, this));
+            }
+        }
     }
 }
 

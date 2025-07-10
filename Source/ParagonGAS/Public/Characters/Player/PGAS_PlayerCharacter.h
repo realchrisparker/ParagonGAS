@@ -311,6 +311,9 @@ protected:
     UFUNCTION()
     void JumpAction(const FInputActionValue& Value);
 
+    /** Called by the IA_Jump input action to handle jumping when released. */
+    void JumpReleaseAction(const FInputActionValue& Value);
+
     /** Called by the IA_PrimaryAttack input action to handle primary attacking. */
     UFUNCTION()
     void PrimaryAttackAction(const FInputActionValue& Value);
