@@ -9,41 +9,34 @@
  * Project: Paragon GAS Sample
  * This is a sample project demonstrating the use of Unreal Engine's Gameplay Ability System (GAS) & open world.
  * Author: Christopher D. Parker
- * Date: 7-9-2025
+ * Date: 7-11-2025
  * =============================================================================
- * PGAS_GA_Jump
- * Simple Gameplay Ability to trigger character jump using GAS.
+ * PGAS_SprintAbility
+ * This ability toggles sprint for the player character using GAS. It sets MaxWalkSpeed on activate and restores it on end.
  */
 
-#include "GAS/Abilities/PGAS_JumpAbility.h"
-#include "GameFramework/Character.h"
-#include "AbilitySystemComponent.h"
-#include "UObject/ConstructorHelpers.h"
-#include "Kismet/GameplayStatics.h"
-#include <GAS/Effects/PGAS_GE_StaminaReduction.h>
-#include "Characters/Base/PGAS_CharacterBase.h"
 
-UPGAS_JumpAbility::UPGAS_JumpAbility()
+#include <GAS/Abilities/PGAS_SprintAbility.h>
+#include <GAS/Effects/PGAS_GE_StaminaReduction.h>
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "AbilitySystemComponent.h"
+
+UPGAS_SprintAbility::UPGAS_SprintAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
     bReplicateInputDirectly = true;
 
     // Ability Tag for matching Event
-    SetAssetTags(FGameplayTagContainer(FGameplayTag::RequestGameplayTag(FName("Character.Ability.Jump"))));
+    SetAssetTags(FGameplayTagContainer(FGameplayTag::RequestGameplayTag(FName("Character.Ability.Sprint"))));
 
     ActivationOwnedTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove")));
-
-    // Default the sound cue using FObjectFinder
-    static ConstructorHelpers::FObjectFinder<USoundBase> JumpSoundObj(TEXT("/Game/ParagonSunWukong/Audio/Cues/Wukong_Effort_Jump.Wukong_Effort_Jump"));
-    if (JumpSoundObj.Succeeded())
-    {
-        JumpSoundCue = JumpSoundObj.Object;
-    }
 
     StaminaReductionEffect = UPGAS_GE_StaminaReduction::StaticClass();
 }
 
-void UPGAS_JumpAbility::ActivateAbility(
+void UPGAS_SprintAbility::ActivateAbility(
     const FGameplayAbilitySpecHandle Handle,
     const FGameplayAbilityActorInfo* ActorInfo,
     const FGameplayAbilityActivationInfo ActivationInfo,
@@ -56,19 +49,24 @@ void UPGAS_JumpAbility::ActivateAbility(
     }
 
     // Play the sound (if set)
-    if (JumpSoundCue && ActorInfo && ActorInfo->AvatarActor.IsValid())
+    if (SprintSoundCue && ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
         UGameplayStatics::PlaySoundAtLocation(
             ActorInfo->AvatarActor->GetWorld(),
-            JumpSoundCue,
+            SprintSoundCue,
             ActorInfo->AvatarActor->GetActorLocation());
     }
 
-    if (APGAS_CharacterBase* Character = Cast<APGAS_CharacterBase>(ActorInfo->AvatarActor.Get()))
+    ACharacter* Character = Cast<ACharacter>(ActorInfo->AvatarActor.Get());
+    if (Character && Character->GetCharacterMovement())
     {
-        Character->Jump();
-        // You can trigger VFX/SFX here
+        // Cache the original speed to restore later
+        Character->GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
     }
+
+    // If using input, keep ability active until input is released
+    SetCanBeCanceled(true);
+    SetShouldBlockOtherAbilities(false);
 
     if (StaminaReductionEffect && ActorInfo && ActorInfo->AbilitySystemComponent.IsValid())
     {
@@ -78,29 +76,17 @@ void UPGAS_JumpAbility::ActivateAbility(
     }
 }
 
-void UPGAS_JumpAbility::InputReleased(const FGameplayAbilitySpecHandle Handle,
-    const FGameplayAbilityActorInfo* ActorInfo,
-    const FGameplayAbilityActivationInfo ActivationInfo)
-{
-    Super::InputReleased(Handle, ActorInfo, ActivationInfo);
-
-    if (APGAS_CharacterBase* Character = Cast<APGAS_CharacterBase>(ActorInfo->AvatarActor.Get()))
-    {
-        Character->StopJumping();
-    }
-    EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
-}
-
-void UPGAS_JumpAbility::EndAbility(
+void UPGAS_SprintAbility::EndAbility(
     const FGameplayAbilitySpecHandle Handle,
     const FGameplayAbilityActorInfo* ActorInfo,
     const FGameplayAbilityActivationInfo ActivationInfo,
     bool bReplicateEndAbility,
     bool bWasCancelled)
 {
-    if (APGAS_CharacterBase* Character = Cast<APGAS_CharacterBase>(ActorInfo->AvatarActor.Get()))
+    ACharacter* Character = Cast<ACharacter>(ActorInfo->AvatarActor.Get());
+    if (Character && Character->GetCharacterMovement())
     {
-        Character->StopJumping();
+        Character->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     }
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

@@ -329,6 +329,13 @@ protected:
     /** Called by the IA_Jump input action to handle jumping when released. */
     void JumpReleaseAction(const FInputActionValue& Value);
 
+    /** Called by the IA_Sprint input action to handle sprinting. */
+    UFUNCTION()
+    void SprintAction(const FInputActionValue& Value);
+
+    /** Called by the IA_Sprint input action to handle sprinting when released. */
+    void SprintReleaseAction(const FInputActionValue& Value);
+
     /** Called by the IA_PrimaryAttack input action to handle primary attacking. */
     UFUNCTION()
     void PrimaryAttackAction(const FInputActionValue& Value);
@@ -383,6 +390,13 @@ protected:
      */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
     TObjectPtr<UInputAction> IA_Jump;
+
+    /**
+     * The Input Action asset for moving the character in sprinting/running (e.g. "IA_Sprint").
+     * This is typically set in the editor or loaded in code.
+     */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
+    TObjectPtr<UInputAction> IA_Sprint;
 
     /**
      * The Input Action asset for primary attacking (e.g. "IA_PrimaryAttack").

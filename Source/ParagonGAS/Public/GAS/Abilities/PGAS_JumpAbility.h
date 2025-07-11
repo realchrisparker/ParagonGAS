@@ -59,6 +59,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Audio")
     TObjectPtr<USoundBase> JumpSoundCue;
 
+    // Gameplay Effect to apply when jumping (e.g., stamina reduction)
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Cost")
     TSubclassOf<class UGameplayEffect> StaminaReductionEffect;
 };

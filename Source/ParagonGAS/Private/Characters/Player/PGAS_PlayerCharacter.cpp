@@ -19,6 +19,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Engine/World.h"
 #include <GAS/Abilities/PGAS_GameplayAbility_Montage.h>
+#include <GAS/Abilities/PGAS_SprintAbility.h>
 #include <GAS/Effects/PGAS_GE_StaminaReduction.h>
 
 // Sets default values
@@ -67,31 +68,46 @@ void APGAS_PlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (APGAS_PlayerController* PC = Cast<APGAS_PlayerController>(GetController()))
+    TObjectPtr<APGAS_PlayerController> PC = Cast<APGAS_PlayerController>(GetController());
+    if (PC)
     {
-        // Set the player state reference.
-        // This is a safe cast, as the controller should always have a player state.
-        MyPlayerState = Cast<APGAS_PlayerState>(PC->GetPlayerState<APlayerState>());
+        // PlayerState and HUD may not always be valid in BeginPlay due to spawn order/networking; safe-guard accordingly.
+        TObjectPtr<APGAS_PlayerState> FoundPlayerState = Cast<APGAS_PlayerState>(PC->GetPlayerState<APlayerState>());
+        if (FoundPlayerState)
+        {
+            MyPlayerState = FoundPlayerState;
+        }
 
         // Set HUD reference.
-        MyPlayerHUD = Cast<APGAS_HUD>(PC->GetHUD());
+        TObjectPtr<APGAS_HUD> FoundHUD = Cast<APGAS_HUD>(PC->GetHUD());
+        if (FoundHUD)
+        {
+            MyPlayerHUD = FoundHUD;
+        }
     }
 
     // Make sure the character always uses LOD0.
-    // This is useful for player characters to ensure they always look good.
-    if (GetMesh())
+    if (USkeletalMeshComponent* MyMesh = GetMesh())
     {
-        GetMesh()->SetForcedLOD(1);  // 0 = Auto, 1 = LOD0, 2 = LOD1, etc.
+        MyMesh->SetForcedLOD(1); // If visual fidelity is critical for the player
     }
 
+    // Set max speed here
+    if (UCharacterMovementComponent* CharMove = GetCharacterMovement())
+    {
+        if (!FMath::IsNearlyEqual(CharMove->MaxWalkSpeed, 350.f))
+            CharMove->MaxWalkSpeed = 350.f;
+    }
+
+    // TODO: Implement HUD updates using Interfaces or delegates (This is a placeholder for now)
     UpdateInGameHUD(); // Update the in-game HUD with the current player status
     // Call UpdateInGameHUD every 1/3 second
     GetWorldTimerManager().SetTimer(
         HUDUpdateTimerHandle,
         this,
         &APGAS_PlayerCharacter::UpdateInGameHUD,
-        0.33f, // interval in seconds
-        true  // looping
+        0.33f,
+        true
     );
 }
 
@@ -173,6 +189,11 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
             EnhancedInputComp->BindAction(IA_Jump, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::JumpAction);
             EnhancedInputComp->BindAction(IA_Jump, ETriggerEvent::Completed, this, &APGAS_PlayerCharacter::JumpReleaseAction);
         }
+        if (IA_Sprint)
+        {
+            EnhancedInputComp->BindAction(IA_Sprint, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::SprintAction);
+            EnhancedInputComp->BindAction(IA_Sprint, ETriggerEvent::Completed, this, &APGAS_PlayerCharacter::SprintReleaseAction);
+        }
         if (IA_PrimaryAttack)
         {
             EnhancedInputComp->BindAction(IA_PrimaryAttack, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::PrimaryAttackAction);
@@ -227,7 +248,6 @@ void APGAS_PlayerCharacter::MoveAction(const FInputActionInstance& Value)
         const FRotator YawRotation(0, Controller->GetControlRotation().Yaw, 0);
         const FVector DirectionRight = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
         AddMovementInput(DirectionRight, MovementVector.X);
-
     }
 
     // Reset idle time and animation flag when movement starts
@@ -300,6 +320,52 @@ void APGAS_PlayerCharacter::JumpReleaseAction(const FInputActionValue& Value)
         // GAS: Tell the ASC that the input was released for this ability (input ID is usually 0 for jump)
         GetAbilitySystemComponent()->AbilityLocalInputReleased(0); // 0 is the default input ID, use your actual mapping if needed
     }
+
+    // Reset idle time and animation flag when movement stops
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+/*
+ * Sprint function to handle sprinting input.
+ * This function is called when the IA_Sprint input action is triggered.
+*/
+void APGAS_PlayerCharacter::SprintAction(const FInputActionValue& Value)
+{
+    if (HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))) == false)
+    {
+        return;
+    }
+
+    // Early-out if we're already falling (i.e., in the air).
+    if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
+    {
+        return;
+    }
+
+    // Activate by tag
+    static FGameplayTag SprintAbilityTag = FGameplayTag::RequestGameplayTag(FName("Character.Ability.Sprint"));
+    ActivateAbilitiesWithTags(FGameplayTagContainer(SprintAbilityTag), true);
+
+    // Add character's movement gameplay tags. (Any gameplay effects tied to movement tags will start.)
+    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Sprinting")));
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+void APGAS_PlayerCharacter::SprintReleaseAction(const FInputActionValue& Value)
+{
+    if (GetAbilitySystemComponent())
+    {
+        // This deactivates all instances of the Sprint ability (robust for multiplayer, prediction, etc.)
+        static FGameplayTagContainer SprintAbilityTagContainer(FGameplayTag::RequestGameplayTag(FName("Character.Ability.Sprint")));
+        GetAbilitySystemComponent()->CancelAbilities(&SprintAbilityTagContainer, nullptr, nullptr);
+    }
+
+    // Remove character's movement gameplay tags. (Any gameplay effects tied to movement tags will stop.)
+    RemoveGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Sprinting")));
 
     // Reset idle time and animation flag when movement stops
     IdleTime = 0.f;
