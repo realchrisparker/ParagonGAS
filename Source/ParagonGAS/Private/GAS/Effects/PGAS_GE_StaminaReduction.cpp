@@ -9,27 +9,27 @@
  * Project: Paragon GAS Sample
  * This is a sample project demonstrating the use of Unreal Engine's Gameplay Ability System (GAS) & open world.
  * Author: Christopher D. Parker
- * Date: 7-3-2025
+ * Date: 7-10-2025
  * =============================================================================
- * PGAS_GE_AttackStaminaReduction
- * Gameplay Effect for reducing stamina on attack (C++ version).
+ * PGAS_GE_StaminaReduction
+ * Gameplay Effect for reducing stamina (C++ version).
 */
 
 
-#include "GAS/Effects/PGAS_GE_AttackStaminaReduction.h"
+#include "GAS/Effects/PGAS_GE_StaminaReduction.h"
 #include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
 
-
-UPGAS_GE_AttackStaminaReduction::UPGAS_GE_AttackStaminaReduction()
+UPGAS_GE_StaminaReduction::UPGAS_GE_StaminaReduction()
 {
-    // Set default values for the gameplay effect
     DurationPolicy = EGameplayEffectDurationType::Instant;
 
-    // Add a modifier to increase stamina over time
     FGameplayModifierInfo ModifierInfo;
     ModifierInfo.Attribute = UPlayerCharacterAttributeSet::GetStaminaAttribute();
     ModifierInfo.ModifierOp = EGameplayModOp::Additive;
-    ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(FScalableFloat(-5.0f)); // Reduce stamina by 5 on attack
+
+    FSetByCallerFloat SetByCaller;
+    SetByCaller.DataTag = StaminaReductionTag;
+    ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(SetByCaller);
 
     Modifiers.Add(ModifierInfo);
 }

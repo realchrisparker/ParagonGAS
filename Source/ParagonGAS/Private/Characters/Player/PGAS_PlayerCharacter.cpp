@@ -19,6 +19,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Engine/World.h"
 #include <GAS/Abilities/PGAS_GameplayAbility_Montage.h>
+#include <GAS/Effects/PGAS_GE_StaminaReduction.h>
 
 // Sets default values
 APGAS_PlayerCharacter::APGAS_PlayerCharacter()
@@ -176,6 +177,10 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
         {
             EnhancedInputComp->BindAction(IA_PrimaryAttack, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::PrimaryAttackAction);
         }
+        if (IA_SecondaryAttack)
+        {
+            EnhancedInputComp->BindAction(IA_SecondaryAttack, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::SecondaryAttackAction);
+        }
     }
 }
 
@@ -279,9 +284,6 @@ void APGAS_PlayerCharacter::JumpAction(const FInputActionValue& Value)
         return;
     }
 
-    // Otherwise, we're on the ground, so jump now.
-    // Jump();
-
     // Activate by tag
     static FGameplayTag JumpAbilityTag = FGameplayTag::RequestGameplayTag(FName("Character.Ability.Jump"));
     ActivateAbilitiesWithTags(FGameplayTagContainer(JumpAbilityTag), true);
@@ -311,7 +313,20 @@ void APGAS_PlayerCharacter::JumpReleaseAction(const FInputActionValue& Value)
 void APGAS_PlayerCharacter::PrimaryAttackAction(const FInputActionValue& Value)
 {
     // Activate the melee GAS ability.
-    if (ActivateMeleeAbility(true))
+    if (ActivatePrimaryAttackAbility(true))
+    {
+        SetIsAttacking(true); // Set the attacking flag to true
+    }
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+void APGAS_PlayerCharacter::SecondaryAttackAction(const FInputActionValue& Value)
+{
+    // Activate the secondary attack GAS ability.
+    if (ActivateSecondaryAttackAbility(true))
     {
         SetIsAttacking(true); // Set the attacking flag to true
     }
@@ -346,9 +361,13 @@ void APGAS_PlayerCharacter::SetupDefaultAbilities()
     UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
     if (ASC)
     {
-        // Give the player character a melee ability.
-        if (MeleeAbility)
-            MeleeAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(MeleeAbility, GetCharacterLevel(), INDEX_NONE, this));
+        // Give the player character a main attack ability.
+        if (PrimaryAttackAbility)
+            PrimaryAttackAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(PrimaryAttackAbility, GetCharacterLevel(), INDEX_NONE, this));
+
+        // Give the player character a secondary attack ability.
+        if (SecondaryAttackAbility)
+            SecondaryAttackAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(SecondaryAttackAbility, GetCharacterLevel(), INDEX_NONE, this));
 
         // Give all abilities in DefaultAbilities array, if any (including Jump)
         for (TSubclassOf<UGameplayAbility> AbilityClass : DefaultAbilities)
@@ -420,7 +439,7 @@ void APGAS_PlayerCharacter::WeaponTrace()
     if (!World) return;
 
     // Get the start and end locations of the staff sockets.
-    FVector Start = GetStaffStartSocketLocation();
+    FVector Start = bSecondaryAttacking ? GetStaffStartExtendedSocketLocation() : GetStaffStartSocketLocation();
     FVector End = GetStaffEndSocketLocation();
     float SphereRadius = 25.0f;
 
@@ -494,20 +513,61 @@ void APGAS_PlayerCharacter::WeaponTrace()
  * This function checks if the character can activate the melee ability and performs the activation.
  * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
 */
-bool APGAS_PlayerCharacter::ActivateMeleeAbility(bool AllowRemoteActivation)
+bool APGAS_PlayerCharacter::ActivatePrimaryAttackAbility(bool AllowRemoteActivation)
 {
     UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 
-    // Ensure the AbilitySystemComponent and MeleeAbilitySpecHandle are valid before proceeding
-    if (!ASC || !MeleeAbilitySpecHandle.IsValid())
+    // Ensure the AbilitySystemComponent and PrimaryAttackAbilitySpecHandle are valid before proceeding
+    if (!ASC || !PrimaryAttackAbilitySpecHandle.IsValid())
         return false;
 
     // Bind to our events to handle montage state notifications in C++
     UPGAS_GameplayAbility_Montage::OnMontageStateNotify.RemoveAll(this); // Unbind any previous bindings to avoid duplicates
     UPGAS_GameplayAbility_Montage::OnMontageStateNotify.AddUObject(this, &APGAS_PlayerCharacter::HandleMontageStateNotify); // Bind
 
+    // Build the stamina reduction effect spec and apply it.
+    FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(UPGAS_GE_StaminaReduction::StaticClass(), GetCharacterLevel(), ASC->MakeEffectContext());
+    if (SpecHandle.IsValid())
+    {
+        SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction")), -0.238f); // Set the magnitude
+        ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+    }
+
+    bSecondaryAttacking = false;
+
     // Activate the ability
-    return ASC->TryActivateAbility(MeleeAbilitySpecHandle, AllowRemoteActivation);
+    return ASC->TryActivateAbility(PrimaryAttackAbilitySpecHandle, AllowRemoteActivation);
+}
+
+/**
+ * Activates the character's secondary attack ability
+ * This function checks if the character can activate the secondary attack ability and performs the activation.
+ * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
+*/
+bool APGAS_PlayerCharacter::ActivateSecondaryAttackAbility(bool AllowRemoteActivation)
+{
+    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+
+    // Ensure the AbilitySystemComponent and SecondaryAttackAbilitySpecHandle are valid before proceeding
+    if (!ASC || !SecondaryAttackAbilitySpecHandle.IsValid())
+        return false;
+
+    // Bind to our events to handle montage state notifications in C++
+    UPGAS_GameplayAbility_Montage::OnMontageStateNotify.RemoveAll(this); // Unbind any previous bindings to avoid duplicates
+    UPGAS_GameplayAbility_Montage::OnMontageStateNotify.AddUObject(this, &APGAS_PlayerCharacter::HandleMontageStateNotify); // Bind
+
+    // Build the stamina reduction effect spec and apply it.
+    FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(UPGAS_GE_StaminaReduction::StaticClass(), GetCharacterLevel(), ASC->MakeEffectContext());
+    if (SpecHandle.IsValid())
+    {
+        SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction")), -0.5f); // Set the magnitude
+        ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+    }
+
+    bSecondaryAttacking = true;
+
+    // Activate the ability
+    return ASC->TryActivateAbility(SecondaryAttackAbilitySpecHandle, AllowRemoteActivation);
 }
 
 /**

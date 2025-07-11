@@ -53,7 +53,29 @@ public:
     */
     UFUNCTION(BlueprintCallable, Category = "Character|Abilities|Melee",
         meta = (DisplayName = "Activate Melee Ability", ToolTip = "Activates the character's melee ability. This function checks if the character can activate the melee ability and performs the activation."))
-    bool ActivateMeleeAbility(bool AllowRemoteActivation = true);
+    bool ActivatePrimaryAttackAbility(bool AllowRemoteActivation = true);
+
+    /**
+     * Activates the character's primary attack ability
+     * This function checks if the character can activate the primary attack ability and performs the activation.
+     * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
+    */
+    UFUNCTION(BlueprintCallable, Category = "Character|Abilities|Melee",
+        meta = (DisplayName = "Activate Secondary Ability", ToolTip = "Activates the character's secondary ability. This function checks if the character can activate the secondary ability and performs the activation."))
+    bool ActivateSecondaryAttackAbility(bool AllowRemoteActivation = true);
+
+    /**
+     * Traces the weapon to detect hits.
+     * This function performs a trace from the weapon's start socket to the end socket to detect hits.
+     * @param extended Whether to use the extended socket for the trace (default: false).
+     * @note This function is typically called when the player performs an attack action.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Player|Combat",
+        meta = (AllowPrivateAccess = "true",
+            DisplayName = "Weapon Trace",
+            Keywords = "combat trace weapon hit detection",
+            Tooltip = "Performs a weapon trace to detect hits."))
+    void WeaponTrace();
 
     /**
      * Returns the Player Attribute Set for this character.
@@ -235,13 +257,6 @@ public:
     */
     virtual void HandleCharacterLevelUp();
 
-    UFUNCTION(BlueprintCallable, Category = "Player|Combat",
-        meta = (AllowPrivateAccess = "true",
-            DisplayName = "Weapon Trace",
-            Keywords = "combat trace weapon hit detection",
-            Tooltip = "Performs a weapon trace to detect hits."))
-    void WeaponTrace();
-
     // Sets up default abilities for the enemy character.
     // This function can be used to set up default abilities for the enemy character.
     virtual void SetupDefaultAbilities() override;
@@ -318,6 +333,10 @@ protected:
     UFUNCTION()
     void PrimaryAttackAction(const FInputActionValue& Value);
 
+    /** Called by the IA_SecondaryAttack input action to handle secondary attacking. */
+    UFUNCTION()
+    void SecondaryAttackAction(const FInputActionValue& Value);
+
     /*
     * Properties
     */
@@ -334,10 +353,15 @@ protected:
     UPROPERTY(BlueprintReadOnly, Category = "Player|HUD")
     TObjectPtr<APGAS_HUD> MyPlayerHUD;
 
-    // Melee ability class to be used by the character.
+    // Primary Attack ability class to be used by the character.
     // This is typically set in the editor or loaded in code.
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Abilities|Melee")
-    TSubclassOf<class UGameplayAbility> MeleeAbility;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Abilities|Combat")
+    TSubclassOf<class UGameplayAbility> PrimaryAttackAbility;
+
+    // Secondary Attack ability class to be used by the character.
+    // This is typically set in the editor or loaded in code.
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Abilities|Combat")
+    TSubclassOf<class UGameplayAbility> SecondaryAttackAbility;
 
     /**
      * The Input Action asset for moving the character (e.g. "IA_Move").
@@ -367,6 +391,13 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
     TObjectPtr<UInputAction> IA_PrimaryAttack;
 
+    /**
+     * The Input Action asset for secondary attacking (e.g. "IA_SecondaryAttack").
+     * This is typically set in the editor or loaded in code.
+     */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
+    TObjectPtr<UInputAction> IA_SecondaryAttack;
+
 private:
     /*
     * Properties
@@ -386,7 +417,10 @@ private:
     TObjectPtr<UPlayerCharacterAttributeSet> AttributeSet;
 
     UPROPERTY()
-    FGameplayAbilitySpecHandle MeleeAbilitySpecHandle;
+    FGameplayAbilitySpecHandle PrimaryAttackAbilitySpecHandle;
+
+    UPROPERTY()
+    FGameplayAbilitySpecHandle SecondaryAttackAbilitySpecHandle;
 
     /**
      * Set of actors that have already been hit by the weapon trace
@@ -397,6 +431,7 @@ private:
     TSet<TWeakObjectPtr<AActor>> AlreadyHitActors;
 
     FName WeaponStaffStartSocketName = "staff_start"; // The name of the weapon staff start socket.
+    FName WeaponStaffStartExtendedSocketName = "staff_start_extended"; // The name of the weapon staff start extended socket.
     FName WeaponStaffEndSocketName = "staff_end"; // The name of the weapon staff end socket.
 
     // Timer handle for the weapon trace timer.
@@ -407,6 +442,8 @@ private:
 
     float IdleTime = 0.0f; // The time the character has been idle.
     bool bIdleAnimationPlayed = false; // Whether the idle animation has been played or not.
+
+    bool bSecondaryAttacking = false; // Whether the character is currently performing a secondary attack.
 
     /*
     * Functions
@@ -434,6 +471,26 @@ private:
 
         // Get the location of the staff start socket on the character's mesh. In world location.		
         return GetMesh()->GetSocketLocation(WeaponStaffStartSocketName);
+    }
+
+    FVector GetStaffStartExtendedSocketLocation() const
+    {
+        // Make sure we have a valid mesh and the socket exists before trying to get the location.
+        if (!GetMesh())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("GetMesh() returned nullptr in GetStaffStartSocketLocation()"));
+            return FVector::ZeroVector; // Return zero vector if mesh is not valid.
+        }
+
+        // Check if the socket exists before trying to get its location.
+        if (!GetMesh()->DoesSocketExist(WeaponStaffStartExtendedSocketName))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Socket '%s' does not exist on the mesh in GetStaffStartSocketLocation()"), *WeaponStaffStartExtendedSocketName.ToString());
+            return FVector::ZeroVector; // Return zero vector if socket does not exist.
+        }
+
+        // Get the location of the staff start socket on the character's mesh. In world location.		
+        return GetMesh()->GetSocketLocation(WeaponStaffStartExtendedSocketName);
     }
 
     FVector GetStaffEndSocketLocation() const

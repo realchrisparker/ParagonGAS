@@ -18,6 +18,9 @@
 #include "GAS/Abilities/PGAS_JumpAbility.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemComponent.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Kismet/GameplayStatics.h"
+#include <GAS/Effects/PGAS_GE_StaminaReduction.h>
 #include "Characters/Base/PGAS_CharacterBase.h"
 
 UPGAS_JumpAbility::UPGAS_JumpAbility()
@@ -29,6 +32,15 @@ UPGAS_JumpAbility::UPGAS_JumpAbility()
     SetAssetTags(FGameplayTagContainer(FGameplayTag::RequestGameplayTag(FName("Character.Ability.Jump"))));
 
     ActivationOwnedTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove")));
+
+    // Default the sound cue using FObjectFinder
+    static ConstructorHelpers::FObjectFinder<USoundBase> JumpSoundObj(TEXT("/Game/ParagonSunWukong/Audio/Cues/Wukong_Effort_Jump.Wukong_Effort_Jump"));
+    if (JumpSoundObj.Succeeded())
+    {
+        JumpSoundCue = JumpSoundObj.Object;
+    }
+
+    StaminaReductionEffect = UPGAS_GE_StaminaReduction::StaticClass();
 }
 
 void UPGAS_JumpAbility::ActivateAbility(
@@ -45,10 +57,26 @@ void UPGAS_JumpAbility::ActivateAbility(
         return;
     }
 
+    // Play the sound (if set)
+    if (JumpSoundCue && ActorInfo && ActorInfo->AvatarActor.IsValid())
+    {
+        UGameplayStatics::PlaySoundAtLocation(
+            ActorInfo->AvatarActor->GetWorld(),
+            JumpSoundCue,
+            ActorInfo->AvatarActor->GetActorLocation());
+    }
+
     if (APGAS_CharacterBase* Character = Cast<APGAS_CharacterBase>(ActorInfo->AvatarActor.Get()))
     {
         Character->Jump();
         // You can trigger VFX/SFX here
+    }
+
+    if (StaminaReductionEffect && ActorInfo && ActorInfo->AbilitySystemComponent.IsValid())
+    {
+        FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(StaminaReductionEffect, GetAbilityLevel());
+        SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction")), -0.120f); // Set the magnitude
+        ActorInfo->AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
     }
 }
 

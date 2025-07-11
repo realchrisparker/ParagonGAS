@@ -19,6 +19,7 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
+#include "Sound/SoundCue.h"
 #include "PGAS_JumpAbility.generated.h"
 
 UCLASS(Blueprintable, meta=(DisplayName="Jump Ability"))
@@ -54,6 +55,11 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability")
     FGameplayTag RequiredTag;
 
-    // Optionally, set a cost (stamina, etc.) here in future
+    // Optionally, add a sound cue to play when jumping
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Audio")
+    TObjectPtr<USoundBase> JumpSoundCue;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Cost")
+    TSubclassOf<class UGameplayEffect> StaminaReductionEffect;
 };
  
