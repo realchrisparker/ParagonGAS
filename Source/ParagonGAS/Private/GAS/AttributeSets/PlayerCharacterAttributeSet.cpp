@@ -40,6 +40,36 @@ void UPlayerCharacterAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimePr
     DOREPLIFETIME(UPlayerCharacterAttributeSet, MaxExperiencePoints);
 }
 
+void UPlayerCharacterAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
+{
+    Super::PreAttributeChange(Attribute, NewValue);
+
+    if (Attribute == GetMaxHealthAttribute())
+    {
+        AdjustAttributeForMaxChange(Health, MaxHealth, NewValue, GetHealthAttribute());
+    }
+
+    if (Attribute == GetMaxStaminaAttribute())
+    {
+        AdjustAttributeForMaxChange(Stamina, MaxStamina, NewValue, GetStaminaAttribute());
+    }
+
+    if (Attribute == GetMaxAdrenalineAttribute())
+    {
+        AdjustAttributeForMaxChange(Adrenaline, MaxAdrenaline, NewValue, GetAdrenalineAttribute());
+    }
+
+    if (Attribute == GetMaxExperiencePointsAttribute())
+    {
+        SetExperiencePoints(0.f);
+    }
+}
+
+/*
+ * Called when a gameplay effect is executed on this attribute set.
+ * This function is called whenever a gameplay effect modifies an attribute in this attribute set.
+ * @param Data The data about the gameplay effect that was executed.
+*/
 void UPlayerCharacterAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
     Super::PostGameplayEffectExecute(Data);
@@ -97,31 +127,6 @@ void UPlayerCharacterAttributeSet::PostGameplayEffectExecute(const FGameplayEffe
             if (Difference >= 0)
                 TargetCharacter->HandleCharacterLevelUp(); // Fire the level-up event if experience points exceed max experience points
         }
-    }
-}
-
-void UPlayerCharacterAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
-{
-    Super::PreAttributeChange(Attribute, NewValue);
-
-    if (Attribute == GetMaxHealthAttribute())
-    {
-        AdjustAttributeForMaxChange(Health, MaxHealth, NewValue, GetHealthAttribute());
-    }
-
-    if (Attribute == GetMaxStaminaAttribute())
-    {
-        AdjustAttributeForMaxChange(Stamina, MaxStamina, NewValue, GetStaminaAttribute());
-    }
-
-    if (Attribute == GetMaxAdrenalineAttribute())
-    {
-        AdjustAttributeForMaxChange(Adrenaline, MaxAdrenaline, NewValue, GetAdrenalineAttribute());
-    }
-
-    if (Attribute == GetMaxExperiencePointsAttribute())
-    {
-        SetExperiencePoints(0.f);
     }
 }
 

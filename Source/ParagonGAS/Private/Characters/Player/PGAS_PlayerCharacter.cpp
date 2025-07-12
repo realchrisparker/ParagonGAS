@@ -18,6 +18,8 @@
 #include "GameplayTagContainer.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Engine/World.h"
+#include "AbilitySystemComponent.h"
+#include "GameplayEffectTypes.h"
 #include <GAS/Abilities/PGAS_GameplayAbility_Montage.h>
 #include <GAS/Abilities/PGAS_SprintAbility.h>
 #include <GAS/Effects/PGAS_GE_StaminaReduction.h>
@@ -99,22 +101,35 @@ void APGAS_PlayerCharacter::BeginPlay()
             CharMove->MaxWalkSpeed = 350.f;
     }
 
-    // TODO: Implement HUD updates using Interfaces or delegates (This is a placeholder for now)
-    UpdateInGameHUD(); // Update the in-game HUD with the current player status
-    // Call UpdateInGameHUD every 1/3 second
-    GetWorldTimerManager().SetTimer(
-        HUDUpdateTimerHandle,
-        this,
-        &APGAS_PlayerCharacter::UpdateInGameHUD,
-        0.33f,
-        true
-    );
+    // Set up the initial HUD values
+    if (MyPlayerHUD)
+    {
+        MyPlayerHUD->GetInGameHUDWidget()->UpdateHealthValue(GetHealth(), GetMaxHealth());
+        MyPlayerHUD->GetInGameHUDWidget()->UpdateStaminaValue(GetStamina(), GetMaxStamina());
+        MyPlayerHUD->GetInGameHUDWidget()->UpdateAdrenalineValue(GetAdrenaline(), GetMaxAdrenaline());
+    }
+
+    // Bind to attribute set stamina change callback
+    if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+    {
+        if (AttributeSet)
+        {
+            // Bind our function to the delegate for the Health attribute
+            ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetHealthAttribute()).AddUObject(
+                this, &APGAS_PlayerCharacter::OnHealthAttributeChanged);
+            // Bind our function to the delegate for the Stamina attribute
+            ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetStaminaAttribute()).AddUObject(
+                this, &APGAS_PlayerCharacter::OnStaminaAttributeChanged);
+            // Bind our function to the delegate for the Adrenaline attribute
+            ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetAdrenalineAttribute()).AddUObject(
+                this, &APGAS_PlayerCharacter::OnAdrenalineAttributeChanged);
+        }
+    }
 }
 
 void APGAS_PlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
-    GetWorldTimerManager().ClearTimer(HUDUpdateTimerHandle);
 }
 
 // Called every frame
@@ -667,17 +682,46 @@ void APGAS_PlayerCharacter::HandleMontageStateNotify(FGameplayTag NotifyTag, FGa
 }
 
 /**
- * Update the in-game HUD with the current player status.
- * This function is called to update the in-game HUD with the current player status.
+ * Called when the health attribute changes.
+ * @param Data The data about the attribute change.
 */
-void APGAS_PlayerCharacter::UpdateInGameHUD()
+void APGAS_PlayerCharacter::OnHealthAttributeChanged(const FOnAttributeChangeData& Data)
 {
+    // The Data parameter contains the new and old values
+    float NewValue = Data.NewValue;
+
     if (MyPlayerHUD)
     {
-        MyPlayerHUD->GetInGameHUDWidget()->UpdateHealthValue(GetHealth(), GetMaxHealth());
-        MyPlayerHUD->GetInGameHUDWidget()->UpdateStaminaValue(GetStamina(), GetMaxStamina());
-        MyPlayerHUD->GetInGameHUDWidget()->UpdateAdrenalineValue(GetAdrenaline(), GetMaxAdrenaline());
-        // MyPlayerHUD->GetInGameHUDWidget()->UpdateExperienceValue(GetExperiencePoints(), GetMaxExperiencePoints());
+        MyPlayerHUD->UpdateHealthBar(NewValue, GetMaxHealth());
     }
 }
 
+/**
+ * Called when the stamina attribute changes.
+ * @param Data The data about the attribute change.
+*/
+void APGAS_PlayerCharacter::OnStaminaAttributeChanged(const FOnAttributeChangeData& Data)
+{
+    // The Data parameter contains the new and old values
+    float NewValue = Data.NewValue;
+
+    if (MyPlayerHUD)
+    {
+        MyPlayerHUD->UpdateStaminaBar(NewValue, GetMaxStamina());
+    }
+}
+
+/**
+ * Called when the adrenaline attribute changes.
+ * @param Data The data about the attribute change.
+*/
+void APGAS_PlayerCharacter::OnAdrenalineAttributeChanged(const FOnAttributeChangeData& Data)
+{
+    // The Data parameter contains the new and old values
+    float NewValue = Data.NewValue;
+
+    if (MyPlayerHUD)
+    {
+        MyPlayerHUD->UpdateAdrenalineBar(NewValue, GetMaxAdrenaline());
+    }
+}

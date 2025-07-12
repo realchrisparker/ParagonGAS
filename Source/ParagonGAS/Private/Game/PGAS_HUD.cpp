@@ -53,57 +53,67 @@ void APGAS_HUD::BeginPlay()
     }
 }
 
+/*
+* IHUD Interface Implementation
+* These functions update the HUD elements with the new values.
+*/
+
 /**
  * Update the health bar UI with the given percentage.
  * @param NewPercentage - The new percentage to update the health bar.
  * @return The new percentage after update (may be clamped or processed).
 */
-// float APGAS_HUD::UpdateHealthBar(float NewPercentage) const
-// {
-//     if (HUDWidget)
-//     {
-//         HUDWidget->HealthOrb->UpdateOrbValue(NewPercentage);
-//     }
+float APGAS_HUD::UpdateHealthBar(float NewValue, float MaxValue) const
+{
+    if (InGameHUDWidget)
+    {
+        InGameHUDWidget->UpdateHealthValue(NewValue, MaxValue);
+    }
         
-//     return 0.0f;
-// }
+    return 0.0f;
+}
 
-// /**
-//  * Update the stamina bar UI with the given percentage.
-//  * @param NewPercentage - The new percentage to update the stamina bar.
-//  * @return The new percentage after update.
-// */
-// float APGAS_HUD::UpdateStaminaBar(float NewPercentage) const
-// {
-//     if (HUDWidget)
-//     {
-//         HUDWidget->StaminaOrb->UpdateOrbValue(NewPercentage);
-//     }
+/**
+ * Update the stamina bar UI with the given percentage.
+ * @param NewPercentage - The new percentage to update the stamina bar.
+ * @return The new percentage after update.
+*/
+float APGAS_HUD::UpdateStaminaBar(float NewValue, float MaxValue) const
+{
+    if (InGameHUDWidget)
+    {
+        InGameHUDWidget->UpdateStaminaValue(NewValue, MaxValue);
+    }
     
-//     return 0.0f;
-// }
+    return 0.0f;
+}
 
-// /**
-//  * Update the mana bar UI with the given percentage.
-//  * @param NewPercentage - The new percentage to update the mana bar.
-//  * @return The new percentage after update.
-// */
-// float APGAS_HUD::UpdateAdrenalineBar(float NewPercentage) const
-// {
-//     if (HUDWidget)
-//     {
-//         HUDWidget->AdrenalineOrb->UpdateOrbValue(NewPercentage);
-//     }
+/**
+ * Update the mana bar UI with the given percentage.
+ * @param NewPercentage - The new percentage to update the mana bar.
+ * @return The new percentage after update.
+*/
+float APGAS_HUD::UpdateAdrenalineBar(float NewValue, float MaxValue) const
+{
+    if (InGameHUDWidget)
+    {
+        InGameHUDWidget->UpdateAdrenalineValue(NewValue, MaxValue);
+    }
 
-//     return 0.0f;
-// }
+    return 0.0f;
+}
 
-// /**
-//  * Update the experience bar UI with the given percentage.
-//  * @param NewPercentage - The new percentage to update the experience bar.
-//  * @return The new percentage after update.
-// */
-// float APGAS_HUD::UpdateExperienceBar(float NewPercentage) const
-// {
-//     return 0.0f;
-// }
+/**
+ * Update the experience bar UI with the given percentage.
+ * @param NewPercentage - The new percentage to update the experience bar.
+ * @return The new percentage after update.
+*/
+float APGAS_HUD::UpdateExperienceBar(float NewValue, float MaxValue) const
+{
+    if (InGameHUDWidget)
+    {
+        // InGameHUDWidget->UpdateExperienceValue(NewValue, MaxValue);
+    }
+
+    return 0.0f;
+}

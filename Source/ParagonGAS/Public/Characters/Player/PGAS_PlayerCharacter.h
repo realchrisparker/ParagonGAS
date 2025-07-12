@@ -25,12 +25,15 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
 #include "InputActionValue.h"
+#include "AbilitySystemComponent.h"
+#include "GameplayEffectTypes.h"
 #include <Characters/Base/PGAS_CharacterBase.h>
 #include <Controllers/Player/PGAS_PlayerController.h>
 #include <Game/PGAS_PlayerState.h>
 #include <Game/PGAS_HUD.h>
 #include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
+#include <UserWidgets/PGAS_InGame_HUD.h>
 #include "PGAS_PlayerCharacter.generated.h"
 
 UCLASS()
@@ -261,8 +264,8 @@ public:
     // This function can be used to set up default abilities for the enemy character.
     virtual void SetupDefaultAbilities() override;
 
-    /** Update the in-game HUD with the current player status. */
-    void UpdateInGameHUD();
+    // /** Update the in-game HUD with the current player status. */
+    // void UpdateInGameHUD();
 
     // Gets the current idle time of the character.
     UFUNCTION(BlueprintCallable, Category = "Player|Camera")
@@ -294,6 +297,24 @@ protected:
 
     // Called when player state has been replicated
     virtual void OnRep_PlayerState() override;
+
+    /**
+    * Called when the Health attribute is changed.
+    * @param Data The data associated with the attribute change.
+    */
+    virtual void OnHealthAttributeChanged(const FOnAttributeChangeData& Data);
+
+    /**
+    * Called when the Stamina attribute is changed.
+    * @param Data The data associated with the attribute change.
+    */
+    virtual void OnStaminaAttributeChanged(const FOnAttributeChangeData& Data);
+
+    /**
+     * Called when the Adrenaline attribute is changed.
+     * @param Data The data associated with the attribute change.
+     */
+    virtual void OnAdrenalineAttributeChanged(const FOnAttributeChangeData& Data);
 
     /**
      * If you prefer to bind this in the Character (rather than a PlayerController),
@@ -450,9 +471,6 @@ private:
 
     // Timer handle for the weapon trace timer.
     FTimerHandle WeaponTraceTimerHandle;
-
-    // Timer handle for the HUD update timer.
-    FTimerHandle HUDUpdateTimerHandle;
 
     float IdleTime = 0.0f; // The time the character has been idle.
     bool bIdleAnimationPlayed = false; // Whether the idle animation has been played or not.

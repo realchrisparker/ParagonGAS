@@ -40,7 +40,7 @@ public:
      * @return The new percentage after update (may be clamped or processed).
      */
     UFUNCTION(Category = "HUD", meta = (DisplayName = "Update Health Bar"))
-    virtual float UpdateHealthBar(float NewPercentage) const = 0;
+    virtual float UpdateHealthBar(float NewValue, float MaxValue) const = 0;
 
     /**
      * Update the mana bar UI with the given percentage.
@@ -48,7 +48,7 @@ public:
      * @return The new percentage after update.
      */
     UFUNCTION(Category = "HUD", meta = (DisplayName = "Update Adrenaline Bar"))
-    virtual float UpdateAdrenalineBar(float NewPercentage) const = 0;
+    virtual float UpdateAdrenalineBar(float NewValue, float MaxValue) const = 0;
 
     /**
      * Update the stamina bar UI with the given percentage.
@@ -56,7 +56,7 @@ public:
      * @return The new percentage after update.
      */
     UFUNCTION(Category = "HUD", meta = (DisplayName = "Update Stamina Bar"))
-    virtual float UpdateStaminaBar(float NewPercentage) const = 0;
+    virtual float UpdateStaminaBar(float NewValue, float MaxValue) const = 0;
 
     /**
      * Update the experience bar UI with the given percentage.
@@ -64,6 +64,6 @@ public:
      * @return The new percentage after update.
      */
     UFUNCTION(Category = "HUD", meta = (DisplayName = "Update Experience Bar"))
-    virtual float UpdateExperienceBar(float NewPercentage) const = 0;
+    virtual float UpdateExperienceBar(float NewValue, float MaxValue) const = 0;
 };
  

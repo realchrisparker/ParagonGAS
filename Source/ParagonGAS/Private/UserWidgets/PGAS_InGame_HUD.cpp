@@ -33,7 +33,22 @@ void UPGAS_InGame_HUD::UpdateHealthValue(float NewValue, float MaxValue) const
 */
 void UPGAS_InGame_HUD::UpdateStaminaValue(float NewValue, float MaxValue) const
 {
-    Staminabar->SetPercent(NewValue / MaxValue);
+    // Ensure the Staminabar is valid before updating
+    if (Staminabar)
+    {
+        // Calculate the percentage and update the stamina bar
+        // UE_LOG(LogTemp, Log, TEXT("Setting Stamina Bar Percent: %f"), NewValue / MaxValue);
+
+        // Make sure the NewValue is not negative to avoid division by zero
+        if (MaxValue <= 0.0f)
+            return; // Avoid division by zero
+
+        // Clamp the NewValue to ensure it doesn't exceed MaxValue
+        NewValue = FMath::Clamp(NewValue, 0.0f, MaxValue);
+
+        // Set the stamina bar percentage based on the new value and max value
+        Staminabar->SetPercent(NewValue / MaxValue);
+    }
 }
 
 /**

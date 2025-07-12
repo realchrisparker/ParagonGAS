@@ -25,7 +25,7 @@
  * 
  */
 UCLASS(Blueprintable)
-class PARAGONGAS_API APGAS_HUD : public AHUD//, public IIHUD
+class PARAGONGAS_API APGAS_HUD : public AHUD, public IIHUD
 {
 	GENERATED_BODY()
 
@@ -46,10 +46,10 @@ public:
 	UPGAS_InGame_HUD* GetInGameHUDWidget() const { return InGameHUDWidget; }
 
 	// Override functions from IIHUD interface
-	// virtual float UpdateHealthBar(float NewPercentage) const override;
-    // virtual float UpdateAdrenalineBar(float NewPercentage) const override;
-    // virtual float UpdateStaminaBar(float NewPercentage) const override;
-	// virtual float UpdateExperienceBar(float NewPercentage) const override;
+	virtual float UpdateHealthBar(float NewValue, float MaxValue) const override;
+    virtual float UpdateAdrenalineBar(float NewValue, float MaxValue) const override;
+    virtual float UpdateStaminaBar(float NewValue, float MaxValue) const override;
+	virtual float UpdateExperienceBar(float NewValue, float MaxValue) const override;
 
 private:
 	/*
