@@ -23,6 +23,7 @@
 #include <GAS/Abilities/PGAS_GameplayAbility_Montage.h>
 #include <GAS/Abilities/PGAS_SprintAbility.h>
 #include <GAS/Effects/PGAS_GE_StaminaReduction.h>
+#include <Data/PGAS_EventAdditionalData.h>
 
 // Sets default values
 APGAS_PlayerCharacter::APGAS_PlayerCharacter()
@@ -562,19 +563,19 @@ void APGAS_PlayerCharacter::WeaponTrace()
             AlreadyHitActors.Add(HitActor);
 
             // Prepare the event tag (must match what your abilities expect)
-            FGameplayTag DamageEventTag = FGameplayTag::RequestGameplayTag(FName("Combat.Damage.Event.Melee.Staff"));
+            FGameplayTag DamageEventTag = FGameplayTag::RequestGameplayTag(FName("Combat.Damage.Event.Melee"));
 
             // Create Instigator Tags
             FGameplayTagContainer InstigatorTags = this->GetGameplayTags(); // Get the character's gameplay tags at this moment
 
             // Create optional object to hold hit information
-            // UPGAS_EventDataOptionalObj* EvnDataOptObj = NewObject<UPGAS_EventDataOptionalObj>();
-            // EvnDataOptObj->HitInfo = Hit;
+            UPGAS_EventAdditionalData* EvnDataOptObj = NewObject<UPGAS_EventAdditionalData>();
+            EvnDataOptObj->HitResult = Hit;
 
             // Prepare the event data
             FGameplayEventData EventData;
             EventData.EventTag = DamageEventTag; // The event tag for the damage event
-            // EventData.OptionalObject = EvnDataOptObj; // Optional object to hold additional data
+            EventData.OptionalObject = EvnDataOptObj; // Optional object to hold additional data
             EventData.Instigator = this; // The actor that initiated the event (this character)
             EventData.InstigatorTags = InstigatorTags; // Tags from the instigator
             EventData.Target = HitActor; // The actor that was hit

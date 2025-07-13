@@ -24,8 +24,9 @@ APGAS_CharacterBase::APGAS_CharacterBase()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-	// // Set up the character's hit reaction component.
-	// HitReactionComponent = CreateDefaultSubobject<UPGAS_HitReactionComponent>(TEXT("HitReactionComponent"));
+	// Set up the hit reaction component.
+	// This component handles hit reactions for the enemy character.
+	HitReactionComponent = CreateDefaultSubobject<UPGAS_HitReactionComponent>(TEXT("Hit Reaction Component"));
 
 	// Set up the character's ability system component.
 	// This component is responsible for managing abilities and effects.

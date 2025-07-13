@@ -17,7 +17,7 @@
 */
 
 #include "Characters/Enemy/PGAS_EnemyCharacter.h"
-#include "GAS/Abilities/PGAS_ReceiveStaffMeleeDamageAbility.h"
+#include "GAS/Abilities/PGAS_ReceiveMeleeDamageAbility.h"
 
 APGAS_EnemyCharacter::APGAS_EnemyCharacter()
 {

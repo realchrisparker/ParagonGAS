@@ -21,6 +21,7 @@
 #include "GameplayTagContainer.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include <Components/PGAS_HitReactionComponent.h>
 #include "PGAS_CharacterBase.generated.h"
 
 UCLASS()
@@ -100,6 +101,13 @@ public:
 		return AbilitySystemComponent;
 	}
 
+	// Returns the Hit Reaction Component for this character
+	// This component handles hit reactions for the enemy character.
+	UPGAS_HitReactionComponent* GetHitReactionComponent() const
+	{
+		return HitReactionComponent;
+	}
+
 	/* Default Abilities */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Abilities",
 		meta = (DisplayName = "Default Abilities", Description = "Default abilities granted to the character at spawn."))
@@ -146,6 +154,11 @@ private:
 	// Ability System Component for managing abilities and effects
 	UPROPERTY()
 	class UAbilitySystemComponent* AbilitySystemComponent;
+
+	// Hit reaction component for handling hit reactions
+	// This component handles hit reactions for the enemy character.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPGAS_HitReactionComponent> HitReactionComponent;
 
 	// Character's level, used for scaling abilities and attributes
 	// This can be used to determine the character's power level, abilities, etc.

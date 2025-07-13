@@ -40,7 +40,7 @@ public:
     /**
      * Returns the Player Attribute Set for this character.
      * This function retrieves the Player Attribute Set associated with the character's Ability System Component.
-     */
+    */
     UEnemyAttributeSet* GetAttributeSet() const
     {
         return const_cast<UEnemyAttributeSet*>(GetAbilitySystemComponent()->GetSet<UEnemyAttributeSet>());
@@ -67,18 +67,18 @@ public:
     }
 
     /*
-    * Called when health is changed.
-    * This function is called whenever the enemy's health changes.
-    * @param DeltaValue The change in health value (positive or negative).
-    * @param Instigator The actor that caused the health change (e.g., damage dealer).
-    * @note This function is intended to be overridden in derived classes to handle health changes.
+     * Called when health is changed.
+     * This function is called whenever the enemy's health changes.
+     * @param DeltaValue The change in health value (positive or negative).
+     * @param Instigator The actor that caused the health change (e.g., damage dealer).
+     * @note This function is intended to be overridden in derived classes to handle health changes.
     */
     UFUNCTION(BlueprintImplementableEvent, Category = "Enemy|Health", meta = (DisplayName = "On Health Changed"))
     void OnHealthChanged(float DeltaValue, AActor* Causer);
 
     /*
-    * Called when the enemy dies.
-    * This function is called when the enemy's health reaches zero.
+     * Called when the enemy dies.
+     * This function is called when the enemy's health reaches zero.
     */
     UFUNCTION(BlueprintImplementableEvent, Category = "Enemy|Health", meta = (DisplayName = "On Death"))
     void OnDeath();
@@ -95,6 +95,7 @@ protected:
     /*
     * Functions
     */
+    
     // Called when the game starts or when spawned
     virtual void BeginPlay() override;
 
@@ -105,13 +106,16 @@ private:
     /*
     * Properties
     */
-
+    
     // Attribute Set for managing enemy attributes (health, mana, etc.)
     // This is where you define your enemy's attributes like health, mana, etc.
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UEnemyAttributeSet> AttributeSet;
 
     FName HealthbarSocketName = "healthbar_Socket"; // The name of the health bar socket.
+
+    FName WeaponStartSocketName = "weapon_start"; // The name of the weapon staff start socket.
+    FName WeaponEndSocketName = "weapon_end"; // The name of the weapon staff end socket.
 
     /*
     * Functions
@@ -120,6 +124,45 @@ private:
     // Sets up the default gameplay tags for this character.
     // This is typically called in the constructor or BeginPlay.
     void SetupDefaultGameplayTags();
+
+    FVector GetWeaponStartSocketLocation() const
+    {
+        // Make sure we have a valid mesh and the socket exists before trying to get the location.
+        if (!GetMesh())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("GetMesh() returned nullptr in GetWeaponStartSocketLocation()"));
+            return FVector::ZeroVector; // Return zero vector if mesh is not valid.
+        }
+
+        // Check if the socket exists before trying to get its location.
+        if (!GetMesh()->DoesSocketExist(WeaponStartSocketName))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Socket '%s' does not exist on the mesh in GetWeaponStartSocketLocation()"), *WeaponStartSocketName.ToString());
+            return FVector::ZeroVector; // Return zero vector if socket does not exist.
+        }
+
+        // Get the location of the weapon start socket on the character's mesh. In world location.
+        return GetMesh()->GetSocketLocation(WeaponStartSocketName);
+    }
+
+    FVector GetWeaponEndSocketLocation() const
+    {
+        // Make sure we have a valid mesh and the socket exists before trying to get the location.
+        if (!GetMesh())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("GetMesh() returned nullptr in GetWeaponEndSocketLocation()"));
+            return FVector::ZeroVector; // Return zero vector if mesh is not valid.
+        }
+
+        // Check if the socket exists before trying to get its location.
+        if (!GetMesh()->DoesSocketExist(WeaponEndSocketName))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Socket '%s' does not exist on the mesh in GetWeaponEndSocketLocation()"), *WeaponEndSocketName.ToString());
+            return FVector::ZeroVector; // Return zero vector if socket does not exist.
+        }
+
+        return GetMesh()->GetSocketLocation(WeaponEndSocketName);
+    }
 
     FVector GetHealthbarSocketLocation() const
     {
