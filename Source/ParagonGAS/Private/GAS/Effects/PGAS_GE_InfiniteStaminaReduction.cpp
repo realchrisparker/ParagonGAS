@@ -11,17 +11,19 @@
  * Author: Christopher D. Parker
  * Date: 7-10-2025
  * =============================================================================
- * PGAS_GE_StaminaReduction
- * Gameplay Effect for reducing stamina (C++ version).
+ * PGAS_GE_InfiniteStaminaReduction
+ * Gameplay Effect for reducing stamina infinitely (C++ version).
 */
 
 
-#include "GAS/Effects/PGAS_GE_StaminaReduction.h"
+#include "GAS/Effects/PGAS_GE_InfiniteStaminaReduction.h"
 #include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
 
-UPGAS_GE_StaminaReduction::UPGAS_GE_StaminaReduction()
+UPGAS_GE_InfiniteStaminaReduction::UPGAS_GE_InfiniteStaminaReduction()
 {
-    DurationPolicy = EGameplayEffectDurationType::Instant;
+    DurationPolicy = EGameplayEffectDurationType::Infinite;
+
+    Period.Value = 0.35f; // How often the effect applies
 
     FGameplayModifierInfo ModifierInfo;
     ModifierInfo.Attribute = UPlayerCharacterAttributeSet::GetStaminaAttribute();

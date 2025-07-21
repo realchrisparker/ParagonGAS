@@ -17,7 +17,7 @@
 
 
 #include <GAS/Abilities/PGAS_SprintAbility.h>
-#include <GAS/Effects/PGAS_GE_StaminaReduction.h>
+#include <GAS/Effects/PGAS_GE_InfiniteStaminaReduction.h>
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -31,9 +31,11 @@ UPGAS_SprintAbility::UPGAS_SprintAbility()
     // Ability Tag for matching Event
     SetAssetTags(FGameplayTagContainer(FGameplayTag::RequestGameplayTag(FName("Character.Ability.Sprint"))));
 
+    // Tags the owner actor ASC should have to activate ability
     ActivationOwnedTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove")));
 
-    StaminaReductionEffect = UPGAS_GE_StaminaReduction::StaticClass();
+    // Default Stamina Effect Class
+    StaminaReductionEffect = UPGAS_GE_InfiniteStaminaReduction::StaticClass();
 }
 
 void UPGAS_SprintAbility::ActivateAbility(

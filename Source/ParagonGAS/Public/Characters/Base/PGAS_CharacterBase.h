@@ -109,12 +109,12 @@ public:
 	}
 
 	/* Default Abilities */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Abilities",
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|GAS",
 		meta = (DisplayName = "Default Abilities", Description = "Default abilities granted to the character at spawn."))
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
 
 	/* Default Attribute Effects */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Attributes",
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|GAS",
 		meta = (DisplayName = "Default Attribute Effects", Description = "Default attribute effects applied to the character at spawn."))
 	TArray<TSubclassOf<class UGameplayEffect>> DefaultAttributeEffects;
 
@@ -162,7 +162,8 @@ private:
 
 	// Character's level, used for scaling abilities and attributes
 	// This can be used to determine the character's power level, abilities, etc.
-	UPROPERTY(VisibleAnywhere, Category = "Player|Attributes")
+	UPROPERTY(VisibleAnywhere, Category = "Player|GAS", meta = (AllowPrivateAccess = "true",
+		DisplayName = "Character Level", ToolTip = "The level of the character, used for scaling abilities and attributes."))
 	int32 CharacterLevel;
 
 	// Flag to check if the character is currently attacking

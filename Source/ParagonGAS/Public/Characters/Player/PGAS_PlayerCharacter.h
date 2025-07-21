@@ -90,7 +90,7 @@ public:
     }
 
     // Gets the health attribute of the character.
-    UFUNCTION(BlueprintCallable, Category = "Player|Attributes", meta = (DisplayName = "Get Health Attribute"))
+    UFUNCTION(BlueprintCallable, Category = "Player|GAS", meta = (DisplayName = "Get Health Attribute"))
     virtual float GetHealth() const
     {
         const UPlayerCharacterAttributeSet* AttriSet = GetAttributeSet();
@@ -100,7 +100,7 @@ public:
     }
 
     // Gets the max health attribute of the character.
-    UFUNCTION(BlueprintCallable, Category = "Player|Attributes", meta = (DisplayName = "Get Max Health Attribute"))
+    UFUNCTION(BlueprintCallable, Category = "Player|GAS", meta = (DisplayName = "Get Max Health Attribute"))
     virtual float GetMaxHealth() const
     {
         const UPlayerCharacterAttributeSet* AttriSet = GetAttributeSet();
@@ -110,7 +110,7 @@ public:
     }
 
     // Gets the stamina attribute of the character.
-    UFUNCTION(BlueprintCallable, Category = "Player|Attributes", meta = (DisplayName = "Get Stamina Attribute"))
+    UFUNCTION(BlueprintCallable, Category = "Player|GAS", meta = (DisplayName = "Get Stamina Attribute"))
     virtual float GetStamina() const
     {
         const UPlayerCharacterAttributeSet* AttriSet = GetAttributeSet();
@@ -120,7 +120,7 @@ public:
     }
 
     // Gets the max stamina attribute of the character.
-    UFUNCTION(BlueprintCallable, Category = "Player|Attributes", meta = (DisplayName = "Get Max Stamina Attribute"))
+    UFUNCTION(BlueprintCallable, Category = "Player|GAS", meta = (DisplayName = "Get Max Stamina Attribute"))
     virtual float GetMaxStamina() const
     {
         const UPlayerCharacterAttributeSet* AttriSet = GetAttributeSet();
@@ -130,7 +130,7 @@ public:
     }
 
     // Gets the adrenaline attribute of the character.
-    UFUNCTION(BlueprintCallable, Category = "Player|Attributes", meta = (DisplayName = "Get Adrenaline Attribute"))
+    UFUNCTION(BlueprintCallable, Category = "Player|GAS", meta = (DisplayName = "Get Adrenaline Attribute"))
     virtual float GetAdrenaline() const
     {
         const UPlayerCharacterAttributeSet* AttriSet = GetAttributeSet();
@@ -140,7 +140,7 @@ public:
     }
 
     // Gets the max adrenaline attribute of the character.
-    UFUNCTION(BlueprintCallable, Category = "Player|Attributes", meta = (DisplayName = "Get Max Adrenaline Attribute"))
+    UFUNCTION(BlueprintCallable, Category = "Player|GAS", meta = (DisplayName = "Get Max Adrenaline Attribute"))
     virtual float GetMaxAdrenaline() const
     {
         const UPlayerCharacterAttributeSet* AttriSet = GetAttributeSet();
@@ -150,7 +150,7 @@ public:
     }
 
     // Gets the experience points attribute of the character.
-    UFUNCTION(BlueprintCallable, Category = "Player|Attributes", meta = (DisplayName = "Get Experience Points Attribute"))
+    UFUNCTION(BlueprintCallable, Category = "Player|GAS", meta = (DisplayName = "Get Experience Points Attribute"))
     virtual float GetExperiencePoints() const
     {
         const UPlayerCharacterAttributeSet* AttriSet = GetAttributeSet();
@@ -160,7 +160,7 @@ public:
     }
 
     // Gets the max experience points attribute of the character.
-    UFUNCTION(BlueprintCallable, Category = "Player|Attributes", meta = (DisplayName = "Get Max Experience Points Attribute"))
+    UFUNCTION(BlueprintCallable, Category = "Player|GAS", meta = (DisplayName = "Get Max Experience Points Attribute"))
     virtual float GetMaxExperiencePoints() const
     {
         const UPlayerCharacterAttributeSet* AttriSet = GetAttributeSet();
@@ -275,9 +275,10 @@ public:
     * Properties
     */
 
-    /** Animation Montage for idle state */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Animations|Idle")
-    TObjectPtr<UAnimMontage> IdleMontage;
+    /** Animation Montage for idle state break */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Animations|Idle", meta= (DisplayName = "Idle Break Montage",
+        ToolTip = "The animation montage to play when the character breaks out of an idle state. This allows for the character to play a specific animation montage when breaking out of an idle state. This will occur if the character has been idle for a certain 30.0f of time."))
+    TObjectPtr<UAnimMontage> IdleBreakMontage;
 
 protected:
     /*
@@ -352,7 +353,7 @@ protected:
 
     /** Called by the IA_Sprint input action to handle sprinting. */
     UFUNCTION()
-    void SprintAction(const FInputActionValue& Value);
+    void SprintStartAction(const FInputActionValue& Value);
 
     /** Called by the IA_Sprint input action to handle sprinting when released. */
     void SprintReleaseAction(const FInputActionValue& Value);
@@ -364,6 +365,13 @@ protected:
     /** Called by the IA_SecondaryAttack input action to handle secondary attacking. */
     UFUNCTION()
     void SecondaryAttackAction(const FInputActionValue& Value);
+
+    /** Called by the IA_Block input action to handle blocking when started. */
+    UFUNCTION()
+    void BlockStartedAction(const FInputActionInstance& Value);
+
+    /** Called by the IA_Block input action to handle blocking when released. */
+    void BlockReleaseAction(const FInputActionValue& Value);
 
     /*
     * Properties
@@ -383,55 +391,62 @@ protected:
 
     // Primary Attack ability class to be used by the character.
     // This is typically set in the editor or loaded in code.
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Abilities|Combat")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|GAS|Combat")
     TSubclassOf<class UGameplayAbility> PrimaryAttackAbility;
 
     // Secondary Attack ability class to be used by the character.
     // This is typically set in the editor or loaded in code.
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Abilities|Combat")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|GAS|Combat")
     TSubclassOf<class UGameplayAbility> SecondaryAttackAbility;
 
     /**
      * The Input Action asset for moving the character (e.g. "IA_Move").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Move Action"))
     TObjectPtr<UInputAction> IA_Move;
 
     /**
      * The Input Action asset for looking around (e.g. "IA_Look").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Look Action"))
     TObjectPtr<UInputAction> IA_Look;
 
     /**
      * The Input Action asset for jumping (e.g. "IA_Jump").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Jump Action"))
     TObjectPtr<UInputAction> IA_Jump;
 
     /**
      * The Input Action asset for moving the character in sprinting/running (e.g. "IA_Sprint").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Sprint Action"))
     TObjectPtr<UInputAction> IA_Sprint;
 
     /**
      * The Input Action asset for primary attacking (e.g. "IA_PrimaryAttack").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Primary Attack Action"))
     TObjectPtr<UInputAction> IA_PrimaryAttack;
 
     /**
      * The Input Action asset for secondary attacking (e.g. "IA_SecondaryAttack").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Secondary Attack Action"))
     TObjectPtr<UInputAction> IA_SecondaryAttack;
+
+    /**
+     * The Input Action asset for blocking (e.g. "IA_Block").
+     * This is typically set in the editor or loaded in code.
+     */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta=(DisplayName = "Block Action"))
+    TObjectPtr<UInputAction> IA_Block;
 
 private:
     /*
@@ -548,9 +563,9 @@ private:
     void PlayIdleBreakMontage()
     {
         // Play the idle animation montage here. Use Montage_Play, GAS, or any system you prefer.
-        if (IdleMontage && GetMesh())
+        if (IdleBreakMontage && GetMesh())
         {
-            GetMesh()->GetAnimInstance()->Montage_Play(IdleMontage);
+            GetMesh()->GetAnimInstance()->Montage_Play(IdleBreakMontage);
         }
     }
 };

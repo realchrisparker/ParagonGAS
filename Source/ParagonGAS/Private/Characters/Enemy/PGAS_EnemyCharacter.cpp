@@ -22,11 +22,15 @@
 APGAS_EnemyCharacter::APGAS_EnemyCharacter()
 {
     // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
 
     // Set up the character's attribute set.
     // This is where you define your character's attributes like health, mana, etc.
     AttributeSet = CreateDefaultSubobject<UEnemyAttributeSet>(TEXT("AttributeSet"));
+
+    // Set up the State Tree AI Component for managing enemy AI behavior.
+    // This component handles the AI behavior for the enemy character.
+    StateTreeAIComponent = CreateDefaultSubobject<UStateTreeAIComponent>(TEXT("State Tree AI Component"));
 
     // Default character level
     SetCharacterLevel(1);

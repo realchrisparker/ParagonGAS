@@ -22,7 +22,8 @@
 #include "GameplayEffectTypes.h"
 #include <GAS/Abilities/PGAS_GameplayAbility_Montage.h>
 #include <GAS/Abilities/PGAS_SprintAbility.h>
-#include <GAS/Effects/PGAS_GE_StaminaReduction.h>
+#include <GAS/Effects/PGAS_GE_InstantStaminaReduction.h>
+#include <GAS/Effects/PGAS_GE_InfiniteStaminaReduction.h>
 #include <Data/PGAS_EventAdditionalData.h>
 
 // Sets default values
@@ -207,7 +208,7 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
         }
         if (IA_Sprint)
         {
-            EnhancedInputComp->BindAction(IA_Sprint, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::SprintAction);
+            EnhancedInputComp->BindAction(IA_Sprint, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::SprintStartAction);
             EnhancedInputComp->BindAction(IA_Sprint, ETriggerEvent::Completed, this, &APGAS_PlayerCharacter::SprintReleaseAction);
         }
         if (IA_PrimaryAttack)
@@ -217,6 +218,11 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
         if (IA_SecondaryAttack)
         {
             EnhancedInputComp->BindAction(IA_SecondaryAttack, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::SecondaryAttackAction);
+        }
+        if (IA_Block)
+        {
+            EnhancedInputComp->BindAction(IA_Block, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::BlockStartedAction);
+            EnhancedInputComp->BindAction(IA_Block, ETriggerEvent::Completed, this, &APGAS_PlayerCharacter::BlockReleaseAction);
         }
     }
 }
@@ -329,6 +335,10 @@ void APGAS_PlayerCharacter::JumpAction(const FInputActionValue& Value)
     bIdleAnimationPlayed = false;
 }
 
+/*
+ * JumpReleaseAction function to handle the release of jumping input.
+ * This function is called when the IA_Jump input action is released.
+*/
 void APGAS_PlayerCharacter::JumpReleaseAction(const FInputActionValue& Value)
 {
     if (GetAbilitySystemComponent())
@@ -346,7 +356,7 @@ void APGAS_PlayerCharacter::JumpReleaseAction(const FInputActionValue& Value)
  * Sprint function to handle sprinting input.
  * This function is called when the IA_Sprint input action is triggered.
 */
-void APGAS_PlayerCharacter::SprintAction(const FInputActionValue& Value)
+void APGAS_PlayerCharacter::SprintStartAction(const FInputActionValue& Value)
 {
     if (HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))) == false)
     {
@@ -371,6 +381,10 @@ void APGAS_PlayerCharacter::SprintAction(const FInputActionValue& Value)
     bIdleAnimationPlayed = false;
 }
 
+/*
+ * SprintReleaseAction function to handle the release of sprinting input.
+ * This function is called when the IA_Sprint input action is released.
+*/
 void APGAS_PlayerCharacter::SprintReleaseAction(const FInputActionValue& Value)
 {
     if (GetAbilitySystemComponent())
@@ -382,6 +396,56 @@ void APGAS_PlayerCharacter::SprintReleaseAction(const FInputActionValue& Value)
 
     // Remove character's movement gameplay tags. (Any gameplay effects tied to movement tags will stop.)
     RemoveGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Sprinting")));
+
+    // Reset idle time and animation flag when movement stops
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+/*
+ * MoveStartedAction function to handle the start of movement input.
+ * This function is called when the IA_Move input action is started.
+*/
+void APGAS_PlayerCharacter::BlockStartedAction(const FInputActionInstance& Value)
+{
+    if (HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))) == false)
+    {
+        return;
+    }
+
+    // Early-out if we're already falling (i.e., in the air).
+    if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
+    {
+        return;
+    }
+
+    // Activate by tag
+    static FGameplayTag BlockAbilityTag = FGameplayTag::RequestGameplayTag(FName("Character.Ability.Block"));
+    ActivateAbilitiesWithTags(FGameplayTagContainer(BlockAbilityTag), true);
+
+    // Add character's blocking gameplay tags. (Any gameplay effects tied to movement tags will start.)
+    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Combat.Blocking")));
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+/*
+ * BlockReleaseAction function to handle the release of blocking input.
+ * This function is called when the IA_Block input action is released.
+*/
+void APGAS_PlayerCharacter::BlockReleaseAction(const FInputActionValue& Value)
+{
+    if (GetAbilitySystemComponent())
+    {
+        // This deactivates all instances of the Block ability (robust for multiplayer, prediction, etc.)
+        static FGameplayTagContainer BlockAbilityTagContainer(FGameplayTag::RequestGameplayTag(FName("Character.Ability.Block")));
+        GetAbilitySystemComponent()->CancelAbilities(&BlockAbilityTagContainer, nullptr, nullptr);
+    }
+
+    // Remove character's blocking gameplay tags. (Any gameplay effects tied to movement tags will stop.)
+    RemoveGameplayTag(FGameplayTag::RequestGameplayTag(FName("Combat.Blocking")));
 
     // Reset idle time and animation flag when movement stops
     IdleTime = 0.f;
@@ -454,8 +518,21 @@ void APGAS_PlayerCharacter::SetupDefaultAbilities()
         // Give all abilities in DefaultAbilities array, if any (including Jump)
         for (TSubclassOf<UGameplayAbility> AbilityClass : DefaultAbilities)
         {
-            if (AbilityClass)
+            if (!AbilityClass)
+                continue; // Skip if the AbilityClass is null
+
+            bool bAlreadyGranted = false;
+            for (const FGameplayAbilitySpec& Spec : ASC->GetActivatableAbilities())
             {
+                if (Spec.Ability && Spec.Ability->GetClass() == AbilityClass)
+                {
+                    bAlreadyGranted = true;
+                    break;
+                }
+            }
+            if (!bAlreadyGranted)
+            {
+                // AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, 0));
                 ASC->GiveAbility(FGameplayAbilitySpec(AbilityClass, GetCharacterLevel(), INDEX_NONE, this));
             }
         }
@@ -608,7 +685,7 @@ bool APGAS_PlayerCharacter::ActivatePrimaryAttackAbility(bool AllowRemoteActivat
     UPGAS_GameplayAbility_Montage::OnMontageStateNotify.AddUObject(this, &APGAS_PlayerCharacter::HandleMontageStateNotify); // Bind
 
     // Build the stamina reduction effect spec and apply it.
-    FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(UPGAS_GE_StaminaReduction::StaticClass(), GetCharacterLevel(), ASC->MakeEffectContext());
+    FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(UPGAS_GE_InstantStaminaReduction::StaticClass(), GetCharacterLevel(), ASC->MakeEffectContext());
     if (SpecHandle.IsValid())
     {
         SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction")), -0.238f); // Set the magnitude
@@ -639,7 +716,7 @@ bool APGAS_PlayerCharacter::ActivateSecondaryAttackAbility(bool AllowRemoteActiv
     UPGAS_GameplayAbility_Montage::OnMontageStateNotify.AddUObject(this, &APGAS_PlayerCharacter::HandleMontageStateNotify); // Bind
 
     // Build the stamina reduction effect spec and apply it.
-    FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(UPGAS_GE_StaminaReduction::StaticClass(), GetCharacterLevel(), ASC->MakeEffectContext());
+    FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(UPGAS_GE_InstantStaminaReduction::StaticClass(), GetCharacterLevel(), ASC->MakeEffectContext());
     if (SpecHandle.IsValid())
     {
         SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction")), -0.5f); // Set the magnitude

@@ -20,7 +20,7 @@
 #include "AbilitySystemComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Kismet/GameplayStatics.h"
-#include <GAS/Effects/PGAS_GE_StaminaReduction.h>
+#include <GAS/Effects/PGAS_GE_InstantStaminaReduction.h>
 #include "Characters/Base/PGAS_CharacterBase.h"
 
 UPGAS_JumpAbility::UPGAS_JumpAbility()
@@ -40,7 +40,7 @@ UPGAS_JumpAbility::UPGAS_JumpAbility()
         JumpSoundCue = JumpSoundObj.Object;
     }
 
-    StaminaReductionEffect = UPGAS_GE_StaminaReduction::StaticClass();
+    StaminaReductionEffect = UPGAS_GE_InstantStaminaReduction::StaticClass();
 }
 
 void UPGAS_JumpAbility::ActivateAbility(

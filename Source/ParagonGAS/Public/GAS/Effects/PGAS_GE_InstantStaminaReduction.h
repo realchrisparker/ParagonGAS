@@ -11,23 +11,23 @@
  * Author: Christopher D. Parker
  * Date: 7-10-2025
  * =============================================================================
- * PGAS_GE_StaminaReduction
- * Gameplay Effect for reducing stamina (C++ version).
+ * PGAS_GE_InstantStaminaReduction
+ * Gameplay Effect for reducing stamina instantly (C++ version).
 */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameplayEffect.h"
-#include "PGAS_GE_StaminaReduction.generated.h"
+#include "PGAS_GE_InstantStaminaReduction.generated.h"
 
-UCLASS(BlueprintType, Blueprintable, Category = "Gameplay Ability System|Effects", meta = (DisplayName = "Stamina Reduction"))
-class PARAGONGAS_API UPGAS_GE_StaminaReduction : public UGameplayEffect
+UCLASS(BlueprintType, Blueprintable, Category = "Gameplay Ability System|Effects", meta = (DisplayName = "Instant Stamina Reduction"))
+class PARAGONGAS_API UPGAS_GE_InstantStaminaReduction : public UGameplayEffect
 {
     GENERATED_BODY()
 
 public:
-    UPGAS_GE_StaminaReduction();
+    UPGAS_GE_InstantStaminaReduction();
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect|Config")
     FGameplayTag StaminaReductionTag = FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction"));

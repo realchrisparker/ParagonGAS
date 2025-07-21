@@ -24,8 +24,7 @@ UPGAS_GE_StaminaRegeneration::UPGAS_GE_StaminaRegeneration()
     // Set default values for the gameplay effect
     DurationPolicy = EGameplayEffectDurationType::Infinite;
 
-    // Periodic application settings
-    Period.Value = 0.35f;
+    Period.Value = 0.35f; // How often the effect applies
 
     // Add a modifier to increase stamina over time
     FGameplayModifierInfo ModifierInfo;

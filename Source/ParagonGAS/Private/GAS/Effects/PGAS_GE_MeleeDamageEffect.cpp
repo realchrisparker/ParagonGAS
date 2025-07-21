@@ -15,7 +15,7 @@
  * Staff Melee Damage Gameplay Effect: Physical melee attack with staff, supporting crits, knockback, and stun.
  */
 
-#include "GAS/Effects/PGAS_GE_MeleeDamageEffect.h"
+#include <GAS/Effects/PGAS_GE_MeleeDamageEffect.h>
 #include <GAS/AttributeSets/EnemyAttributeSet.h>
 
 UPGAS_GE_MeleeDamageEffect::UPGAS_GE_MeleeDamageEffect()

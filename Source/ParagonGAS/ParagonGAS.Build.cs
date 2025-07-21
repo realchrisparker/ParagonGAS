@@ -18,6 +18,7 @@ public class ParagonGAS : ModuleRules
 			"GameplayAbilities",
 			"GameplayTags",
 			"GameplayTasks",
+			"StateTreeModule",
 			"AIModule",
 			"UMG",
 			"NavigationSystem",

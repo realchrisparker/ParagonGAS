@@ -18,6 +18,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/StateTreeAIComponent.h"
 #include <GAS/AttributeSets/EnemyAttributeSet.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Characters/Base/PGAS_CharacterBase.h>
@@ -91,6 +92,13 @@ public:
     */
     virtual void HandleHealthChange(float DeltaValue, AActor* Causer);
 
+    // Returns the State Tree AI Component for this character
+    // This component handles the AI behavior for the enemy character.
+    UStateTreeAIComponent* GetStateTreeAIComponent() const
+    {
+        return StateTreeAIComponent;
+    };
+
 protected:
     /*
     * Functions
@@ -109,8 +117,13 @@ private:
     
     // Attribute Set for managing enemy attributes (health, mana, etc.)
     // This is where you define your enemy's attributes like health, mana, etc.
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|GAS", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UEnemyAttributeSet> AttributeSet;
+
+    // State tree AI component for managing enemy AI behavior
+    // This component handles the AI behavior for the enemy character.
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|AI", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UStateTreeAIComponent> StateTreeAIComponent;
 
     FName HealthbarSocketName = "healthbar_Socket"; // The name of the health bar socket.
 
