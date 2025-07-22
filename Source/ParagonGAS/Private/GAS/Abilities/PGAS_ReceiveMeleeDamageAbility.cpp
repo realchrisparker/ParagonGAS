@@ -83,25 +83,11 @@ void UPGAS_ReceiveMeleeDamageAbility::ActivateAbility(
             TSubclassOf<UGameplayEffect> DamageEffectClass = UPGAS_GE_MeleeDamageEffect::StaticClass();
             FGameplayEffectSpecHandle EffectSpecHandle = MakeOutgoingGameplayEffectSpec(DamageEffectClass, TargetCharacter->GetCharacterLevel());
 
-            // If you want to access default crit multiplier etc, use GetDefault<> (read-only)
-            const UPGAS_GE_MeleeDamageEffect* DamageEffect = Cast<const UPGAS_GE_MeleeDamageEffect>(DamageEffectClass->GetDefaultObject());
-            float CritMultiplier = DamageEffect && DamageEffect->bCanCrit ? DamageEffect->CritMultiplier : 1.0f;
-
-            float BaseDamage = DamageEffect->BaseDamage;
-            float FinalDamage = bIsCritical ? BaseDamage * CritMultiplier : BaseDamage;
-
-            // SetByCaller for dynamic runtime values
-            EffectSpecHandle.Data->SetSetByCallerMagnitude(EventTriggerTag, -FinalDamage);
-
             // Set context (instigator)
             EffectSpecHandle.Data->GetContext().AddInstigator(ActorInfo->OwnerActor.Get(), ActorInfo->AvatarActor.Get());
 
-            // UE_LOG(LogTemp, Log, TEXT("Target current health %f"), TargetCharacter->GetHealth());
-
             // Apply the effect to the target
             TargetASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
-
-            // UE_LOG(LogTemp, Log, TEXT("Target after damage health %f"), TargetCharacter->GetHealth());
 
             // Get hit result from event data if available
             FHitResult HitResult;

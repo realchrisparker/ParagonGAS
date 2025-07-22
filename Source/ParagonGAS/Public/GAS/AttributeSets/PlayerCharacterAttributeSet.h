@@ -91,6 +91,14 @@ public:
 	FGameplayAttributeData MaxExperiencePoints;
 	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, MaxExperiencePoints);
 
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_AttackPower)
+	FGameplayAttributeData AttackPower;
+	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, AttackPower);
+
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Defense)
+	FGameplayAttributeData Defense;
+	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, Defense);
+
 protected:
 	/*
 	 * Functions
@@ -126,4 +134,10 @@ protected:
 
 	UFUNCTION()
 	virtual void OnRep_MaxExperiencePoints(const FGameplayAttributeData& OldMaxExperiencePoints);
+
+	UFUNCTION()
+	virtual void OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower);
+
+	UFUNCTION()
+	virtual void OnRep_Defense(const FGameplayAttributeData& OldDefense);
 };
