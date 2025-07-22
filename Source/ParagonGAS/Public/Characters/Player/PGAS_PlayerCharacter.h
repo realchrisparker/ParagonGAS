@@ -54,7 +54,7 @@ public:
      * This function checks if the character can activate the melee ability and performs the activation.
      * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
     */
-    UFUNCTION(BlueprintCallable, Category = "Character|Abilities|Melee",
+    UFUNCTION(BlueprintCallable, Category = "Player|Abilities|Melee",
         meta = (DisplayName = "Activate Melee Ability", ToolTip = "Activates the character's melee ability. This function checks if the character can activate the melee ability and performs the activation."))
     bool ActivatePrimaryAttackAbility(bool AllowRemoteActivation = true);
 
@@ -63,7 +63,7 @@ public:
      * This function checks if the character can activate the primary attack ability and performs the activation.
      * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
     */
-    UFUNCTION(BlueprintCallable, Category = "Character|Abilities|Melee",
+    UFUNCTION(BlueprintCallable, Category = "Player|Abilities|Melee",
         meta = (DisplayName = "Activate Secondary Ability", ToolTip = "Activates the character's secondary ability. This function checks if the character can activate the secondary ability and performs the activation."))
     bool ActivateSecondaryAttackAbility(bool AllowRemoteActivation = true);
 

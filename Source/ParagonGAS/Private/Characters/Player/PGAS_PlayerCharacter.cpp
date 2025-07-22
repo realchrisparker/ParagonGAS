@@ -514,28 +514,6 @@ void APGAS_PlayerCharacter::SetupDefaultAbilities()
         // Give the player character a secondary attack ability.
         if (SecondaryAttackAbility)
             SecondaryAttackAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(SecondaryAttackAbility, GetCharacterLevel(), INDEX_NONE, this));
-
-        // Give all abilities in DefaultAbilities array, if any (including Jump)
-        for (TSubclassOf<UGameplayAbility> AbilityClass : DefaultAbilities)
-        {
-            if (!AbilityClass)
-                continue; // Skip if the AbilityClass is null
-
-            bool bAlreadyGranted = false;
-            for (const FGameplayAbilitySpec& Spec : ASC->GetActivatableAbilities())
-            {
-                if (Spec.Ability && Spec.Ability->GetClass() == AbilityClass)
-                {
-                    bAlreadyGranted = true;
-                    break;
-                }
-            }
-            if (!bAlreadyGranted)
-            {
-                // AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, 0));
-                ASC->GiveAbility(FGameplayAbilitySpec(AbilityClass, GetCharacterLevel(), INDEX_NONE, this));
-            }
-        }
     }
 }
 
@@ -737,7 +715,7 @@ bool APGAS_PlayerCharacter::ActivateSecondaryAttackAbility(bool AllowRemoteActiv
 */
 void APGAS_PlayerCharacter::HandleMontageStateNotify(FGameplayTag NotifyTag, FGameplayEventData EventData)
 {
-    UE_LOG(LogTemp, Log, TEXT("HandleMontageStateNotify called with NotifyTag: %s"), *NotifyTag.ToString());
+    // UE_LOG(LogTemp, Log, TEXT("HandleMontageStateNotify called with NotifyTag: %s"), *NotifyTag.ToString());
     // Determine the type of notify and handle it accordingly
     if (NotifyTag == FGameplayTag::RequestGameplayTag(FName("Attack.Damage.Notify.Begin")))
     {

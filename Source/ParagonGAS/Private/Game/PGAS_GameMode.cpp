@@ -1,13 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Game/PGAS_GameMode.h"
+#include <Game/PGAS_GameMode.h>
 #include <Game/PGAS_HUD.h>
 #include <Game/PGAS_GameState.h>
 #include <Game/PGAS_GameSession.h>
 #include <Game/PGAS_PlayerState.h>
 #include <Controllers/Player/PGAS_PlayerController.h>
 #include <Characters/Player/PGAS_PlayerCharacter.h>
+#include "DrawDebugHelpers.h"
+#include "Perception/AISense_Sight.h"
+#include "Perception/AISense_Hearing.h"
+#include "Perception/AISense_Damage.h"
 
 APGAS_GameMode::APGAS_GameMode()
 {

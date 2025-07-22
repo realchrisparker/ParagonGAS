@@ -14,7 +14,7 @@
 */
 
 
-#include "Characters/Base/PGAS_CharacterBase.h"
+#include <Characters/Base/PGAS_CharacterBase.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include "AbilitySystemGlobals.h"
 

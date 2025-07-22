@@ -39,33 +39,5 @@ public:
     /** Amount of base damage this effect applies. */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage")
     float BaseDamage = 20.0f; // default value, can be overridden in instances
-
-    /** Whether this staff attack can crit. */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage|Critical")
-    bool bCanCrit;
-
-    /** Crit damage multiplier (applied if a critical hit). */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage|Critical", meta = (EditCondition = "bCanCrit", ClampMin = "1.0"))
-    float CritMultiplier;
-
-    /** Optional: Knockback force to apply with this hit (0 = no knockback). */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage|Meta")
-    float KnockbackForce;
-
-    /** Optional: Duration (in seconds) of stun this effect applies (0 = no stun). */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage|Meta")
-    float StunDuration;
-
-    /** Calculates final damage (can be overridden in Blueprint or C++). */
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Damage")
-    float CalculateFinalDamage(bool bIsCritical) const;
-
-    /** Returns true if this effect should apply a stun. */
-    UFUNCTION(BlueprintPure, Category = "Damage")
-    bool HasStun() const { return StunDuration > 0.f; }
-
-    /** Returns true if this effect should apply knockback. */
-    UFUNCTION(BlueprintPure, Category = "Damage")
-    bool HasKnockback() const { return KnockbackForce > 0.f; }
 };
  

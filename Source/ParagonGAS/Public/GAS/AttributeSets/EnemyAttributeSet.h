@@ -70,6 +70,14 @@ public:
 	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS(UEnemyAttributeSet, MaxHealth);
 
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_AttackPower)
+	FGameplayAttributeData AttackPower;
+	ATTRIBUTE_ACCESSORS(UEnemyAttributeSet, AttackPower);
+
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Defense)
+	FGameplayAttributeData Defense;
+	ATTRIBUTE_ACCESSORS(UEnemyAttributeSet, Defense);
+
 protected:
 	/*
 	 * Functions
@@ -87,4 +95,10 @@ protected:
 
 	UFUNCTION()
 	virtual void OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth);
+
+	UFUNCTION()
+	virtual void OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower);
+
+	UFUNCTION()
+	virtual void OnRep_Defense(const FGameplayAttributeData& OldDefense);
 };

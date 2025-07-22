@@ -14,32 +14,37 @@
  * Custom AI Controller for Enemy Characters (StateTree-ready)
  */
 
-#include "Controllers/AI/PGAS_EnemyAIController.h"
-#include "Components/StateTreeComponent.h"
+#include <Controllers/AI/PGAS_EnemyAIController.h>
 #include "GameFramework/Pawn.h"
-
+#include "StateTreePropertyRef.h"
+#include "StateTreePropertyBindings.h"
 
 APGAS_EnemyAIController::APGAS_EnemyAIController()
 {
-    UE_LOG(LogTemp, Warning, TEXT("APGAS_EnemyAIController::Constructor - Initializing Enemy AI Controller"));
     bAttachToPawn = true; // Attach controller to pawn
 
+    // Set up the State Tree AI Component for managing enemy AI behavior.
+    // This component handles the AI behavior for the enemy character.
+    StateTreeAIComponent = CreateDefaultSubobject<UPGAS_StateTreeAIComponent>(TEXT("State Tree AI Component"));
+    
     // Create Perception Component
     PerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("Perception Component"));
 
-    // Create and configure Sight sense
+    // Add sight sense
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
-    SightConfig->SightRadius = 2000.0f;
-    SightConfig->LoseSightRadius = 2200.0f;
-    SightConfig->PeripheralVisionAngleDegrees = 70.0f;
-    SightConfig->SetMaxAge(5.f);
+    SightConfig->SightRadius = 1000.0f;
+    SightConfig->LoseSightRadius = 1500.0f;
+    SightConfig->PeripheralVisionAngleDegrees = 45.0f;
+    SightConfig->SetMaxAge(5.f); // How long the perception lasts when player is not seen anymore
+    SightConfig->PointOfViewBackwardOffset = 250.0f; // How far behind the character to check for sight (Peripheral vision)
+    SightConfig->NearClippingRadius = 175.0f; // How close the character can be to still be seen (Peripheral vision)
+    SightConfig->AutoSuccessRangeFromLastSeenLocation = -1.0f; // How far to check for last seen location (Turned off)
     SightConfig->DetectionByAffiliation.bDetectEnemies = true;
     SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
     SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
 
-    // Assign Sight as the sense
-    PerceptionComponent->ConfigureSense(*SightConfig);
-    PerceptionComponent->SetDominantSense(UAISense_Sight::StaticClass());
+    PerceptionComponent->ConfigureSense(*SightConfig); // Assign Sight as the sense
+    PerceptionComponent->SetDominantSense(UAISense_Sight::StaticClass()); // Set Sight as the dominant sense
 
     // Add hearing
     HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("HearingConfig"));
@@ -55,18 +60,24 @@ APGAS_EnemyAIController::APGAS_EnemyAIController()
     DamageConfig = CreateDefaultSubobject<UAISenseConfig_Damage>(TEXT("DamageConfig"));
     PerceptionComponent->ConfigureSense(*DamageConfig);
 
-
-    // Bind to the perception updated delegate
-    PerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &APGAS_EnemyAIController::OnTargetPerceptionUpdated);
+    // Bind to the perception delegates so we can receive events from the perception system
+    // PerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &APGAS_EnemyAIController::OnTargetPerceptionUpdated);
+    // PerceptionComponent->OnTargetPerceptionForgotten.AddDynamic(this, &APGAS_EnemyAIController::OnTargetPerceptionForgotten);
 }
 
+/**
+ * Called when the game starts or when spawned.
+ * This is where we can initialize any AI-specific logic.
+*/
 void APGAS_EnemyAIController::BeginPlay()
 {
     Super::BeginPlay();
-
-    UE_LOG(LogTemp, Warning, TEXT("APGAS_EnemyAIController::BeginPlay - Controller initialized for %s"), *GetName());
 }
 
+/**
+ * Called when the controller possesses a pawn.
+ * This is where we can initialize the AI behavior and perception.
+ */
 void APGAS_EnemyAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
@@ -81,50 +92,183 @@ void APGAS_EnemyAIController::OnPossess(APawn* InPawn)
     }
 }
 
+/**
+ * Called when the controller is unpossessed from a pawn.
+ * This is where we can clean up or stop AI behavior.
+ */
 void APGAS_EnemyAIController::OnUnPossess()
 {
     Super::OnUnPossess();
 
-    UE_LOG(LogTemp, Warning, TEXT("APGAS_EnemyAIController::OnUnPossess - Unpossessing Pawn"));
+    // UE_LOG(LogTemp, Warning, TEXT("APGAS_EnemyAIController::OnUnPossess - Unpossessing Pawn"));
 
     // Clean up or stop StateTree logic
     OwningCharacter = nullptr; // Clear the reference to the character
 }
 
+
+/* ============================================================
+ * Callbacks for perception updates
+ * These handle the perception events and can be customized for specific behavior.
+*/
+
+/**
+ * Called when the perception system updates the target's perception.
+ * This is where we handle the perception of the target actor.
+ * @param Actor The actor that was perceived.
+ * @param Stimulus The stimulus data containing information about the perception.
+*/
 void APGAS_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
-    FString Sense = Stimulus.Type.Name.ToString();
+    // Validate the Actor pointer
+    if (!Actor)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("OnTargetPerceptionUpdated called with null Actor!"));
+        return;
+    }
 
-    if (Sense == TEXT("Damage"))
-    {
-        if (Stimulus.WasSuccessfullySensed())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Enemy took DAMAGE from: %s"), *Actor->GetName());
-            // TODO: React to being damaged (alert, flee, counterattack, etc.)
-        }
-        // No "else": Damage is an instant event, not a persistent stimulus like Sight
+    // Static IDs for sense types (only initialized once)
+    static const FAISenseID SightID = UAISense::GetSenseID(UAISense_Sight::StaticClass());
+    static const FAISenseID HearingID = UAISense::GetSenseID(UAISense_Hearing::StaticClass());
+    static const FAISenseID DamageID = UAISense::GetSenseID(UAISense_Damage::StaticClass());
+
+    // Determine the sense type
+    FString SenseName;
+    if (Stimulus.Type == SightID)
+        SenseName = TEXT("Sight");
+    else if (Stimulus.Type == HearingID)
+        SenseName = TEXT("Hearing");
+    else if (Stimulus.Type == DamageID)
+        SenseName = TEXT("Damage");
+    else {
+        SenseName = TEXT("Unknown");
     }
-    else if (Sense == TEXT("Sight"))
+
+    // Validate and cast to your specific target class ONCE
+    APGAS_PlayerCharacter* SensedPlayer = Cast<APGAS_PlayerCharacter>(Actor);
+    if (!SensedPlayer)
+    {
+        UE_LOG(LogTemp, Verbose, TEXT("Actor %s is not a PGAS_PlayerCharacter."), *GetNameSafe(Actor));
+        return;
+    }
+
+    // Update targeting info+
+    // StateTreeAIComponent->SetAcquiredTargetActorParameter(SensedPlayer); // Set the target actor in the StateTree
+    // StateTreeAIComponent->SetPointOfInterestParameter(SensedPlayer->GetActorLocation());
+    // StateTreeAIComponent->SetIsAcquiredTargetVisibleParameter(Stimulus.WasSuccessfullySensed()); // Update visibility state
+
+    // 6. Perception handling - use switch for clarity and perf
+    if (Stimulus.Type == DamageID)
     {
         if (Stimulus.WasSuccessfullySensed())
         {
-            UE_LOG(LogTemp, Warning, TEXT("Perceived (Sight): %s"), *Actor->GetName());
+            HandleDamagePerception(SensedPlayer, Stimulus);
+        }
+    }
+    else if (Stimulus.Type == SightID)
+    {
+        if (Stimulus.WasSuccessfullySensed())
+        {
+            HandleSightPerception(SensedPlayer, Stimulus);
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("Lost sight of: %s"), *Actor->GetName());
+            HandleLostSightPerception(SensedPlayer, Stimulus);
         }
     }
-    else if (Sense == TEXT("Hearing"))
+    else if (Stimulus.Type == HearingID)
     {
         if (Stimulus.WasSuccessfullySensed())
         {
-            UE_LOG(LogTemp, Warning, TEXT("Heard: %s"), *Actor->GetName());
+            HandleHearingPerception(SensedPlayer, Stimulus);
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("Lost hearing of: %s"), *Actor->GetName());
+            HandleLostHearingPerception(SensedPlayer, Stimulus);
         }
     }
 }
 
+/**
+ * Called when the perception system forgets an actor.
+ * This is where we handle the case where the perception of an actor is forgotten.
+ * @param Actor The actor that was forgotten.
+*/
+void APGAS_EnemyAIController::OnTargetPerceptionForgotten(AActor* Actor)
+{
+    UE_LOG(LogTemp, Warning, TEXT("PERCEPTION FORGOTTEN: All perception of actor %s has expired or been explicitly forgotten."), *GetNameSafe(Actor));
+
+    // Handle the case where the perception of an actor is forgotten
+    // StateTreeAIComponent->SetMotivationParameter(StateTreeAIComponent->GetDefaultMotivationParameter()); // Update StateTree parameter
+    // StateTreeAIComponent->SetIsAcquiredTargetVisibleParameter(false); // Update visibility state
+}
+
+
+void APGAS_EnemyAIController::HandleDamagePerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Enemy took DAMAGE from: %s"), *Actor->GetName());
+
+    // Implement damage handling logic here
+    if (!Actor)
+    {
+        return;
+    }
+
+    SetFocus(Actor); // Set focus on the perceived actor
+    // StateTreeAIComponent->SetMotivationParameter(FGameplayTag::RequestGameplayTag(FName("Character.Motivation.Attack"))); // Update StateTree parameter
+    // StateTreeAIComponent->SendEvent(FGameplayTag::RequestGameplayTag(FName("StateTree.Event.DamagePerceived"))); // Send the event
+}
+
+void APGAS_EnemyAIController::HandleSightPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Perceived (Sight): %s"), *Actor->GetName());
+
+    if (!Actor)
+    {
+        return;
+    }
+
+    SetFocus(Actor); // Set focus on the perceived actor
+    // StateTreeAIComponent->SetMotivationParameter(FGameplayTag::RequestGameplayTag(FName("Character.Motivation.Attack"))); // Update StateTree parameter
+    // StateTreeAIComponent->SendEvent(FGameplayTag::RequestGameplayTag(FName("StateTree.Event.SightPerceived"))); // Send the event
+}
+
+void APGAS_EnemyAIController::HandleLostSightPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Lost sight of: %s"), *Actor->GetName());
+
+    if (!Actor)
+    {
+        return;
+    }
+
+    ClearFocus(EAIFocusPriority::Gameplay); // Clear focus when the actor is no longer seen
+    // StateTreeAIComponent->SetMotivationParameter(StateTreeAIComponent->GetDefaultMotivationParameter()); // Update StateTree parameter
+}
+
+void APGAS_EnemyAIController::HandleHearingPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Heard: %s"), *Actor->GetName());
+
+    if (!Actor)
+    {
+        return;
+    }
+    
+    SetFocus(Actor); // Set focus on the perceived actor
+    // StateTreeAIComponent->SetMotivationParameter(FGameplayTag::RequestGameplayTag(FName("Character.Motivation.Attack"))); // Update StateTree parameter
+    // StateTreeAIComponent->SendEvent(FGameplayTag::RequestGameplayTag(FName("StateTree.Event.HearingPerceived"))); // Send the event
+}
+
+void APGAS_EnemyAIController::HandleLostHearingPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Lost hearing of: %s"), *Actor->GetName());
+
+    if (!Actor)
+    {
+        return;
+    }
+
+    ClearFocus(EAIFocusPriority::Gameplay); // Clear focus when the actor is no longer heard
+    // StateTreeAIComponent->SetMotivationParameter(StateTreeAIComponent->GetDefaultMotivationParameter()); // Update StateTree parameter
+}

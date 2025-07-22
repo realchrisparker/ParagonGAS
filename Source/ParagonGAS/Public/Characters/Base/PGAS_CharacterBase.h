@@ -38,27 +38,27 @@ public:
 	APGAS_CharacterBase();
 
 	/** Adds a gameplay tag to this character */
-	UFUNCTION(BlueprintCallable, Category = "Character|Gameplay Tags")
+	UFUNCTION(BlueprintCallable, Category = "Player|Gameplay Tags")
 	void AddGameplayTag(FGameplayTag Tag);
 
 	/** Removes a gameplay tag from this character */
-	UFUNCTION(BlueprintCallable, Category = "Character|Gameplay Tags")
+	UFUNCTION(BlueprintCallable, Category = "Player|Gameplay Tags")
 	void RemoveGameplayTag(FGameplayTag Tag);
 
 	/** Returns all the gameplay tags for this character */
-	UFUNCTION(BlueprintCallable, Category = "Character|Gameplay Tags")
+	UFUNCTION(BlueprintCallable, Category = "Player|Gameplay Tags")
 	FGameplayTagContainer GetGameplayTags() const;
 
 	/** Checks if character has a specific gameplay tag */
-	UFUNCTION(BlueprintCallable, Category = "Character|Gameplay Tags")
+	UFUNCTION(BlueprintCallable, Category = "Player|Gameplay Tags")
 	bool HasGameplayTag(FGameplayTag Tag) const;
 
 	/** Checks if character has all tags from a container */
-	UFUNCTION(BlueprintCallable, Category = "Character|Gameplay Tags")
+	UFUNCTION(BlueprintCallable, Category = "Player|Gameplay Tags")
 	bool HasAllGameplayTags(const FGameplayTagContainer& TagContainer) const;
 
 	/** Checks if character has any tag from a container */
-	UFUNCTION(BlueprintCallable, Category = "Character|Gameplay Tags")
+	UFUNCTION(BlueprintCallable, Category = "Player|Gameplay Tags")
 	bool HasAnyGameplayTag(const FGameplayTagContainer& TagContainer) const;
 
 	/*
@@ -67,7 +67,7 @@ public:
 	* @param AllowRemoteActivation Whether to allow remote activation of abilities (default: true).
 	* @return bool True if any abilities were activated, false otherwise.
 	*/
-	UFUNCTION(BlueprintCallable, Category = "Character|Abilities", meta = (DisplayName = "Activate Abilities With Tags"))
+	UFUNCTION(BlueprintCallable, Category = "Player|Abilities", meta = (DisplayName = "Activate Abilities With Tags"))
 	bool ActivateAbilitiesWithTags(FGameplayTagContainer AbilityTags, bool AllowRemoteActivation = true);
 	
 	// Applies default attribute effects to the character
@@ -89,6 +89,30 @@ public:
 	/** Sets the character level */
 	UFUNCTION(BlueprintCallable, Category = "Character")
 	void SetCharacterLevel(int32 NewLevel) { CharacterLevel = NewLevel; }
+
+	/**
+	 * Checks if the character is currently attacking.
+	 * This function is used to determine if the character is in an attacking state.
+	 * @return bool True if the character is attacking, false otherwise.
+	*/
+	UFUNCTION(BlueprintPure, Category = "Player|Combat", meta = (DisplayName = "Is Currently Attacking", HideSelfPin = "true", ReturnDisplayName = "Is Attacking",
+		ToolTip = "Checks if the character is currently attacking."))
+	bool IsAttacking() const
+	{
+		return bIsAttacking;
+	}
+
+	/**
+	 * Sets the attacking state of the character.
+	 * This function is used to set whether the character is currently attacking or not.
+	 * @param bAttacking True if the character is attacking, false otherwise.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Player|Combat", meta = (DisplayName = "Set Is Attacking", ToolTip = "Sets the attacking state of the character."))
+	void SetIsAttacking(bool bAttacking)
+	{
+		bIsAttacking = bAttacking;
+		UE_LOG(LogTemp, Warning, TEXT("Set Is Attacking: %s"), bIsAttacking ? TEXT("True") : TEXT("False"));
+	}
 
 	/*
 	* Properties
@@ -118,30 +142,6 @@ public:
 		meta = (DisplayName = "Default Attribute Effects", Description = "Default attribute effects applied to the character at spawn."))
 	TArray<TSubclassOf<class UGameplayEffect>> DefaultAttributeEffects;
 
-	/**
-	 * Checks if the character is currently attacking.
-	 * This function is used to determine if the character is in an attacking state.
-	 * @return bool True if the character is attacking, false otherwise.
-	*/
-	UFUNCTION(BlueprintPure, Category = "Character|Combat", meta = (DisplayName = "Is Currently Attacking", HideSelfPin = "true", ReturnDisplayName = "Is Attacking",
-		ToolTip = "Checks if the character is currently attacking."))
-	bool IsAttacking() const
-	{
-		return bIsAttacking;
-	}
-
-	/**
-	 * Sets the attacking state of the character.
-	 * This function is used to set whether the character is currently attacking or not.
-	 * @param bAttacking True if the character is attacking, false otherwise.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Character|Combat", meta = (DisplayName = "Set Is Attacking", ToolTip = "Sets the attacking state of the character."))
-	void SetIsAttacking(bool bAttacking)
-	{
-		bIsAttacking = bAttacking;
-		UE_LOG(LogTemp, Warning, TEXT("Set Is Attacking: %s"), bIsAttacking ? TEXT("True") : TEXT("False"));
-	}
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -157,7 +157,7 @@ private:
 
 	// Hit reaction component for handling hit reactions
 	// This component handles hit reactions for the enemy character.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPGAS_HitReactionComponent> HitReactionComponent;
 
 	// Character's level, used for scaling abilities and attributes

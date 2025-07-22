@@ -16,8 +16,8 @@
 * This file defines the enemy character class in the game.
 */
 
-#include "Characters/Enemy/PGAS_EnemyCharacter.h"
-#include "GAS/Abilities/PGAS_ReceiveMeleeDamageAbility.h"
+#include <Characters/Enemy/PGAS_EnemyCharacter.h>
+#include <GAS/Abilities/PGAS_ReceiveMeleeDamageAbility.h>
 
 APGAS_EnemyCharacter::APGAS_EnemyCharacter()
 {
@@ -28,15 +28,17 @@ APGAS_EnemyCharacter::APGAS_EnemyCharacter()
     // This is where you define your character's attributes like health, mana, etc.
     AttributeSet = CreateDefaultSubobject<UEnemyAttributeSet>(TEXT("AttributeSet"));
 
-    // Set up the State Tree AI Component for managing enemy AI behavior.
-    // This component handles the AI behavior for the enemy character.
-    StateTreeAIComponent = CreateDefaultSubobject<UStateTreeAIComponent>(TEXT("State Tree AI Component"));
-
     // Default character level
     SetCharacterLevel(1);
 
     // Add default gameplay tags.
     SetupDefaultGameplayTags();
+
+    // Set the default movement speed values.
+    MovementSpeeds.Sneak = 150.0f;
+    MovementSpeeds.Walk = 200.0f;
+    MovementSpeeds.Escalated = 450.0f;
+    MovementSpeeds.Attack = 200.0f;
 }
 
 // Called when the game starts or when spawned

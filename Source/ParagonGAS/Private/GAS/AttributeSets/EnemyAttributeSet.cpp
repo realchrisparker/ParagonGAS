@@ -35,6 +35,8 @@ void UEnemyAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
     // Replicate the RPG attributes
     DOREPLIFETIME(UEnemyAttributeSet, Health);
     DOREPLIFETIME(UEnemyAttributeSet, MaxHealth);
+    DOREPLIFETIME(UEnemyAttributeSet, AttackPower);
+    DOREPLIFETIME(UEnemyAttributeSet, Defense);
 }
 
 void UEnemyAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -102,4 +104,14 @@ void UEnemyAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
 void UEnemyAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth)
 {
     GAMEPLAYATTRIBUTE_REPNOTIFY(UEnemyAttributeSet, MaxHealth, OldMaxHealth);
+}
+
+void UEnemyAttributeSet::OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UEnemyAttributeSet, AttackPower, OldAttackPower);
+}
+
+void UEnemyAttributeSet::OnRep_Defense(const FGameplayAttributeData& OldDefense)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UEnemyAttributeSet, Defense, OldDefense);
 }

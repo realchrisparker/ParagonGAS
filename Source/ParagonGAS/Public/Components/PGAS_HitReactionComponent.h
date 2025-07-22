@@ -88,6 +88,7 @@ private:
 	* Properties
 	*/
 
-	/** Returns the owner as a character, if possible */
-	class ACharacter* GetOwningCharacter() const;
+	/** Caches the owner as a character */
+	UPROPERTY()
+	TObjectPtr<class APGAS_CharacterBase> CachedOwnerCharacter;
 };

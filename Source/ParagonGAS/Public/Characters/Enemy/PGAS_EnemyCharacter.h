@@ -18,11 +18,12 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Components/StateTreeAIComponent.h"
+#include "StateTreeReference.h"
 #include <GAS/AttributeSets/EnemyAttributeSet.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Characters/Base/PGAS_CharacterBase.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
+#include <Structs/PGAS_ST_MovementSpeed.h>
 #include "PGAS_EnemyCharacter.generated.h"
 
 UCLASS()
@@ -48,7 +49,7 @@ public:
     }
 
     // Gets the health attribute of the character.
-    UFUNCTION(BlueprintCallable, Category = "Enemy|Attributes", meta = (DisplayName = "Get Health Attribute"))
+    UFUNCTION(BlueprintCallable, Category = "Player|Attributes", meta = (DisplayName = "Get Health Attribute"))
     virtual float GetHealth() const
     {
         const UEnemyAttributeSet* AttriSet = GetAttributeSet();
@@ -58,7 +59,7 @@ public:
     }
 
     // Gets the max health attribute of the character.
-    UFUNCTION(BlueprintCallable, Category = "Enemy|Attributes", meta = (DisplayName = "Get Max Health Attribute"))
+    UFUNCTION(BlueprintCallable, Category = "Player|Attributes", meta = (DisplayName = "Get Max Health Attribute"))
     virtual float GetMaxHealth() const
     {
         const UEnemyAttributeSet* AttriSet = GetAttributeSet();
@@ -74,14 +75,14 @@ public:
      * @param Instigator The actor that caused the health change (e.g., damage dealer).
      * @note This function is intended to be overridden in derived classes to handle health changes.
     */
-    UFUNCTION(BlueprintImplementableEvent, Category = "Enemy|Health", meta = (DisplayName = "On Health Changed"))
+    UFUNCTION(BlueprintImplementableEvent, Category = "Player|Health", meta = (DisplayName = "On Health Changed"))
     void OnHealthChanged(float DeltaValue, AActor* Causer);
 
     /*
      * Called when the enemy dies.
      * This function is called when the enemy's health reaches zero.
     */
-    UFUNCTION(BlueprintImplementableEvent, Category = "Enemy|Health", meta = (DisplayName = "On Death"))
+    UFUNCTION(BlueprintImplementableEvent, Category = "Player|Health", meta = (DisplayName = "On Death"))
     void OnDeath();
 
     /*
@@ -92,12 +93,18 @@ public:
     */
     virtual void HandleHealthChange(float DeltaValue, AActor* Causer);
 
-    // Returns the State Tree AI Component for this character
-    // This component handles the AI behavior for the enemy character.
-    UStateTreeAIComponent* GetStateTreeAIComponent() const
-    {
-        return StateTreeAIComponent;
-    };
+    // Returns the State Tree asset for this character.
+    // This is used for AI behavior logic.
+    UFUNCTION(BlueprintCallable, Category = "Player|AI")
+    UStateTree* GetStateTree() { return StateTree; }
+
+    /*
+    * Properties
+    */
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player",
+        meta = (DisplayName = "Movement Speeds", Description = "Default movement speed values for the character."))
+    FPGAS_ST_MovementSpeed MovementSpeeds;
 
 protected:
     /*
@@ -111,19 +118,15 @@ protected:
     virtual void Tick(float DeltaTime) override;
 
 private:
-    /*
-    * Properties
-    */
     
     // Attribute Set for managing enemy attributes (health, mana, etc.)
     // This is where you define your enemy's attributes like health, mana, etc.
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|GAS", meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|GAS", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UEnemyAttributeSet> AttributeSet;
 
-    // State tree AI component for managing enemy AI behavior
-    // This component handles the AI behavior for the enemy character.
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|AI", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UStateTreeAIComponent> StateTreeAIComponent;
+    // Reference to the StateTree asset for AI logic
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player|AI", meta = (AllowPrivateAccess = "true"))
+    UStateTree* StateTree;
 
     FName HealthbarSocketName = "healthbar_Socket"; // The name of the health bar socket.
 

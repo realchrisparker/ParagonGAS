@@ -18,7 +18,8 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
-#include "StateTreeReference.h"
+#include "GameplayTagContainer.h"
+// #include "Components/StateTreeAIComponent.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Hearing.h"
@@ -26,12 +27,15 @@
 #include "Perception/AISenseConfig_Touch.h"
 #include "Perception/AISenseConfig_Prediction.h"
 #include <Characters/Enemy/PGAS_EnemyCharacter.h>
+#include <Characters/Player/PGAS_PlayerCharacter.h>
+#include <Components/PGAS_StateTreeAIComponent.h">
 #include "PGAS_EnemyAIController.generated.h"
 
 /**
- * 
- */
-UCLASS(Blueprintable, BlueprintType, meta=(BlueprintSpawnableComponent, DisplayName="Enemy AI Controller"))
+ * Custom AI Controller for Enemy Characters
+ * This controller manages the AI behavior for enemy characters using State Trees.
+*/
+UCLASS(Blueprintable, BlueprintType, meta = (BlueprintSpawnableComponent, DisplayName = "Enemy AI Controller"))
 class PARAGONGAS_API APGAS_EnemyAIController : public AAIController
 {
 	GENERATED_BODY()
@@ -53,6 +57,11 @@ public:
 	/** Called when the controller is unpossessed */
 	virtual void OnUnPossess() override;
 
+	// Returns the State Tree AI Component for this character
+	// This component handles the AI behavior for the enemy character.
+	UFUNCTION(BlueprintCallable, Category = "Player|AI", meta = (DisplayName = "Get State Tree AI Component"))
+	UPGAS_StateTreeAIComponent* GetStateTreeAIComponent() const { return StateTreeAIComponent; };
+
 protected:
 	/*
 	 * Properties
@@ -64,7 +73,7 @@ protected:
 
 	// Hearing config
 	UPROPERTY()
-	TObjectPtr<UAISenseConfig_Hearing> HearingConfig;	
+	TObjectPtr<UAISenseConfig_Hearing> HearingConfig;
 
 	// Damage config
 	UPROPERTY()
@@ -73,16 +82,39 @@ protected:
 	/*
 	 * Functions
 	*/
-	
+
 	// Perception updated callback
 	UFUNCTION()
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+
+	UFUNCTION()
+	void OnTargetPerceptionForgotten(AActor* Actor);
 
 private:
 	/*
 	 * Properties
 	*/
 
+	// State tree AI component for managing enemy AI behavior
+	// This component handles the AI behavior for the enemy character.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|AI", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPGAS_StateTreeAIComponent> StateTreeAIComponent;
+
 	/** Enemy character this controller is managing */
 	TObjectPtr<APGAS_EnemyCharacter> OwningCharacter = nullptr;
+
+	/*
+	 * Functions
+	*/
+
+	// Handle damage perception
+	void HandleDamagePerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus);
+
+	// Handle sight and lost sight perception
+	void HandleSightPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus);
+	void HandleLostSightPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus);
+
+	// Handle hearing and lost hearing perception
+	void HandleHearingPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus);
+	void HandleLostHearingPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus);
 };

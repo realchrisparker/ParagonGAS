@@ -38,6 +38,8 @@ void UPlayerCharacterAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimePr
     DOREPLIFETIME(UPlayerCharacterAttributeSet, MaxAdrenaline);
     DOREPLIFETIME(UPlayerCharacterAttributeSet, ExperiencePoints);
     DOREPLIFETIME(UPlayerCharacterAttributeSet, MaxExperiencePoints);
+    DOREPLIFETIME(UPlayerCharacterAttributeSet, AttackPower);
+    DOREPLIFETIME(UPlayerCharacterAttributeSet, Defense);
 }
 
 void UPlayerCharacterAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -185,4 +187,14 @@ void UPlayerCharacterAttributeSet::OnRep_ExperiencePoints(const FGameplayAttribu
 void UPlayerCharacterAttributeSet::OnRep_MaxExperiencePoints(const FGameplayAttributeData& OldMaxExperiencePoints)
 {
     GAMEPLAYATTRIBUTE_REPNOTIFY(UPlayerCharacterAttributeSet, MaxExperiencePoints, OldMaxExperiencePoints);
+}
+
+void UPlayerCharacterAttributeSet::OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UPlayerCharacterAttributeSet, AttackPower, OldAttackPower);
+}
+
+void UPlayerCharacterAttributeSet::OnRep_Defense(const FGameplayAttributeData& OldDefense)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UPlayerCharacterAttributeSet, Defense, OldDefense);
 }

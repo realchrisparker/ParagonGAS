@@ -16,7 +16,8 @@
 */
 
 
-#include "Components/PGAS_HitReactionComponent.h"
+#include <Components/PGAS_HitReactionComponent.h>
+#include <Characters/Base/PGAS_CharacterBase.h>
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -33,7 +34,11 @@ UPGAS_HitReactionComponent::UPGAS_HitReactionComponent()
 // Called when the game starts
 void UPGAS_HitReactionComponent::BeginPlay()
 {
-	Super::BeginPlay();	
+	Super::BeginPlay();
+
+	// Cache the owner character for quick access
+	// This assumes the owner is a character, you can adjust if needed
+	CachedOwnerCharacter = Cast<APGAS_CharacterBase>(GetOwner());
 }
 
 // Called every frame
@@ -45,21 +50,24 @@ void UPGAS_HitReactionComponent::TickComponent(float DeltaTime, ELevelTick TickT
 }
 
 /**
- * Gets the owning character of this component.
- * @return The character that owns this component, or nullptr if not found.
-*/
-ACharacter* UPGAS_HitReactionComponent::GetOwningCharacter() const
-{
-	return Cast<ACharacter>(GetOwner());
-}
-
-/**
  * Performs a hit reaction based on the specified hit direction.
  * @param HitDirection The direction of the hit (e.g., "Hit.Back", "Hit.Forward", etc.).
  * @param PlayRate The play rate for the hit reaction montage.
 */
 void UPGAS_HitReactionComponent::PerformHitReaction(const FGameplayTag& HitDirection, float PlayRate)
 {
+	// Check if we have a valid owner character
+	if (!CachedOwnerCharacter)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No owning character found"));
+		return;
+	}
+
+	// Check if the character is invincible (Don't have to get the ASC here, we can use the character directly)
+	if (CachedOwnerCharacter->HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.State.Invincible"))))
+		return;
+
+	// Play the appropriate hit reaction montage based on the hit direction
 	if (HitDirection == FGameplayTag::RequestGameplayTag(FName("Hit.Reactions.Back")))
 	{
 		if (BackHitMontage)
@@ -107,9 +115,9 @@ void UPGAS_HitReactionComponent::PerformHitReaction(const FGameplayTag& HitDirec
  */
 void UPGAS_HitReactionComponent::PlayMontageInternal(UAnimMontage* Montage, float InPlayRate)
 {
-	if (Montage && GetOwningCharacter())
+	if (Montage && CachedOwnerCharacter)
 	{
-		UAnimInstance* AnimInstance = GetOwningCharacter()->GetMesh()->GetAnimInstance();
+		UAnimInstance* AnimInstance = CachedOwnerCharacter->GetMesh()->GetAnimInstance();
 		if (AnimInstance)
 		{
 			AnimInstance->Montage_Play(Montage, InPlayRate);

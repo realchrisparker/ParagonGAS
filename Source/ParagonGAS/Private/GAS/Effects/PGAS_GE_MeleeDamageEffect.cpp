@@ -17,38 +17,22 @@
 
 #include <GAS/Effects/PGAS_GE_MeleeDamageEffect.h>
 #include <GAS/AttributeSets/EnemyAttributeSet.h>
+#include <GAS/Effects/Calculations/PGAS_MeleeDamageExecutionCalc.h>
 
 UPGAS_GE_MeleeDamageEffect::UPGAS_GE_MeleeDamageEffect()
 {
     // All other inherited UGameplayEffect options (like DurationPolicy) can be set here as well.
     DurationPolicy = EGameplayEffectDurationType::Instant;
 
-    // Crit defaults
-    bCanCrit = true;
-    CritMultiplier = 2.0f; // Double damage on crit
+    // Remove direct Modifiers, execution handles all calculation
+    Modifiers.Empty();
 
-    // Knockback & stun defaults
-    KnockbackForce = 250.f; // Tweak as desired
-    StunDuration = 0.5f;    // Half-second stun
+    // Setup execution calculation
+    FGameplayEffectExecutionDefinition ExecDef;
+    ExecDef.CalculationClass = UPGAS_MeleeDamageExecutionCalc::StaticClass();
 
-    // Damage modifier for Health (SETUP THIS WAY)
-    FGameplayModifierInfo ModifierInfo;
-    ModifierInfo.Attribute = UEnemyAttributeSet::GetHealthAttribute();
-    ModifierInfo.ModifierOp = EGameplayModOp::Additive;
+    // If you want to capture attributes for use in the execution calculation, add them to ExecDef.Modifiers
 
-    FSetByCallerFloat SetByCaller;
-    SetByCaller.DataTag = DamageTypeTag;
-    ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(SetByCaller);
-
-    Modifiers.Add(ModifierInfo);
-}
-
-float UPGAS_GE_MeleeDamageEffect::CalculateFinalDamage_Implementation(bool bIsCritical) const
-{
-    if (bIsCritical && bCanCrit)
-    {
-        return BaseDamage * CritMultiplier;
-    }
-    return BaseDamage;
+    Executions.Add(ExecDef);
 }
  
