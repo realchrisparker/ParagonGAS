@@ -19,7 +19,7 @@
 #include "CoreMinimal.h"
 #include "AIController.h"
 #include "GameplayTagContainer.h"
-// #include "Components/StateTreeAIComponent.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Hearing.h"
@@ -29,7 +29,14 @@
 #include <Characters/Enemy/PGAS_EnemyCharacter.h>
 #include <Characters/Player/PGAS_PlayerCharacter.h>
 #include <Components/PGAS_StateTreeAIComponent.h">
+#include <Enums/PGAS_StimulusSenseType.h>
 #include "PGAS_EnemyAIController.generated.h"
+
+
+ // Delegate for perception updates
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPGASStimulusEventSignature, AActor*, Actor, const FAIStimulus&, Stimulus);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPGASStimulusForgottenSignature, AActor*, Actor);
+
 
 /**
  * Custom AI Controller for Enemy Characters
@@ -62,22 +69,30 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Player|AI", meta = (DisplayName = "Get State Tree AI Component"))
 	UPGAS_StateTreeAIComponent* GetStateTreeAIComponent() const { return StateTreeAIComponent; };
 
-protected:
+	UFUNCTION(BlueprintCallable, Category = "Player|AI", meta = (DisplayName = "Get Current Stimulus Sense Type"))
+	EPGAS_StimulusSenseType GetCurrentStimulusSenseType() const { return CurrentStimulusSenseType; };
+
 	/*
 	 * Properties
 	*/
 
-	// Sight configuration object
-	UPROPERTY()
-	TObjectPtr<UAISenseConfig_Sight> SightConfig;
+	UPROPERTY(BlueprintAssignable, Category = "Player|AI|Events", meta = (DisplayName = "On Damage Stimulus Detected"))
+	FPGASStimulusEventSignature OnDamageStimulusDetected;
 
-	// Hearing config
-	UPROPERTY()
-	TObjectPtr<UAISenseConfig_Hearing> HearingConfig;
+	/** Broadcast delegates */
+	UPROPERTY(BlueprintAssignable, Category = "Player|AI|Events", meta = (DisplayName = "On Sight Stimulus Detected"))
+	FPGASStimulusEventSignature OnSightStimulusDetected;
 
-	// Damage config
-	UPROPERTY()
-	TObjectPtr<UAISenseConfig_Damage> DamageConfig;
+	UPROPERTY(BlueprintAssignable, Category = "Player|AI|Events", meta = (DisplayName = "On Sight Stimulus Forgotten"))
+	FPGASStimulusForgottenSignature OnSightStimulusForgotten;
+
+	UPROPERTY(BlueprintAssignable, Category = "Player|AI|Events", meta = (DisplayName = "On Hearing Stimulus Detected"))
+	FPGASStimulusEventSignature OnHearingStimulusDetected;
+
+	UPROPERTY(BlueprintAssignable, Category = "Player|AI|Events", meta = (DisplayName = "On Hearing Stimulus Forgotten"))
+	FPGASStimulusForgottenSignature OnHearingStimulusForgotten;
+
+protected:
 
 	/*
 	 * Functions
@@ -103,18 +118,18 @@ private:
 	/** Enemy character this controller is managing */
 	TObjectPtr<APGAS_EnemyCharacter> OwningCharacter = nullptr;
 
-	/*
-	 * Functions
-	*/
+	// Sight configuration object
+	UPROPERTY()
+	TObjectPtr<UAISenseConfig_Sight> SightConfig;
 
-	// Handle damage perception
-	void HandleDamagePerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus);
+	// Hearing config
+	UPROPERTY()
+	TObjectPtr<UAISenseConfig_Hearing> HearingConfig;
 
-	// Handle sight and lost sight perception
-	void HandleSightPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus);
-	void HandleLostSightPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus);
+	// Damage config
+	UPROPERTY()
+	TObjectPtr<UAISenseConfig_Damage> DamageConfig;
 
-	// Handle hearing and lost hearing perception
-	void HandleHearingPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus);
-	void HandleLostHearingPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus);
+	UPROPERTY()
+	EPGAS_StimulusSenseType CurrentStimulusSenseType = EPGAS_StimulusSenseType::Unknown;
 };

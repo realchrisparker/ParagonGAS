@@ -20,9 +20,13 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffectTypes.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "Perception/AISense_Damage.h"
+#include "Perception/AIPerceptionSystem.h"
 #include <Data/PGAS_EventAdditionalData.h>
 #include <GAS/Effects/PGAS_GE_MeleeDamageEffect.h>
-#include "Characters/Base/PGAS_CharacterBase.h"
+#include <Characters/Base/PGAS_CharacterBase.h>
+#include <Characters/Enemy/PGAS_EnemyCharacter.h>
+#include <Controllers/AI/PGAS_EnemyAIController.h>
 
 
 UPGAS_ReceiveMeleeDamageAbility::UPGAS_ReceiveMeleeDamageAbility()
@@ -121,6 +125,21 @@ void UPGAS_ReceiveMeleeDamageAbility::ActivateAbility(
                     if (TargetCharacter->GetHitReactionComponent())
                     {
                         TargetCharacter->GetHitReactionComponent()->PerformHitReaction(HitDirectionTag, 1.0f);
+                    }
+
+                    // Get the AI controller for the target character
+                    APGAS_EnemyAIController* AIController = Cast<APGAS_EnemyAIController>(TargetCharacter->GetController());
+                    if (AIController)
+                    {
+                        // Send report damage event to the AI controller, this will trigger the AI perception system damage sense
+                        UAISense_Damage::ReportDamageEvent(
+                            GetWorld(),
+                            TargetCharacter,                // The actor that received damage (target)
+                            ActorInfo->OwnerActor.Get(),    // The actor that caused the damage (source)
+                            1.0f,                           // Damage is calculated in the effect, not here.
+                            TargetCharacter->GetActorLocation(),          // FVector: World-space location where damage occurred
+                            TargetCharacter->GetActorLocation()          // FVector: Usually same as HitLocation
+                        );
                     }
                 }
             }

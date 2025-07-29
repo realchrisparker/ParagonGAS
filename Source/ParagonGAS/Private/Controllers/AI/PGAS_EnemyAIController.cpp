@@ -26,7 +26,7 @@ APGAS_EnemyAIController::APGAS_EnemyAIController()
     // Set up the State Tree AI Component for managing enemy AI behavior.
     // This component handles the AI behavior for the enemy character.
     StateTreeAIComponent = CreateDefaultSubobject<UPGAS_StateTreeAIComponent>(TEXT("State Tree AI Component"));
-    
+
     // Create Perception Component
     PerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("Perception Component"));
 
@@ -60,9 +60,9 @@ APGAS_EnemyAIController::APGAS_EnemyAIController()
     DamageConfig = CreateDefaultSubobject<UAISenseConfig_Damage>(TEXT("DamageConfig"));
     PerceptionComponent->ConfigureSense(*DamageConfig);
 
-    // Bind to the perception delegates so we can receive events from the perception system
-    // PerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &APGAS_EnemyAIController::OnTargetPerceptionUpdated);
-    // PerceptionComponent->OnTargetPerceptionForgotten.AddDynamic(this, &APGAS_EnemyAIController::OnTargetPerceptionForgotten);
+    // Bind perception events
+    PerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &APGAS_EnemyAIController::OnTargetPerceptionUpdated);
+    PerceptionComponent->OnTargetPerceptionForgotten.AddDynamic(this, &APGAS_EnemyAIController::OnTargetPerceptionForgotten);
 }
 
 /**
@@ -82,8 +82,6 @@ void APGAS_EnemyAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 
-    UE_LOG(LogTemp, Warning, TEXT("APGAS_EnemyAIController::OnPossess - Possessing Pawn: %s"), *InPawn->GetName());
-
     OwningCharacter = Cast<APGAS_EnemyCharacter>(InPawn);
     if (!OwningCharacter)
     {
@@ -100,17 +98,9 @@ void APGAS_EnemyAIController::OnUnPossess()
 {
     Super::OnUnPossess();
 
-    // UE_LOG(LogTemp, Warning, TEXT("APGAS_EnemyAIController::OnUnPossess - Unpossessing Pawn"));
-
     // Clean up or stop StateTree logic
     OwningCharacter = nullptr; // Clear the reference to the character
 }
-
-
-/* ============================================================
- * Callbacks for perception updates
- * These handle the perception events and can be customized for specific behavior.
-*/
 
 /**
  * Called when the perception system updates the target's perception.
@@ -144,47 +134,47 @@ void APGAS_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimul
         SenseName = TEXT("Unknown");
     }
 
-    // Validate and cast to your specific target class ONCE
-    APGAS_PlayerCharacter* SensedPlayer = Cast<APGAS_PlayerCharacter>(Actor);
-    if (!SensedPlayer)
+    // Validate SensedActor
+    AActor* SensedActor = Actor;
+    if (!SensedActor)
     {
-        UE_LOG(LogTemp, Verbose, TEXT("Actor %s is not a PGAS_PlayerCharacter."), *GetNameSafe(Actor));
+        UE_LOG(LogTemp, Verbose, TEXT("Actor %s is not a valid actor."), *GetNameSafe(Actor));
         return;
     }
 
-    // Update targeting info+
-    // StateTreeAIComponent->SetAcquiredTargetActorParameter(SensedPlayer); // Set the target actor in the StateTree
-    // StateTreeAIComponent->SetPointOfInterestParameter(SensedPlayer->GetActorLocation());
-    // StateTreeAIComponent->SetIsAcquiredTargetVisibleParameter(Stimulus.WasSuccessfullySensed()); // Update visibility state
+    CurrentStimulusSenseType = EPGAS_StimulusSenseType::Unknown; // Reset to unknown before processing
 
-    // 6. Perception handling - use switch for clarity and perf
+    // Perception handling - use switch for clarity and perf
     if (Stimulus.Type == DamageID)
     {
+        CurrentStimulusSenseType = EPGAS_StimulusSenseType::Damage;
         if (Stimulus.WasSuccessfullySensed())
         {
-            HandleDamagePerception(SensedPlayer, Stimulus);
+            OnDamageStimulusDetected.Broadcast(SensedActor, Stimulus);
         }
     }
     else if (Stimulus.Type == SightID)
     {
+        CurrentStimulusSenseType = EPGAS_StimulusSenseType::Sight;
         if (Stimulus.WasSuccessfullySensed())
         {
-            HandleSightPerception(SensedPlayer, Stimulus);
+            OnSightStimulusDetected.Broadcast(SensedActor, Stimulus);
         }
         else
         {
-            HandleLostSightPerception(SensedPlayer, Stimulus);
+            OnSightStimulusForgotten.Broadcast(SensedActor);
         }
     }
     else if (Stimulus.Type == HearingID)
     {
+        CurrentStimulusSenseType = EPGAS_StimulusSenseType::Hearing;
         if (Stimulus.WasSuccessfullySensed())
         {
-            HandleHearingPerception(SensedPlayer, Stimulus);
+            OnHearingStimulusDetected.Broadcast(SensedActor, Stimulus);
         }
         else
         {
-            HandleLostHearingPerception(SensedPlayer, Stimulus);
+            OnHearingStimulusForgotten.Broadcast(SensedActor);
         }
     }
 }
@@ -196,79 +186,5 @@ void APGAS_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimul
 */
 void APGAS_EnemyAIController::OnTargetPerceptionForgotten(AActor* Actor)
 {
-    UE_LOG(LogTemp, Warning, TEXT("PERCEPTION FORGOTTEN: All perception of actor %s has expired or been explicitly forgotten."), *GetNameSafe(Actor));
-
-    // Handle the case where the perception of an actor is forgotten
-    // StateTreeAIComponent->SetMotivationParameter(StateTreeAIComponent->GetDefaultMotivationParameter()); // Update StateTree parameter
-    // StateTreeAIComponent->SetIsAcquiredTargetVisibleParameter(false); // Update visibility state
-}
-
-
-void APGAS_EnemyAIController::HandleDamagePerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus)
-{
-    UE_LOG(LogTemp, Warning, TEXT("Enemy took DAMAGE from: %s"), *Actor->GetName());
-
-    // Implement damage handling logic here
-    if (!Actor)
-    {
-        return;
-    }
-
-    SetFocus(Actor); // Set focus on the perceived actor
-    // StateTreeAIComponent->SetMotivationParameter(FGameplayTag::RequestGameplayTag(FName("Character.Motivation.Attack"))); // Update StateTree parameter
-    // StateTreeAIComponent->SendEvent(FGameplayTag::RequestGameplayTag(FName("StateTree.Event.DamagePerceived"))); // Send the event
-}
-
-void APGAS_EnemyAIController::HandleSightPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus)
-{
-    UE_LOG(LogTemp, Warning, TEXT("Perceived (Sight): %s"), *Actor->GetName());
-
-    if (!Actor)
-    {
-        return;
-    }
-
-    SetFocus(Actor); // Set focus on the perceived actor
-    // StateTreeAIComponent->SetMotivationParameter(FGameplayTag::RequestGameplayTag(FName("Character.Motivation.Attack"))); // Update StateTree parameter
-    // StateTreeAIComponent->SendEvent(FGameplayTag::RequestGameplayTag(FName("StateTree.Event.SightPerceived"))); // Send the event
-}
-
-void APGAS_EnemyAIController::HandleLostSightPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus)
-{
-    UE_LOG(LogTemp, Warning, TEXT("Lost sight of: %s"), *Actor->GetName());
-
-    if (!Actor)
-    {
-        return;
-    }
-
-    ClearFocus(EAIFocusPriority::Gameplay); // Clear focus when the actor is no longer seen
-    // StateTreeAIComponent->SetMotivationParameter(StateTreeAIComponent->GetDefaultMotivationParameter()); // Update StateTree parameter
-}
-
-void APGAS_EnemyAIController::HandleHearingPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus)
-{
-    UE_LOG(LogTemp, Warning, TEXT("Heard: %s"), *Actor->GetName());
-
-    if (!Actor)
-    {
-        return;
-    }
-    
-    SetFocus(Actor); // Set focus on the perceived actor
-    // StateTreeAIComponent->SetMotivationParameter(FGameplayTag::RequestGameplayTag(FName("Character.Motivation.Attack"))); // Update StateTree parameter
-    // StateTreeAIComponent->SendEvent(FGameplayTag::RequestGameplayTag(FName("StateTree.Event.HearingPerceived"))); // Send the event
-}
-
-void APGAS_EnemyAIController::HandleLostHearingPerception(APGAS_PlayerCharacter* Actor, FAIStimulus Stimulus)
-{
-    UE_LOG(LogTemp, Warning, TEXT("Lost hearing of: %s"), *Actor->GetName());
-
-    if (!Actor)
-    {
-        return;
-    }
-
-    ClearFocus(EAIFocusPriority::Gameplay); // Clear focus when the actor is no longer heard
-    // StateTreeAIComponent->SetMotivationParameter(StateTreeAIComponent->GetDefaultMotivationParameter()); // Update StateTree parameter
+    //
 }
