@@ -32,9 +32,10 @@ APGAS_EnemyAIController::APGAS_EnemyAIController()
 
     // Add sight sense
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
+    SightConfig->SetDebugColor(FColor::Black); // Set default debug color
     SightConfig->SightRadius = 1000.0f;
     SightConfig->LoseSightRadius = 1500.0f;
-    SightConfig->PeripheralVisionAngleDegrees = 45.0f;
+    SightConfig->PeripheralVisionAngleDegrees = 35.0f;
     SightConfig->SetMaxAge(5.f); // How long the perception lasts when player is not seen anymore
     SightConfig->PointOfViewBackwardOffset = 250.0f; // How far behind the character to check for sight (Peripheral vision)
     SightConfig->NearClippingRadius = 175.0f; // How close the character can be to still be seen (Peripheral vision)
@@ -59,6 +60,12 @@ APGAS_EnemyAIController::APGAS_EnemyAIController()
     // Add damage perception
     DamageConfig = CreateDefaultSubobject<UAISenseConfig_Damage>(TEXT("DamageConfig"));
     PerceptionComponent->ConfigureSense(*DamageConfig);
+
+    // Add prediction sense
+    PredictionConfig = CreateDefaultSubobject<UAISenseConfig_Prediction>(TEXT("PredictionConfig"));
+    PredictionConfig->SetMaxAge(1.0f); // How long the prediction lasts
+    PredictionConfig->SetStartsEnabled(true); // Start enabled
+    PerceptionComponent->ConfigureSense(*PredictionConfig);
 
     // Bind perception events
     PerceptionComponent->OnTargetPerceptionUpdated.AddDynamic(this, &APGAS_EnemyAIController::OnTargetPerceptionUpdated);
@@ -186,5 +193,93 @@ void APGAS_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimul
 */
 void APGAS_EnemyAIController::OnTargetPerceptionForgotten(AActor* Actor)
 {
-    //
+    OnSightStimulusForgotten.Broadcast(Actor); // Broadcast sight stimulus forgotten event
+    OnHearingStimulusForgotten.Broadcast(Actor); // Broadcast hearing stimulus forgotten event
+}
+
+/**
+ * Forget a specific actor from perception.
+ * @param ActorToForget The actor to forget.
+*/
+void APGAS_EnemyAIController::ForgetPerceptionActor(AActor* ActorToForget)
+{
+    if (!ActorToForget)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ForgetPerceptionActor: ActorToForget is nullptr."));
+        return;
+    }
+
+    UAIPerceptionComponent* PC = GetPerceptionComponent();
+    if (PC)
+    {
+        PC->ForgetActor(ActorToForget);
+        UE_LOG(LogTemp, Log, TEXT("ForgetPerceptionActor: Forgot actor %s"), *ActorToForget->GetName());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ForgetPerceptionActor: PerceptionComponent is null."));
+    }
+}
+
+/**
+ * Forget multiple actors from perception.
+ * @param ActorsToForget The array of actors to forget.
+*/
+void APGAS_EnemyAIController::ForgetPerceptionActors(const TArray<AActor*>& ActorsToForget)
+{
+    UAIPerceptionComponent* PC = GetPerceptionComponent();
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ForgetPerceptionActors: PerceptionComponent is null."));
+        return;
+    }
+
+    if (ActorsToForget.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ForgetPerceptionActors: No actors provided."));
+        return;
+    }
+
+    for (AActor* Actor : ActorsToForget)
+    {
+        if (Actor)
+        {
+            PC->ForgetActor(Actor);
+            UE_LOG(LogTemp, Log, TEXT("ForgetPerceptionActors: Forgot actor %s"), *Actor->GetName());
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("ForgetPerceptionActors: Encountered null actor, skipping."));
+        }
+    }
+}
+
+TArray<AActor*> APGAS_EnemyAIController::GetAllDamageSensedActors() const
+{
+    TArray<AActor*> SensedActors;
+    if (PerceptionComponent)
+    {
+        PerceptionComponent->GetCurrentlyPerceivedActors(UAISense_Damage::StaticClass(), SensedActors);
+    }
+    return SensedActors;
+}
+
+TArray<AActor*> APGAS_EnemyAIController::GetAllHeardActors() const
+{
+    TArray<AActor*> SensedActors;
+    if (PerceptionComponent)
+    {
+        PerceptionComponent->GetCurrentlyPerceivedActors(UAISense_Hearing::StaticClass(), SensedActors);
+    }
+    return SensedActors;
+}
+
+TArray<AActor*> APGAS_EnemyAIController::GetAllSeenActors() const
+{
+    TArray<AActor*> SensedActors;
+    if (PerceptionComponent)
+    {
+        PerceptionComponent->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), SensedActors);
+    }
+    return SensedActors;
 }

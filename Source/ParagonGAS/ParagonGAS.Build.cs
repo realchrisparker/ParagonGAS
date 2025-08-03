@@ -30,7 +30,8 @@ public class ParagonGAS : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[] {
 			"Slate",
 			"SlateCore",
-			"EditorStyle"
+			"EditorStyle",
+			"StateTreeEditorModule"
 		});
 		
 		// Uncomment if you are using online features

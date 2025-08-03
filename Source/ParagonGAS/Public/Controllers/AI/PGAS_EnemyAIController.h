@@ -30,6 +30,7 @@
 #include <Characters/Player/PGAS_PlayerCharacter.h>
 #include <Components/PGAS_StateTreeAIComponent.h">
 #include <Enums/PGAS_StimulusSenseType.h>
+#include <Controllers/AI/Senses/PGAS_SightConfig.h>
 #include "PGAS_EnemyAIController.generated.h"
 
 
@@ -72,6 +73,45 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Player|AI", meta = (DisplayName = "Get Current Stimulus Sense Type"))
 	EPGAS_StimulusSenseType GetCurrentStimulusSenseType() const { return CurrentStimulusSenseType; };
 
+	/**
+	 * Forget a specific actor from perception.
+	 * @param ActorToForget The actor to forget.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Player|AI")
+	void ForgetPerceptionActor(AActor* ActorToForget);
+
+	/**
+	 * Forget multiple actors from perception.
+	 * @param ActorsToForget The array of actors to forget.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Player|AI")
+	void ForgetPerceptionActors(const TArray<AActor*>& ActorsToForget);
+
+	/**
+	 * Returns all actors currently sensed by the Damage sense.
+	 * This function retrieves all actors that have been sensed by the Damage sense.
+	 * @return An array of actors currently sensed by the Damage sense.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Player|AI")
+    TArray<AActor*> GetAllDamageSensedActors() const;
+
+	/**
+	 * Returns all actors currently sensed by the Hearing sense.
+	 * This function retrieves all actors that have been sensed by the Hearing sense.
+	 * @return An array of actors currently sensed by the Hearing sense.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Player|AI")
+    TArray<AActor*> GetAllHeardActors() const;
+
+	/**
+	 * Returns all actors currently sensed by the Sight sense.
+	 * This function retrieves all actors that have been sensed by the Sight sense.
+	 * @return An array of actors currently sensed by the Sight sense.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Player|AI")
+    TArray<AActor*> GetAllSeenActors() const;
+
+
 	/*
 	 * Properties
 	*/
@@ -91,6 +131,14 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Player|AI|Events", meta = (DisplayName = "On Hearing Stimulus Forgotten"))
 	FPGASStimulusForgottenSignature OnHearingStimulusForgotten;
+
+	/**
+	 * The current acquired target from perception events 
+	 * Placed here for easy access in Blueprints and can be shared in State Trees.
+	 * This is the actor that the AI is currently focused on due to perception.
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Output, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AActor> AcquiredTarget = nullptr;
 
 protected:
 
@@ -129,6 +177,10 @@ private:
 	// Damage config
 	UPROPERTY()
 	TObjectPtr<UAISenseConfig_Damage> DamageConfig;
+
+	// Prediction config
+	UPROPERTY()
+	TObjectPtr<UAISenseConfig_Prediction> PredictionConfig;
 
 	UPROPERTY()
 	EPGAS_StimulusSenseType CurrentStimulusSenseType = EPGAS_StimulusSenseType::Unknown;
