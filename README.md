@@ -11,5 +11,6 @@ Version 5.6
 - Gameplay Tags
 
 # FAB Content Used
-- Basic RPG UI Starter Kit (https://www.fab.com/listings/a9ebd665-564f-42a9-b96c-8888776471c7)
 - Paragon: Wukong (https://www.fab.com/listings/27054d0c-c26e-4fe3-b6f9-fa778dfcb8b6)
+- Shadow Knight Armor (https://www.fab.com/listings/397751e3-1ec5-4a76-b7e3-7850e4e1bbc2)
+- Mixamo Animations
