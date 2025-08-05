@@ -30,7 +30,6 @@
 #include <Characters/Player/PGAS_PlayerCharacter.h>
 #include <Components/PGAS_StateTreeAIComponent.h">
 #include <Enums/PGAS_StimulusSenseType.h>
-#include <Controllers/AI/Senses/PGAS_SightConfig.h>
 #include "PGAS_EnemyAIController.generated.h"
 
 
@@ -109,8 +108,28 @@ public:
 	 * @return An array of actors currently sensed by the Sight sense.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Player|AI")
-    TArray<AActor*> GetAllSeenActors() const;
+	TArray<AActor*> GetAllSeenActors() const;
 
+	/**
+	 * Report a damage event to the AI perception system.
+	 * This function is used to report damage events to the AI perception system.
+	 * @param DamagedActor The actor that was damaged.
+	 * @param InstigatorActor The actor that caused the damage.
+	 * @param DamageAmount The amount of damage inflicted.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "AI|Perception")
+	void ReportDamageEvent(AActor* DamagedActor, AActor* InstigatorActor, float DamageAmount);
+
+	/**
+	 * Report a noise event to the AI perception system.
+	 * This function is used to report noise events to the AI perception system.
+	 * @param NoiseInstigator The actor that made the noise.
+	 * @param NoiseLocation The location where the noise was made.
+	 * @param Loudness The loudness of the noise (default is 1.0).
+	 * @param MaxRange The maximum range of the noise (default is 1200.0).
+	*/
+	UFUNCTION(BlueprintCallable, Category = "AI|Perception")
+	void ReportNoiseEvent(AActor* NoiseInstigator, FVector NoiseLocation, float Loudness = 1.f, float MaxRange = 1200.f);
 
 	/*
 	 * Properties

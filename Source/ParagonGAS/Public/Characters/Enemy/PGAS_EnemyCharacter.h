@@ -23,7 +23,6 @@
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Characters/Base/PGAS_CharacterBase.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
-#include <Structs/PGAS_ST_MovementSpeed.h>
 #include "PGAS_EnemyCharacter.generated.h"
 
 UCLASS()
@@ -101,10 +100,6 @@ public:
     /*
     * Properties
     */
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player",
-        meta = (DisplayName = "Movement Speeds", Description = "Default movement speed values for the character."))
-    FPGAS_ST_MovementSpeed MovementSpeeds;
 
 protected:
     /*

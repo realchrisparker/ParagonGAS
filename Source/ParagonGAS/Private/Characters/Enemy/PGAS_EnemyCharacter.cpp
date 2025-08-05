@@ -33,12 +33,6 @@ APGAS_EnemyCharacter::APGAS_EnemyCharacter()
 
     // Add default gameplay tags.
     SetupDefaultGameplayTags();
-
-    // Set the default movement speed values.
-    MovementSpeeds.Sneak = 150.0f;
-    MovementSpeeds.Walk = 200.0f;
-    MovementSpeeds.Escalated = 450.0f;
-    MovementSpeeds.Attack = 200.0f;
 }
 
 // Called when the game starts or when spawned

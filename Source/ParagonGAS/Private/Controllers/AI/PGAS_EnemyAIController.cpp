@@ -32,7 +32,6 @@ APGAS_EnemyAIController::APGAS_EnemyAIController()
 
     // Add sight sense
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
-    SightConfig->SetDebugColor(FColor::Black); // Set default debug color
     SightConfig->SightRadius = 1000.0f;
     SightConfig->LoseSightRadius = 1500.0f;
     SightConfig->PeripheralVisionAngleDegrees = 35.0f;
@@ -254,6 +253,11 @@ void APGAS_EnemyAIController::ForgetPerceptionActors(const TArray<AActor*>& Acto
     }
 }
 
+/**
+ * Returns all actors currently sensed by the Damage sense.
+ * This function retrieves all actors that have been sensed by the Damage sense.
+ * @return An array of actors currently sensed by the Damage sense.
+*/
 TArray<AActor*> APGAS_EnemyAIController::GetAllDamageSensedActors() const
 {
     TArray<AActor*> SensedActors;
@@ -264,6 +268,11 @@ TArray<AActor*> APGAS_EnemyAIController::GetAllDamageSensedActors() const
     return SensedActors;
 }
 
+/**
+ * Returns all actors currently sensed by the Hearing sense.
+ * This function retrieves all actors that have been sensed by the Hearing sense.
+ * @return An array of actors currently sensed by the Hearing sense.
+*/
 TArray<AActor*> APGAS_EnemyAIController::GetAllHeardActors() const
 {
     TArray<AActor*> SensedActors;
@@ -274,6 +283,11 @@ TArray<AActor*> APGAS_EnemyAIController::GetAllHeardActors() const
     return SensedActors;
 }
 
+/**
+ * Returns all actors currently sensed by the Sight sense.
+ * This function retrieves all actors that have been sensed by the Sight sense.
+ * @return An array of actors currently sensed by the Sight sense.
+*/
 TArray<AActor*> APGAS_EnemyAIController::GetAllSeenActors() const
 {
     TArray<AActor*> SensedActors;
@@ -282,4 +296,64 @@ TArray<AActor*> APGAS_EnemyAIController::GetAllSeenActors() const
         PerceptionComponent->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), SensedActors);
     }
     return SensedActors;
+}
+
+/**
+ * Report a damage event to the AI perception system.
+ * This function is used to report damage events to the AI perception system.
+ * @param DamagedActor The actor that was damaged.
+ * @param InstigatorActor The actor that caused the damage.
+ * @param DamageAmount The amount of damage inflicted.
+*/
+void APGAS_EnemyAIController::ReportDamageEvent(AActor* DamagedActor, AActor* InstigatorActor, float DamageAmount)
+{
+    UWorld* World = GetWorld();
+    if (!World || !DamagedActor)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ReportDamageEvent: Missing world or damaged actor."));
+        return;
+    }
+
+    // The location of the “event” is the damaged actor’s location.
+    const FVector EventLocation = DamagedActor->GetActorLocation();
+    const FVector InstigatorLocation = InstigatorActor
+        ? InstigatorActor->GetActorLocation()
+        : EventLocation;
+
+    // Report into UE’s perception system
+    UAISense_Damage::ReportDamageEvent(
+        World,
+        DamagedActor,
+        InstigatorActor,
+        DamageAmount,
+        EventLocation,
+        InstigatorLocation
+    );
+}
+
+/**
+ * Report a noise event to the AI perception system.
+ * This function is used to report noise events to the AI perception system.
+ * @param NoiseInstigator The actor that made the noise.
+ * @param NoiseLocation The location where the noise was made.
+ * @param Loudness The loudness of the noise (default is 1.0).
+ * @param MaxRange The maximum range of the noise (default is 1200.0).
+*/
+void APGAS_EnemyAIController::ReportNoiseEvent(AActor* NoiseInstigator, FVector NoiseLocation, float Loudness, float MaxRange)
+{
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ReportNoiseEvent: No valid World context."));
+        return;
+    }
+
+    // If Instigator is null, perception will still register noise at NoiseLocation.
+    UAISense_Hearing::ReportNoiseEvent(
+        World,
+        NoiseLocation,
+        Loudness,
+        NoiseInstigator,
+        MaxRange
+    );
 }

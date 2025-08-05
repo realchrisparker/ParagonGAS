@@ -132,14 +132,19 @@ void UPGAS_ReceiveMeleeDamageAbility::ActivateAbility(
                     if (AIController)
                     {
                         // Send report damage event to the AI controller, this will trigger the AI perception system damage sense
-                        UAISense_Damage::ReportDamageEvent(
-                            GetWorld(),
+                        AIController->ReportDamageEvent(
                             TargetCharacter,                // The actor that received damage (target)
                             ActorInfo->OwnerActor.Get(),    // The actor that caused the damage (source)
-                            1.0f,                           // Damage is calculated in the effect, not here.
-                            TargetCharacter->GetActorLocation(),          // FVector: World-space location where damage occurred
-                            TargetCharacter->GetActorLocation()          // FVector: Usually same as HitLocation
+                            1.0f                            // Damage is calculated in the effect, not here.
                         );
+                        // UAISense_Damage::ReportDamageEvent(
+                        //     GetWorld(),
+                        //     TargetCharacter,                // The actor that received damage (target)
+                        //     ActorInfo->OwnerActor.Get(),    // The actor that caused the damage (source)
+                        //     1.0f,                           // Damage is calculated in the effect, not here.
+                        //     TargetCharacter->GetActorLocation(),          // FVector: World-space location where damage occurred
+                        //     TargetCharacter->GetActorLocation()          // FVector: Usually same as HitLocation
+                        // );
                     }
                 }
             }

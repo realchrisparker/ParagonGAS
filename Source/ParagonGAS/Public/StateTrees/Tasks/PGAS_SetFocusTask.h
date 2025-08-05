@@ -61,7 +61,7 @@ USTRUCT(category = "PGAS",
         DisplayName = "Set Focus Task",
         ToolTip = "A task that sets the focus on a specified actor.",
         Keywords = "Focus, AI, Task"))
-    struct PARAGONGAS_API FPGAS_SetFocusTask : public FStateTreeTaskCommonBase
+struct PARAGONGAS_API FPGAS_SetFocusTask : public FStateTreeTaskCommonBase
 {
     GENERATED_BODY()
 
@@ -104,56 +104,46 @@ USTRUCT(category = "PGAS",
     }
 
 #if WITH_EDITOR
-    
-    // /**
-    //  * Customize the text shown in the Details panel and node tooltip.
-    //  */
-    // FText GetDescription(
-    //     const FGuid& ID,
-    //     FStateTreeDataView InstanceDataView,
-    //     const IStateTreeBindingLookup& BindingLookup,
-    //     EStateTreeNodeFormatting Formatting
-    // ) const
-    // {
-    //     // Build a binding path for the nested FInstanceData::FocusActor member
-    //     const FPropertyBindingPath InstancePath(ID, GET_MEMBER_NAME_CHECKED(FInstanceData, FocusActor));
 
-    //     // Query where that comes from in the tree asset
-    //     const FPropertyBindingPath* SourcePath = BindingLookup.GetPropertyBindingSource(InstancePath);
-
-    //     // Stringify the binding (e.g. “GlobalData.TargetActor”) or default to “None”
-    //     const FString BoundName = SourcePath
-    //         ? SourcePath->ToString(
-    //             -1,/*HighlightedSegment=*/
-    //             nullptr,/*HighlightPrefix=*/
-    //             nullptr,/*HighlightPostfix=*/
-    //             true,/*bOutputInstances=*/
-    //             0/*FirstSegment=*/
-    //         )
-    //         : TEXT("None");
-
-    //     return FText::Format(
-    //         NSLOCTEXT("PGAS", "SetFocusTaskDesc", "Set Focus to Actor {0}"),
-    //         FText::FromString(BoundName)
-    //     );
-    // }
-
-    /**
-     * Point to a different Slate icon for your node.
-     * Defaults to "StateTreeEditorStyle|Node.Task" .
-     */
-    virtual FName GetIconName() const override
+    virtual FName GetIconName() const override { return FName("GenericPlay"); }
+    virtual FColor GetIconColor() const override { return FColor::Silver; }
+    virtual FText GetDescription(const FGuid& ID,
+        FStateTreeDataView InstanceDataView,
+        const IStateTreeBindingLookup& BindingLookup,
+        EStateTreeNodeFormatting Formatting = EStateTreeNodeFormatting::Text) const override
     {
-        return FName("StateTreeEditorStyle|Node.Task");
-    }
+        const FInstanceData* Data = InstanceDataView.GetPtr<FInstanceData>();
+        if (!Data)
+        {
+            return NSLOCTEXT("PGAS", "SetFocusTask_NoData", "Set Focus Task");
+        }
 
-    /**
-     * Override the tint of that icon.
-     * Defaults to UE::StateTree::Colors::Grey .
-     */
-    virtual FColor GetIconColor() const override
-    {
-        return FColor::Blue;
+        // Build the binding path for FocusActor
+        const FPropertyBindingPath InstancePath(ID, GET_MEMBER_NAME_CHECKED(FInstanceData, FocusActor));
+        const FPropertyBindingPath* SourcePath = BindingLookup.GetPropertyBindingSource(InstancePath);
+
+        FString BoundName;
+        if (SourcePath && SourcePath->NumSegments() > 0)
+        {
+            for (int32 SegmentIndex = 0; SegmentIndex < SourcePath->NumSegments(); ++SegmentIndex)
+            {
+                if (SegmentIndex > 0)
+                {
+                    BoundName.AppendChar(TEXT('.'));
+                }
+                const FPropertyBindingPathSegment& Segment = SourcePath->GetSegment(SegmentIndex);
+                BoundName += Segment.GetName().ToString();
+            }
+        }
+        else
+        {
+            BoundName = TEXT("[Bound Parameter]");
+        }
+
+        return FText::Format(
+            NSLOCTEXT("PGAS", "SetFocusTaskDesc", "Set Focus to Actor {0}"),
+            FText::FromString(BoundName)
+        );
     }
 #endif
 };
