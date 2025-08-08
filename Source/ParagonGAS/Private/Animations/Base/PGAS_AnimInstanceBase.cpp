@@ -1,4 +1,20 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+ * ========================================================================
+ * Copyright © 2025 God's Studio
+ * All Rights Reserved.
+ *
+ * Free for all to use, copy, and distribute. I hope you learn from this as I learned creating it.
+ * =============================================================================
+ *
+ * Project: Paragon GAS Sample
+ * This is a sample project demonstrating the use of Unreal Engine's Gameplay Ability System (GAS) & open world.
+ * Author: Christopher D. Parker
+ * Date: 7-7-2025
+ * =============================================================================
+ * PGAS_AnimInstanceBase.h
+ * Base class for all Animation Instances in ParagonGAS.
+ * This class serves as a foundation for custom animation instances, providing a common interface and functionality.
+*/
 
 
 #include "Animations/Base/PGAS_AnimInstanceBase.h"

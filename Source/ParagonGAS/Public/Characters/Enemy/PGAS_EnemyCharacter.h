@@ -22,7 +22,7 @@
 #include <GAS/AttributeSets/EnemyAttributeSet.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Characters/Base/PGAS_CharacterBase.h>
-#include <GAS/PGAS_AbilitySystemComponent.h>
+#include <Weapons/Base/PGAS_WeaponBase.h>
 #include "PGAS_EnemyCharacter.generated.h"
 
 UCLASS()
@@ -68,23 +68,6 @@ public:
     }
 
     /*
-     * Called when health is changed.
-     * This function is called whenever the enemy's health changes.
-     * @param DeltaValue The change in health value (positive or negative).
-     * @param Instigator The actor that caused the health change (e.g., damage dealer).
-     * @note This function is intended to be overridden in derived classes to handle health changes.
-    */
-    UFUNCTION(BlueprintImplementableEvent, Category = "Player|Health", meta = (DisplayName = "On Health Changed"))
-    void OnHealthChanged(float DeltaValue, AActor* Causer);
-
-    /*
-     * Called when the enemy dies.
-     * This function is called when the enemy's health reaches zero.
-    */
-    UFUNCTION(BlueprintImplementableEvent, Category = "Player|Health", meta = (DisplayName = "On Death"))
-    void OnDeath();
-
-    /*
      * Handles the enemy's health change
      * This function is called whenever the enemy's health changes.
      * @param DeltaValue The change in health value (positive or negative).
@@ -101,11 +84,25 @@ public:
     * Properties
     */
 
+    /** The default weapon class to spawn and equip (set this to your Broadsword BP derived from APGAS_WeaponBase) */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player|Combat", meta = (AllowPrivateAccess = "true"))
+    TSubclassOf<class APGAS_WeaponBase> DefaultWeaponClass;
+
+    /** The currently equipped weapon instance */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Combat", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<class APGAS_WeaponBase> EquippedWeapon;
+
+    /**
+    * Equips the default weapon for this character. (Spawn)
+    */
+    UFUNCTION(BlueprintCallable, Category = "Player|Combat")
+    void EquipDefaultWeapon();
+
 protected:
     /*
     * Functions
     */
-    
+
     // Called when the game starts or when spawned
     virtual void BeginPlay() override;
 
@@ -113,7 +110,7 @@ protected:
     virtual void Tick(float DeltaTime) override;
 
 private:
-    
+
     // Attribute Set for managing enemy attributes (health, mana, etc.)
     // This is where you define your enemy's attributes like health, mana, etc.
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|GAS", meta = (AllowPrivateAccess = "true"))

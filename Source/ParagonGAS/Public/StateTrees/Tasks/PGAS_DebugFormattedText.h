@@ -30,7 +30,8 @@ enum class EPGAS_DebugParamType : uint8
     Int     UMETA(DisplayName = "Int"),
     String  UMETA(DisplayName = "String"),
     Name    UMETA(DisplayName = "Name"),
-    Text    UMETA(DisplayName = "Text")
+    Text    UMETA(DisplayName = "Text"),
+    Bool    UMETA(DisplayName = "Bool"),
 };
 
 USTRUCT(BlueprintType, Category = "PGAS|Debug")
@@ -65,6 +66,10 @@ struct FPGAS_DebugFormatParam
     /** Only valid if Type==Text */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input)
     FText TextValue;
+
+    /** Only valid if Type==Bool */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input)
+    bool BoolValue;
 };
 
 /**

@@ -53,7 +53,6 @@ APGAS_EnemyAIController::APGAS_EnemyAIController()
     HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
     HearingConfig->DetectionByAffiliation.bDetectFriendlies = true;
     HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
-
     PerceptionComponent->ConfigureSense(*HearingConfig);
 
     // Add damage perception

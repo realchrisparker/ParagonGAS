@@ -68,6 +68,9 @@ EStateTreeRunStatus UPGAS_DebugFormattedText::EnterState(FStateTreeExecutionCont
                 // Already an FText
                 Args.Add(KeyString, FFormatArgumentValue(P.TextValue));
                 break;
+
+            case EPGAS_DebugParamType::Bool:
+                Args.Add(KeyString, FFormatArgumentValue(P.BoolValue));
         }
     }
 

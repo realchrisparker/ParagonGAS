@@ -45,6 +45,9 @@ void APGAS_EnemyCharacter::BeginPlay()
 
     // Set up default abilities for the enemy character.
     SetupDefaultAbilities();
+
+    // Equip the default weapon.
+    EquipDefaultWeapon();
 }
 
 // Called every frame
@@ -67,10 +70,32 @@ void APGAS_EnemyCharacter::SetupDefaultGameplayTags()
 // Handles changes to the character's health attribute
 void APGAS_EnemyCharacter::HandleHealthChange(float DeltaValue, AActor* Causer)
 {
-    OnHealthChanged(DeltaValue, Causer);
+    OnHealthChanged.Broadcast(DeltaValue, Causer);
+
     if (GetHealth() <= 0)
     {
         // If the character's health is zero or less, trigger the death event
-        OnDeath();
+        OnDeath.Broadcast();
     }
+}
+
+/**
+ * Equips the default weapon for this character. (Spawn)
+ */
+void APGAS_EnemyCharacter::EquipDefaultWeapon()
+{
+    if (EquippedWeapon || !DefaultWeaponClass) return;
+
+    UWorld* World = GetWorld();
+    if (!World || !GetMesh()) return;
+
+    FActorSpawnParameters Params;
+    Params.Owner = this;
+    Params.Instigator = this;
+
+    APGAS_WeaponBase* NewWeapon = World->SpawnActor<APGAS_WeaponBase>(DefaultWeaponClass, FTransform::Identity, Params);
+    if (!NewWeapon) return;
+
+    NewWeapon->EquipToMesh(GetMesh());
+    EquippedWeapon = NewWeapon;
 }

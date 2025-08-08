@@ -45,7 +45,7 @@ public:
     /*
     * Functions
     */
-        
+
     // Constructor
     APGAS_PlayerCharacter();
 
@@ -271,12 +271,30 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Player|Camera")
     float GetIdleTime() const { return IdleTime; }
 
+    UFUNCTION(BlueprintCallable, Category = "Player|Health")
+    bool IsDead() const
+    {
+        // Check health.
+        if (GetHealth() <= 0)
+        {
+            return true;
+        }
+
+        // Check alive state.
+        if (!HasGameplayTag(FGameplayTag::RequestGameplayTag("Character.State.Alive")))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     /*
     * Properties
     */
 
     /** Animation Montage for idle state break */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Animations|Idle", meta= (DisplayName = "Idle Break Montage",
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Animations|Idle", meta = (DisplayName = "Idle Break Montage",
         ToolTip = "The animation montage to play when the character breaks out of an idle state. This allows for the character to play a specific animation montage when breaking out of an idle state. This will occur if the character has been idle for a certain 30.0f of time."))
     TObjectPtr<UAnimMontage> IdleBreakMontage;
 
@@ -445,7 +463,7 @@ protected:
      * The Input Action asset for blocking (e.g. "IA_Block").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta=(DisplayName = "Block Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Block Action"))
     TObjectPtr<UInputAction> IA_Block;
 
 private:

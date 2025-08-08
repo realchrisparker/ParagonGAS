@@ -35,8 +35,9 @@ UCLASS(Blueprintable,
         category = "PGAS",
         ShortTooltip = "Evaluates the AI perception of the context actor.",
         Tooltip = "Monitors the AI perception GAS attribute of the context actor.",
-        Icon = "Check_Circle"))
-    class PARAGONGAS_API UPGAS_STE_Perception : public UStateTreeEvaluatorBlueprintBase
+        Icon = "Check_Circle")
+)
+class PARAGONGAS_API UPGAS_STE_Perception : public UStateTreeEvaluatorBlueprintBase
 {
     GENERATED_BODY()
 
@@ -109,10 +110,6 @@ public:
     */
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Output, meta = (AllowPrivateAccess = "true"))
     TObjectPtr<AActor> AcquiredTarget = nullptr;
-
-    // /** The current acquired target location from perception events */
-    // UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Output, meta = (AllowPrivateAccess = "true"))
-    // FVector AcquiredTargetLocation = FVector::ZeroVector;
 
 protected:
     /*

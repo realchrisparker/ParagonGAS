@@ -30,8 +30,9 @@ UCLASS(Blueprintable,
         category = "PGAS",
         ShortTooltip = "Evaluates the health of the context actor.",
         Tooltip = "Monitors the health GAS attribute of the context actor.",
-        Icon = "Check_Circle"))
-    class PARAGONGAS_API UPGAS_STE_HealthEvaluator : public UStateTreeEvaluatorBlueprintBase
+        Icon = "Check_Circle")
+)
+class PARAGONGAS_API UPGAS_STE_HealthEvaluator : public UStateTreeEvaluatorBlueprintBase
 {
     GENERATED_BODY()
 

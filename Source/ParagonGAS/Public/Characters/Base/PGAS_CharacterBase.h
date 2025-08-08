@@ -24,6 +24,16 @@
 #include <Components/PGAS_HitReactionComponent.h>
 #include "PGAS_CharacterBase.generated.h"
 
+// Delegates
+
+// Health change delegate
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChangedSignature, float, DeltaValue, AActor*, Causer);
+// Death delegate
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeathSignature);
+
+/**
+ * Base class for all characters in the game.
+ */
 UCLASS()
 class PARAGONGAS_API APGAS_CharacterBase : public ACharacter, public IAbilitySystemInterface//, public IICharacterCombat
 {
@@ -142,6 +152,14 @@ public:
 		meta = (DisplayName = "Default Attribute Effects", Description = "Default attribute effects applied to the character at spawn."))
 	TArray<TSubclassOf<class UGameplayEffect>> DefaultAttributeEffects;
 
+	/** Broadcast when health changes. */
+	UPROPERTY(BlueprintAssignable, Category = "Player|Health", meta = (DisplayName = "On Health Changed"))
+	FOnHealthChangedSignature OnHealthChanged;
+	
+	/** Broadcast when the character dies. */
+	UPROPERTY(BlueprintAssignable, Category = "Player|Health", meta = (DisplayName = "On Death"))
+	FOnDeathSignature OnDeath;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
