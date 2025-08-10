@@ -16,6 +16,7 @@
 
 #include "Weapons/Base/PGAS_WeaponBase.h"
 #include "Components/StaticMeshComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 APGAS_WeaponBase::APGAS_WeaponBase()
 {
@@ -28,6 +29,13 @@ APGAS_WeaponBase::APGAS_WeaponBase()
     WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     WeaponMesh->SetGenerateOverlapEvents(false);
     WeaponMesh->SetCanEverAffectNavigation(false);
+
+    // Optional authoring helpers (created at runtime so they exist by default in BP)
+    TraceStart = CreateDefaultSubobject<USceneComponent>(TEXT("TraceStart"));
+    TraceStart->SetupAttachment(WeaponMesh);
+
+    TraceEnd = CreateDefaultSubobject<USceneComponent>(TEXT("TraceEnd"));
+    TraceEnd->SetupAttachment(WeaponMesh);
 }
 
 void APGAS_WeaponBase::BeginPlay()
@@ -44,10 +52,74 @@ void APGAS_WeaponBase::EquipToMesh(USkeletalMeshComponent* TargetMesh)
     }
 
     FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
-    AttachToComponent(TargetMesh, AttachRules, AttachSocketName);
+    AttachToComponent(TargetMesh, AttachRules, EquipedSocketName);
 }
 
 void APGAS_WeaponBase::Unequip()
 {
     DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+}
+
+bool APGAS_WeaponBase::GetBladeTracePoints(FVector& OutStart, FVector& OutEnd) const
+{
+    // Try Scene Components first if requested
+    if (BladeTraceMode == EPGASBladeTraceMode::UseSceneComponents)
+    {
+        if (TraceStart && TraceEnd)
+        {
+            OutStart = TraceStart->GetComponentLocation();
+            OutEnd = TraceEnd->GetComponentLocation();
+            return true;
+        }
+        // Soft fallback to sockets if scene comps aren’t set
+    }
+
+    // Sockets on the static mesh
+    if (WeaponMesh)
+    {
+        const bool bHasStart = WeaponMesh->DoesSocketExist(StartSocketName);
+        const bool bHasEnd = WeaponMesh->DoesSocketExist(EndSocketName);
+
+        if (bHasStart && bHasEnd)
+        {
+            OutStart = WeaponMesh->GetSocketLocation(StartSocketName);
+            OutEnd = WeaponMesh->GetSocketLocation(EndSocketName);
+            return true;
+        }
+    }
+
+    // Final fallback: approximate using mesh bounds along local X (tip = +X)
+    if (WeaponMesh)
+    {
+        const FBoxSphereBounds B = WeaponMesh->Bounds;
+        const FVector X = WeaponMesh->GetComponentTransform().GetUnitAxis(EAxis::X);
+        const FVector Center = B.Origin;
+        const float HalfX = B.BoxExtent.X;
+        OutStart = Center - X * HalfX;
+        OutEnd = Center + X * HalfX;
+        return true;
+    }
+
+    return false;
+}
+
+bool APGAS_WeaponBase::SphereTraceBlade(
+    float Radius,
+    const TArray<TEnumAsByte<EObjectTypeQuery>>& ObjectTypes,
+    const TArray<AActor*>& ActorsToIgnore,
+    TArray<FHitResult>& OutHits,
+    bool bDebug) const
+{
+    UWorld* World = GetWorld();
+    if (!World) return false;
+
+    FVector Start, End;
+    if (!GetBladeTracePoints(Start, End))
+        return false;
+
+    EDrawDebugTrace::Type DebugDraw = bDebug ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+
+    return UKismetSystemLibrary::SphereTraceMultiForObjects(
+        World, Start, End, Radius, ObjectTypes, false, ActorsToIgnore, DebugDraw, OutHits, true
+    );
 }

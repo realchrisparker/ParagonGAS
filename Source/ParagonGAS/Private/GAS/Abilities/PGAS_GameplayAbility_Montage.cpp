@@ -23,6 +23,9 @@
 #include <Animations/PGAS_GameplayTagNotify.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Characters/Base/PGAS_CharacterBase.h>
+#include <Characters/Enemy/PGAS_EnemyCharacter.h>
+#include <Data/PGAS_EventAdditionalData.h>
+#include <Weapons/Base/PGAS_WeaponBase.h>
 
 
  // Constructor
@@ -44,7 +47,7 @@ void UPGAS_GameplayAbility_Montage::ActivateAbility(const FGameplayAbilitySpecHa
     CachedHandle = Handle;
     CachedActorInfo = ActorInfo;
     CachedActivationInfo = ActivationInfo;
-    CachedTriggerEventData = TriggerEventData;  
+    CachedTriggerEventData = TriggerEventData;
 
     // Check if the montage to play is valid and if the ability can be committed
     if (!MontageToPlay || !CommitAbility(Handle, ActorInfo, ActivationInfo))
@@ -137,7 +140,7 @@ void UPGAS_GameplayAbility_Montage::OnMontageCompleted()
         if (Character)
             Character->SetIsAttacking(false); // Reset the attacking state when the montage completes
     }
-    
+
     // Notify the end of the montage
     MontageCompleted();
 
@@ -185,12 +188,38 @@ void UPGAS_GameplayAbility_Montage::OnNotifyBegin(FGameplayEventData Payload)
 {
     OnMontageStateNotify.Broadcast(Payload.EventTag, Payload); // Broadcast it before Blueprint handling
     MontageStateNotify(Payload.EventTag, Payload); // Fire the montage state notify event for the begin notify
+
+    // Determine if this is begin damage notify (Attack.Damage.Notify.Begin)
+    if (Payload.EventTag == FGameplayTag::RequestGameplayTag(TEXT("Attack.Damage.Notify.Begin")))
+    {
+        // Determine if this is an enemy character
+        if (AActor* AvatarActor = GetAvatarActorFromActorInfo())
+        {
+            AvatarActor->GetWorldTimerManager().SetTimer(
+                WeaponTraceTimerHandle,
+                this,
+                &UPGAS_GameplayAbility_Montage::WeaponTrace,
+                0.01f, // Every 0.01 seconds
+                true   // Loop
+            );
+        }
+    }
 }
 
 void UPGAS_GameplayAbility_Montage::OnNotifyEnd(FGameplayEventData Payload)
 {
     OnMontageStateNotify.Broadcast(Payload.EventTag, Payload); // Broadcast it before Blueprint handling
     MontageStateNotify(Payload.EventTag, Payload); // Fire the montage state notify event for the end notify
+
+    // Determine if this is end damage notify (Attack.Damage.Notify.End)
+    if (Payload.EventTag == FGameplayTag::RequestGameplayTag(TEXT("Attack.Damage.Notify.End")))
+    {
+        // Determine if this is an enemy character
+        if (AActor* AvatarActor = GetAvatarActorFromActorInfo())
+        {
+            AvatarActor->GetWorldTimerManager().ClearTimer(WeaponTraceTimerHandle);
+        }
+    }
 }
 
 void UPGAS_GameplayAbility_Montage::OnComboInputReceived()
@@ -216,6 +245,69 @@ void UPGAS_GameplayAbility_Montage::TryActivateNextCombo()
         {
             // Try to activate the next combo ability
             ASC->TryActivateAbilityByClass(NextComboAbility);
+        }
+    }
+}
+
+/*
+ * Performs a weapon trace to detect hits.
+ * This function should be implemented to perform a trace from Start to End.
+ * @return void.
+*/
+void UPGAS_GameplayAbility_Montage::WeaponTrace()
+{
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    // Get the enemycharacter from CachedActorInfo
+    APGAS_EnemyCharacter* Character = Cast<APGAS_EnemyCharacter>(CachedActorInfo->OwnerActor);
+    if (Character && Character->EquippedWeapon)
+    {
+        float SphereRadius = 25.0f;
+        
+        TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+        ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+
+        TArray<AActor*> IgnoreActors;
+        IgnoreActors.Add(Character); // Ignore self in the trace
+
+        TArray<FHitResult> OutHits;
+        bool bHit = Character->EquippedWeapon->SphereTraceBlade(SphereRadius, ObjectTypes, IgnoreActors, OutHits, true);
+        if (bHit)
+        {
+            for (const FHitResult& Hit : OutHits)
+            {
+                // Get the actor that was hit.
+                AActor* HitActor = Hit.GetActor();
+                if (!HitActor) continue;
+
+                // Check if the hit actor is valid and not already hit in this window.
+                if (AlreadyHitActors.Contains(HitActor)) continue;
+
+                // Actor not hit yet, so we add it to the set of already hit actors.
+                AlreadyHitActors.Add(HitActor);
+
+                // Prepare the event tag (must match what your abilities expect)
+                FGameplayTag DamageEventTag = FGameplayTag::RequestGameplayTag(FName("Combat.Damage.Event.Melee"));
+
+                // Create Instigator Tags
+                FGameplayTagContainer InstigatorTags = Character->GetGameplayTags(); // Get the character's gameplay tags at this moment
+
+                // Create optional object to hold hit information
+                UPGAS_EventAdditionalData* EvnDataOptObj = NewObject<UPGAS_EventAdditionalData>();
+                EvnDataOptObj->HitResult = Hit;
+
+                // Prepare the event data
+                FGameplayEventData EventData;
+                EventData.EventTag = DamageEventTag; // The event tag for the damage event
+                EventData.OptionalObject = EvnDataOptObj; // Optional object to hold additional data
+                EventData.Instigator = Character; // The actor that initiated the event (this character)
+                EventData.InstigatorTags = InstigatorTags; // Tags from the instigator
+                EventData.Target = HitActor; // The actor that was hit
+
+                // Send the event
+                UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(HitActor, DamageEventTag, EventData);
+            }
         }
     }
 }

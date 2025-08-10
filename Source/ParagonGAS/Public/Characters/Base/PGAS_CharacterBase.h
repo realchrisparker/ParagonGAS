@@ -79,6 +79,9 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Player|Abilities", meta = (DisplayName = "Activate Abilities With Tags"))
 	bool ActivateAbilitiesWithTags(FGameplayTagContainer AbilityTags, bool AllowRemoteActivation = true);
+
+	UFUNCTION(BlueprintCallable, Category = "Player|Abilities", meta = (DisplayName = "Cancel Abilities With Tags"))
+	void CancelAbilitiesWithTags(FGameplayTagContainer AbilityTags);
 	
 	// Applies default attribute effects to the character
 	// This function is typically called in the BeginPlay or constructor to set up the character's

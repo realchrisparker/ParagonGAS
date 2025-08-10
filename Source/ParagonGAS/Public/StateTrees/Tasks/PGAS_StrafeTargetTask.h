@@ -66,11 +66,49 @@ struct FStrafeTargetInstanceData
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task", meta = (ClampMin = "0.0", DisplayName = "Duration Deviation"))
     float StrafeDurationDeviation = 0.f;
 
+    /** Acceptance radius for MoveTo – larger value reduces micro-repath jitter */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task", meta = (ClampMin = "0.0", DisplayName = "Acceptance Radius"))
+    float AcceptanceRadius = 75.f;
+
+    /** How often we can issue a new MoveTo (sec). Throttling avoids constant path restarts. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task", meta = (ClampMin = "0.05", DisplayName = "Move Update Interval"))
+    float MoveUpdateInterval = 0.25f;
+
+    /** Only update MoveTo if the desired goal shifts more than this (uu) */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task", meta = (ClampMin = "0.0", DisplayName = "Goal Update Distance"))
+    float GoalUpdateDistance = 75.f;
+
+    /** How quickly we ease toward a new angular deviation target */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task", meta = (ClampMin = "0.1", DisplayName = "Deviation Interp Speed"))
+    float DeviationInterpSpeed = 6.f;
+
+    /** Random interval range for picking a new deviation target (sec) */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task", meta = (ClampMin = "0.05", DisplayName = "Deviation Retarget Min"))
+    float DeviationRetargetIntervalMin = 0.3f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task", meta = (ClampMin = "0.05", DisplayName = "Deviation Retarget Max"))
+    float DeviationRetargetIntervalMax = 0.8f;
+
     /** How long we’ve been strafing */
     float ElapsedTime = 0.f;
 
     /** Current angle around the target (degrees) */
     float CurrentAngle = 0.f;
+
+    /** Runtime: time since last MoveTo issued */
+    float TimeSinceLastMoveCmd = 0.f;
+
+    /** Runtime: last MoveTo goal we commanded */
+    FVector LastGoalLocation = FVector::ZeroVector;
+
+    /** Runtime: have we issued at least one MoveTo? */
+    bool bHasLastGoal = false;
+
+    /** Runtime: smoothing for deviation */
+    float CurrentDeviation = 0.f;
+    float TargetDeviation = 0.f;
+    float DeviationRetargetTimer = 0.f;
+    float DeviationRetargetInterval = 0.f;
 };
 
 
@@ -111,9 +149,20 @@ struct PARAGONGAS_API FPGAS_StrafeTargetTask : public FStateTreeTaskCommonBase
         FStrafeTargetInstanceData& Data = Context.GetInstanceData(*this);
 
         Data.CurrentAngle = 0.f; // Reset angle to start strafing from the beginning
-        Data.ElapsedTime = 0.f; // Reset elapsed time
+        Data.ElapsedTime = 0.f;   // Reset elapsed time
 
-        // Pick a random actual duration within deviation
+        // Reset MoveTo throttling state
+        Data.TimeSinceLastMoveCmd = 0.f;
+        Data.LastGoalLocation = FVector::ZeroVector;
+        Data.bHasLastGoal = false;
+
+        // Initialize deviation retarget cadence
+        Data.CurrentDeviation = 0.f;
+        Data.TargetDeviation = FMath::FRandRange(-Data.StrafeDeviationDegrees, Data.StrafeDeviationDegrees);
+        Data.DeviationRetargetTimer = 0.f;
+        Data.DeviationRetargetInterval = FMath::FRandRange(Data.DeviationRetargetIntervalMin, Data.DeviationRetargetIntervalMax);
+
+        // Pick a random actual duration within deviation (mutates StrafeDuration in-place by design)
         Data.StrafeDuration = FMath::FRandRange(
             Data.StrafeDuration - Data.StrafeDurationDeviation,
             Data.StrafeDuration + Data.StrafeDurationDeviation
@@ -153,26 +202,44 @@ struct PARAGONGAS_API FPGAS_StrafeTargetTask : public FStateTreeTaskCommonBase
             return EStateTreeRunStatus::Failed;
 
         // Advance base angle based on speed
-        float Circumference = 2 * PI * Data.StrafeRadius;
-        float RotationRate = (Data.StrafeSpeed / Circumference) * 360.f; // degrees per second
+        const float Circumference = 2 * PI * Data.StrafeRadius;
+        const float RotationRate = (Data.StrafeSpeed / Circumference) * 360.f; // degrees per second
         Data.CurrentAngle += RotationRate * DeltaTime;
 
-        // Add a random angular deviation
-        float Deviation = FMath::FRandRange(-Data.StrafeDeviationDegrees, Data.StrafeDeviationDegrees);
-        float TotalAngle = Data.CurrentAngle + Deviation;
-        float Rad = FMath::DegreesToRadians(TotalAngle);
+        // Smoothly change deviation at random intervals to avoid jitter
+        Data.DeviationRetargetTimer += DeltaTime;
+        if (Data.DeviationRetargetTimer >= Data.DeviationRetargetInterval)
+        {
+            Data.TargetDeviation = FMath::FRandRange(-Data.StrafeDeviationDegrees, Data.StrafeDeviationDegrees);
+            Data.DeviationRetargetTimer = 0.f;
+            Data.DeviationRetargetInterval = FMath::FRandRange(Data.DeviationRetargetIntervalMin, Data.DeviationRetargetIntervalMax);
+        }
+        Data.CurrentDeviation = FMath::FInterpTo(Data.CurrentDeviation, Data.TargetDeviation, DeltaTime, Data.DeviationInterpSpeed);
 
-        FVector DesiredLocation = Target->GetActorLocation()
+        const float TotalAngleDeg = Data.CurrentAngle + Data.CurrentDeviation;
+        const float Rad = FMath::DegreesToRadians(TotalAngleDeg);
+
+        const FVector DesiredLocation = Target->GetActorLocation()
             + FVector(FMath::Cos(Rad) * Data.StrafeRadius,
                 FMath::Sin(Rad) * Data.StrafeRadius, 0.f);
 
-        // Create a move request to the desired location
-        FAIMoveRequest MoveReq;
-        MoveReq.SetGoalLocation(DesiredLocation);
-        MoveReq.SetAcceptanceRadius(5.f);
+        // Throttle issuing MoveTo to avoid constant path restarts (major source of shaking)
+        Data.TimeSinceLastMoveCmd += DeltaTime;
+        const bool bNeedsGoalUpdate = !Data.bHasLastGoal || FVector::Dist2D(DesiredLocation, Data.LastGoalLocation) > Data.GoalUpdateDistance;
+        if (bNeedsGoalUpdate && Data.TimeSinceLastMoveCmd >= Data.MoveUpdateInterval)
+        {
+            FAIMoveRequest MoveReq;
+            MoveReq.SetGoalLocation(DesiredLocation);
+            MoveReq.SetAcceptanceRadius(Data.AcceptanceRadius);
+            MoveReq.SetAllowPartialPath(true);
+            MoveReq.SetCanStrafe(true);
 
-        // Move the AI controller towards the desired location
-        Data.AIController->MoveTo(MoveReq);
+            Data.AIController->MoveTo(MoveReq);
+
+            Data.LastGoalLocation = DesiredLocation;
+            Data.bHasLastGoal = true;
+            Data.TimeSinceLastMoveCmd = 0.f;
+        }
 
         // Let task continue running
         return EStateTreeRunStatus::Running;

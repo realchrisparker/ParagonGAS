@@ -25,8 +25,8 @@
 #include "PGAS_PerformAttack.generated.h"
 
 
- /**
-  * Modes for selecting which attack ability to fire
+/**
+ * Modes for selecting which attack ability to fire
  */
 UENUM(BlueprintType, Category = "PGAS|Attack",
     meta = (DisplayName = "Attack Selection Mode",

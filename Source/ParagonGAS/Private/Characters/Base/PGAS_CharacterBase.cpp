@@ -106,7 +106,12 @@ bool APGAS_CharacterBase::HasAnyGameplayTag(const FGameplayTagContainer& TagCont
 	return false;
 }
 
-// Activates abilities with the specified tags
+/*
+ * Activates abilities with the specified gameplay tags.
+ * @param AbilityTags The gameplay tags of the abilities to activate.
+ * @param AllowRemoteActivation Whether to allow remote activation of abilities (default: true).
+ * @return bool True if any abilities were activated, false otherwise.
+*/
 bool APGAS_CharacterBase::ActivateAbilitiesWithTags(FGameplayTagContainer AbilityTags, bool AllowRemoteActivation)
 {
 	if (!AbilitySystemComponent)
@@ -116,6 +121,18 @@ bool APGAS_CharacterBase::ActivateAbilitiesWithTags(FGameplayTagContainer Abilit
 
 	// Activate abilities with the specified tags
 	return AbilitySystemComponent->TryActivateAbilitiesByTag(AbilityTags, AllowRemoteActivation);
+}
+
+// Activates abilities with the specified tags
+void APGAS_CharacterBase::CancelAbilitiesWithTags(FGameplayTagContainer AbilityTags)
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	// Cancel abilities with the specified tags
+	AbilitySystemComponent->CancelAbilities(&AbilityTags, nullptr, nullptr);
 }
 
 // Applies default attribute effects to the character

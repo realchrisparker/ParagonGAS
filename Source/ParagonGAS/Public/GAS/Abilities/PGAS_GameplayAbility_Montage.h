@@ -20,6 +20,8 @@
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
 #include "Animation/AnimMontage.h"
+#include "GameFramework/Actor.h"
+#include "Engine/World.h"
 #include <Enums/PGAS_ComboStep.h>
 #include "PGAS_GameplayAbility_Montage.generated.h"
 
@@ -170,6 +172,13 @@ private:
     UFUNCTION()
     void OnNotifyEnd(FGameplayEventData Payload);
 
+    /**
+     * Traces the weapon to detect hits.
+     * This function performs a trace from the weapon's start socket to the end socket to detect hits.
+     * @note This function is typically called when the player performs an attack action.
+     */
+    void WeaponTrace();
+
     /*
     * Properties
     */
@@ -179,5 +188,16 @@ private:
     const FGameplayAbilityActorInfo* CachedActorInfo = nullptr;
     FGameplayAbilityActivationInfo CachedActivationInfo;
     const FGameplayEventData* CachedTriggerEventData = nullptr;
+
+    // Timer handle for the weapon trace timer.
+    FTimerHandle WeaponTraceTimerHandle;
+
+    /**
+     * Set of actors that have already been hit by the weapon trace
+     * This is used to prevent hitting the same actor multiple times in a single trace.
+     * It is a transient property, meaning it will not be saved or replicated.
+    */
+    UPROPERTY(Transient)
+    TSet<TWeakObjectPtr<AActor>> AlreadyHitActors;
 };
  

@@ -41,17 +41,37 @@ public:
      * Functions
      */
 
-    /** Cache the context actor and reset health. */
-    virtual void TreeStart(FStateTreeExecutionContext& Context) override;
+     /** Cache the context actor and reset health. */
+    virtual void TreeStart(FStateTreeExecutionContext& Context) override
+    {
+        Super::TreeStart(Context);
+
+        CurrentHealth = 0.f;
+    }
 
     /** Sample health each tick and write to CurrentHealth. */
-    virtual void Tick(FStateTreeExecutionContext& Context, float DeltaTime) override;
+    virtual void Tick(FStateTreeExecutionContext& Context, float DeltaTime) override
+    {
+        Super::Tick(Context, DeltaTime);
+
+        if (Character)
+        {
+            CurrentHealth = Character->GetHealth(); // Get the current health from the character's attribute set
+        }
+        else
+        {
+            CurrentHealth = 0.f;
+        }
+    }
 
     /** Clear cached pointers. */
-    virtual void TreeStop(FStateTreeExecutionContext& Context) override;
+    virtual void TreeStop(FStateTreeExecutionContext& Context) override
+    {
+        Super::TreeStop(Context);
+    }
 
 #if WITH_EDITOR
-    
+
     /**
      * Gets the description of the condition for editor display.
      * @param ID The unique identifier for the node.
@@ -81,7 +101,7 @@ public:
     };
 
 #endif
-    
+
     /*
      * Properties
     */
