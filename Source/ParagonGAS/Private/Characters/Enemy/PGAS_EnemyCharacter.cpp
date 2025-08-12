@@ -84,6 +84,7 @@ void APGAS_EnemyCharacter::HandleHealthChange(float DeltaValue, AActor* Causer)
  */
 void APGAS_EnemyCharacter::EquipDefaultWeapon()
 {
+    // TODO: Implement inventory system (Change this to work with inventory in the future)
     if (EquippedWeapon || !DefaultWeaponClass) return;
 
     UWorld* World = GetWorld();

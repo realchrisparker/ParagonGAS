@@ -93,10 +93,43 @@ public:
     TObjectPtr<class APGAS_WeaponBase> EquippedWeapon;
 
     /**
-    * Equips the default weapon for this character. (Spawn)
-    */
+     * Equips the default weapon for this character. (Spawn)
+     */
     UFUNCTION(BlueprintCallable, Category = "Player|Combat")
     void EquipDefaultWeapon();
+
+    /**
+     * Equips the default weapon for this character. (Spawn)
+     */
+    UFUNCTION(BlueprintCallable, Category = "Player|Combat")
+    void ArmDefaultWeapon(EPGASWeaponInventorySlot Slot = EPGASWeaponInventorySlot::RightHand)
+    {
+        if (EquippedWeapon)
+        {
+            EquippedWeapon->InventorySlot = Slot; // Set the inventory slot for the equipped weapon, should be one of the hands.
+            EquippedWeapon->EquipToMesh(this->GetMesh());
+        }
+    }
+
+    /**
+     * Checks if the character has a weapon equipped.
+     */
+    UFUNCTION(BlueprintPure, Category = "Player|Combat", meta=(ReturnDisplayName="Is Armed"))
+    bool IsWeaponEquipped()
+    {
+        if (EquippedWeapon == nullptr)
+        {
+            return false;
+        }
+
+        // Determine if weapon is located in the hand of the character. If so it is equipped. If not it is unequipped.
+        if (EquippedWeapon->EquipedSocketName == FName("weapon_l") || EquippedWeapon->EquipedSocketName == FName("weapon_r"))
+        {
+            return true;
+        }
+
+        return false;
+    }
 
 protected:
     /*

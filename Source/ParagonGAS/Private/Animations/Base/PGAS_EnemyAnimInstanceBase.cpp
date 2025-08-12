@@ -35,7 +35,6 @@ void UPGAS_EnemyAnimInstanceBase::BeginDestroy()
     try
     {
         CachedMovementComponent = nullptr; // Clear cached movement component pointer
-        OwningPawn = nullptr; // Clear cached owning pawn pointer
     }
     catch (...)
     {
@@ -59,6 +58,22 @@ void UPGAS_EnemyAnimInstanceBase::NativeInitializeAnimation()
 void UPGAS_EnemyAnimInstanceBase::NativeUpdateAnimation(float DeltaSeconds)
 {
     Super::NativeUpdateAnimation(DeltaSeconds);
+
+    if (OwningPawn)
+    {
+        // Get actor rotation
+        OwningPawnActorRotation = OwningPawn->GetActorRotation();
+
+        // Get unarmed state
+        APGAS_EnemyCharacter* Character = Cast<APGAS_EnemyCharacter>(OwningPawn);
+        if (Character)
+        {
+            IsArmed = Character->IsWeaponEquipped();
+        }
+
+        // Get rotation
+        Rotation = OwningPawn->GetActorRotation();
+    }
 }
 
 // Called when the animation instance updates thread safe
@@ -67,29 +82,23 @@ void UPGAS_EnemyAnimInstanceBase::NativeThreadSafeUpdateAnimation(float DeltaSec
     Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
 
     // Update animation properties based on the movement component
-    if (!CachedMovementComponent || !OwningPawn)
+    if (CachedMovementComponent || OwningPawn)
     {
-        return;
+        // Get is in air state
+        IsInAir = CachedMovementComponent->IsFalling();
+
+        // Get velocity
+        Velocity = CachedMovementComponent->Velocity;
+
+        // Get speed and movement state
+        Speed = CachedMovementComponent->Velocity.Size();
+        IsMoving = Speed > 0.0f;
+
+        // Calculate direction using rotation    
+        Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, OwningPawnActorRotation); // returns -180..180 (0=fwd, +90=right, -90=left)
+
+        // Roll & Pitch, normalize to 0.0001
+        Roll = FMath::Clamp(Rotation.Roll, -0.0001f, 0.0001f);
+        Pitch = FMath::Clamp(Rotation.Pitch, -0.0001f, 0.0001f);
     }
-
-    // Get is in air state
-    IsInAir = CachedMovementComponent->IsFalling();
-
-    // Get velocity
-    Velocity = CachedMovementComponent->Velocity;
-
-    // Get speed and movement state
-    Speed = CachedMovementComponent->Velocity.Size();
-    IsMoving = Speed > 0.0f;
-
-    // Get rotation
-    Rotation = OwningPawn->GetActorRotation();
-
-    // Calculate direction using rotation
-    const FRotator Facing = OwningPawn->GetActorRotation();
-    Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, Facing); // returns -180..180 (0=fwd, +90=right, -90=left)
-
-    // Roll & Pitch, normalize to 0.0001
-    Roll = FMath::Clamp(Rotation.Roll, -0.0001f, 0.0001f);
-    Pitch = FMath::Clamp(Rotation.Pitch, -0.0001f, 0.0001f);
 }

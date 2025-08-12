@@ -27,13 +27,15 @@
 UENUM(BlueprintType, meta=(DisplayName = "Weapon Inventory Slot"))
 enum class EPGASWeaponInventorySlot : uint8
 {
-    BackLeft UMETA(DisplayName = "Back Left"), //
-    BackRight UMETA(DisplayName = "Back Right"), //
-    HipLeft UMETA(DisplayName = "Hip Left"), //
-    HipRight UMETA(DisplayName = "Hip Right"), //
-    HipLeft UMETA(DisplayName = "Hip Left"), //
-    HipRight UMETA(DisplayName = "Hip Right"), //
-    InStash UMETA(DisplayName = "In Stash") //
+    LeftHand UMETA(DisplayName = "Left Hand"),
+    RightHand UMETA(DisplayName = "Right Hand"),
+    BackLeft UMETA(DisplayName = "Back Left"),
+    BackRight UMETA(DisplayName = "Back Right"), 
+    HipLeft UMETA(DisplayName = "Hip Left"), 
+    HipRight UMETA(DisplayName = "Hip Right"), 
+    ThighLeft UMETA(DisplayName = "Thigh Left"),
+    ThighRight UMETA(DisplayName = "Thigh Right"), 
+    InStash UMETA(DisplayName = "In Stash") 
 };
 
  /**
@@ -76,11 +78,7 @@ public:
 
     /** Convenience: does a SphereTraceMulti along the blade and returns hits */
     UFUNCTION(BlueprintCallable, Category = "Weapon|Trace")
-    bool SphereTraceBlade(float Radius,
-        const TArray<TEnumAsByte<EObjectTypeQuery>>& ObjectTypes,
-        const TArray<AActor*>& ActorsToIgnore,
-        TArray<FHitResult>& OutHits,
-        bool bDebug = false) const;
+    bool SphereTraceBlade(float Radius, const TArray<TEnumAsByte<EObjectTypeQuery>>& ObjectTypes, const TArray<AActor*>& ActorsToIgnore, TArray<FHitResult>& OutHits, bool bDebug = false) const;
 
     /*
     * Properties
@@ -94,17 +92,17 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
     FGameplayTagContainer WeaponTags;
 
-    /** Default socket to attach to (override per-BP if needed) */
+    /** Inventory slot for this weapon */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-    FName EquipedSocketName = FName("hand_r_socket");
-
-    /** Default socket to attach to (override per-BP if needed) */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-    FName InventorySocketName = FName("weapon_inventory1");
+    EPGASWeaponInventorySlot InventorySlot = EPGASWeaponInventorySlot::BackLeft;
 
     /** How to provide blade endpoints for tracing */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Trace")
     EPGASBladeTraceMode BladeTraceMode = EPGASBladeTraceMode::UseSceneComponents;
+
+    // Equiped socket name.
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta=(AllowPrivateAccess = "true"))
+    FName EquipedSocketName = FName("");
     
     /** Scene markers (non-visual). Place these at the guard/tip in the BP. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Trace",
@@ -138,4 +136,14 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+
+private:
+    FName InventorySocketLeftHandName = FName("weapon_l");
+    FName InventorySocketRightHandName = FName("weapon_r");
+    FName InventorySocketBackLeftName = FName("weapon_backleft");
+    FName InventorySocketBackRightName = FName("weapon_backright");
+    FName InventorySocketHipLeftName = FName("weapon_hipleft");
+    FName InventorySocketHipRightName = FName("weapon_hipright");
+    FName InventorySocketThighLeftName = FName("weapon_thighleft");
+    FName InventorySocketThighRightName = FName("weapon_thighright");
 };

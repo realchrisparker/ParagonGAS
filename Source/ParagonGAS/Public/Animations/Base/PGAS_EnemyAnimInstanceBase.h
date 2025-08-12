@@ -22,6 +22,7 @@
 #include "Animation/AnimInstance.h"
 #include "KismetAnimationLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include <Characters/Enemy/PGAS_EnemyCharacter.h> 
 #include "PGAS_EnemyAnimInstanceBase.generated.h"
 
 /**
@@ -78,6 +79,9 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animation")
     float Direction;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animation")
+    bool IsArmed;
+
 protected:
     /*
      * Functions
@@ -105,4 +109,7 @@ private:
 
     // Cached movement component pointer (game thread only)
     TObjectPtr<APawn> OwningPawn;
+
+    // Cached actor rotation (game thread only)
+    FRotator OwningPawnActorRotation = FRotator::ZeroRotator;
 };

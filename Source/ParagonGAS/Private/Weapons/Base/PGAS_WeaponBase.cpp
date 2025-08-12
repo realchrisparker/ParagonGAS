@@ -51,6 +51,38 @@ void APGAS_WeaponBase::EquipToMesh(USkeletalMeshComponent* TargetMesh)
         return;
     }
 
+    // Determine the equipped socket name based on the inventory slot (Can be one of the hands, other part of the body, or in the stash)
+    switch (InventorySlot)
+    {
+        case EPGASWeaponInventorySlot::LeftHand:
+            EquipedSocketName = InventorySocketLeftHandName;
+            break;
+        case EPGASWeaponInventorySlot::RightHand:
+            EquipedSocketName = InventorySocketRightHandName;
+            break;
+        case EPGASWeaponInventorySlot::BackLeft:
+            EquipedSocketName = InventorySocketBackLeftName;
+            break;
+        case EPGASWeaponInventorySlot::BackRight:
+            EquipedSocketName = InventorySocketBackRightName;
+            break;
+        case EPGASWeaponInventorySlot::HipLeft:
+            EquipedSocketName = InventorySocketHipLeftName;
+            break;
+        case EPGASWeaponInventorySlot::HipRight:
+            EquipedSocketName = InventorySocketHipRightName;
+            break;
+        case EPGASWeaponInventorySlot::ThighLeft:
+            EquipedSocketName = InventorySocketThighLeftName;
+            break;
+        case EPGASWeaponInventorySlot::ThighRight:
+            EquipedSocketName = InventorySocketThighRightName;
+            break;
+        case EPGASWeaponInventorySlot::InStash:
+            // Handle stash case if needed
+            break;
+    }
+
     FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
     AttachToComponent(TargetMesh, AttachRules, EquipedSocketName);
 }
