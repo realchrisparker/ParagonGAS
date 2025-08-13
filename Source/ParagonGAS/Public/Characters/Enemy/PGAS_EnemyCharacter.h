@@ -80,18 +80,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Player|AI")
     UStateTree* GetStateTree() { return StateTree; }
 
-    /*
-    * Properties
-    */
-
-    /** The default weapon class to spawn and equip (set this to your Broadsword BP derived from APGAS_WeaponBase) */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player|Combat", meta = (AllowPrivateAccess = "true"))
-    TSubclassOf<class APGAS_WeaponBase> DefaultWeaponClass;
-
-    /** The currently equipped weapon instance */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Combat", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<class APGAS_WeaponBase> EquippedWeapon;
-
     /**
      * Equips the default weapon for this character. (Spawn)
      */
@@ -114,7 +102,7 @@ public:
     /**
      * Checks if the character has a weapon equipped.
      */
-    UFUNCTION(BlueprintPure, Category = "Player|Combat", meta=(ReturnDisplayName="Is Armed"))
+    UFUNCTION(BlueprintPure, Category = "Player|Combat", meta = (ReturnDisplayName = "Is Armed"))
     bool IsWeaponEquipped()
     {
         if (EquippedWeapon == nullptr)
@@ -130,6 +118,33 @@ public:
 
         return false;
     }
+
+    virtual FVector GetPawnViewLocation() const override;
+    virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
+
+
+    /*
+    * Properties
+    */
+
+    /** The default weapon class to spawn and equip (set this to your Broadsword BP derived from APGAS_WeaponBase) */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player|Combat", meta = (AllowPrivateAccess = "true"))
+    TSubclassOf<class APGAS_WeaponBase> DefaultWeaponClass;
+
+    /** The currently equipped weapon instance */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Combat", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<class APGAS_WeaponBase> EquippedWeapon;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player|AI", meta = (AllowPrivateAccess = "true", DisplayName = "AI Sight Socket Name", Tooltip = "The name of the AI sight socket. Leave blank to use default."))
+    FName AISightSocketName;
+
+    /** If true, use Controller yaw; otherwise use Actor yaw for sight direction */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player|AI")
+    bool bUseControllerYawForSight = true;
+
+    /** Debug: Draws a line showing the AI's sight direction */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player|AI")
+    bool bDebugDrawSightLine = false;
 
 protected:
     /*

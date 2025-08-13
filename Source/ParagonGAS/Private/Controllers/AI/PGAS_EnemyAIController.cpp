@@ -35,9 +35,9 @@ APGAS_EnemyAIController::APGAS_EnemyAIController()
     SightConfig->SightRadius = 1000.0f;
     SightConfig->LoseSightRadius = 1500.0f;
     SightConfig->PeripheralVisionAngleDegrees = 35.0f;
-    SightConfig->SetMaxAge(5.f); // How long the perception lasts when player is not seen anymore
-    SightConfig->PointOfViewBackwardOffset = 250.0f; // How far behind the character to check for sight (Peripheral vision)
-    SightConfig->NearClippingRadius = 175.0f; // How close the character can be to still be seen (Peripheral vision)
+    // SightConfig->SetMaxAge(5.f); // How long the perception lasts when player is not seen anymore
+    // SightConfig->PointOfViewBackwardOffset = 250.0f; // How far behind the character to check for sight (Peripheral vision)
+    // SightConfig->NearClippingRadius = 175.0f; // How close the character can be to still be seen (Peripheral vision)
     SightConfig->AutoSuccessRangeFromLastSeenLocation = -1.0f; // How far to check for last seen location (Turned off)
     SightConfig->DetectionByAffiliation.bDetectEnemies = true;
     SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
@@ -49,7 +49,7 @@ APGAS_EnemyAIController::APGAS_EnemyAIController()
     // Add hearing
     HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("HearingConfig"));
     HearingConfig->HearingRange = 1200.f;
-    HearingConfig->SetMaxAge(3.f);
+    // HearingConfig->SetMaxAge(3.f);
     HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
     HearingConfig->DetectionByAffiliation.bDetectFriendlies = true;
     HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;

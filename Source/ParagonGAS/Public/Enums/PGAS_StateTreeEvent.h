@@ -21,9 +21,8 @@
 UENUM(BlueprintType, meta = (DisplayName = "State Tree Event"))
 enum class EPGAS_StateTreeEvent : uint8
 {
-    Idle    UMETA(DisplayName = "Idle"),
-    Attack  UMETA(DisplayName = "Attack"),
-    Patrol  UMETA(DisplayName = "Patrol"),
-    Flee    UMETA(DisplayName = "Flee"),
-    Search  UMETA(DisplayName = "Search"),
+    Unknown    UMETA(DisplayName = "Unknown"),
+    Idle       UMETA(DisplayName = "Idle"),
+    Patrol     UMETA(DisplayName = "Patrol"),
+    Attack     UMETA(DisplayName = "Attack")
 };

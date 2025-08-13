@@ -30,6 +30,7 @@
 #include <Characters/Player/PGAS_PlayerCharacter.h>
 #include <Components/PGAS_StateTreeAIComponent.h">
 #include <Enums/PGAS_StimulusSenseType.h>
+#include <Enums/PGAS_StateTreeEvent.h>
 #include "PGAS_EnemyAIController.generated.h"
 
 
@@ -158,6 +159,9 @@ public:
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Output, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<AActor> AcquiredTarget = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Output, meta = (AllowPrivateAccess = "true"))
+	EPGAS_StateTreeEvent CurrentStateTreeState;
 
 protected:
 

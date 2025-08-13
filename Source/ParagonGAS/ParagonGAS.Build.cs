@@ -24,7 +24,8 @@ public class ParagonGAS : ModuleRules
 			"NavigationSystem",
 			"AnimGraphRuntime",
 			"GameplayStateTreeModule",
-			"ApplicationCore"
+			"ApplicationCore",
+			"PropertyBindingUtils"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {

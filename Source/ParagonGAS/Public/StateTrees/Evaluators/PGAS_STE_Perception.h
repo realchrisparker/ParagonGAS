@@ -172,17 +172,9 @@ private:
                 EventTag = FGameplayTag::RequestGameplayTag(FName("StateTree.Event.Attack"));
                 LastEvent = EPGAS_StateTreeEvent::Attack;
                 break;
-            case EPGAS_StateTreeEvent::Search:
-                EventTag = FGameplayTag::RequestGameplayTag(FName("StateTree.Event.Attack.Search"));
-                LastEvent = EPGAS_StateTreeEvent::Search;
-                break;
             case EPGAS_StateTreeEvent::Patrol:
                 EventTag = FGameplayTag::RequestGameplayTag(FName("StateTree.Event.Patrol"));
                 LastEvent = EPGAS_StateTreeEvent::Patrol;
-                break;
-            case EPGAS_StateTreeEvent::Flee:
-                EventTag = FGameplayTag::RequestGameplayTag(FName("StateTree.Event.Flee"));
-                LastEvent = EPGAS_StateTreeEvent::Flee;
                 break;
             default:
                 return; // Ignore unknown events

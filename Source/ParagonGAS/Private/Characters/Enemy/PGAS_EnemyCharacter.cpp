@@ -100,3 +100,63 @@ void APGAS_EnemyCharacter::EquipDefaultWeapon()
     NewWeapon->EquipToMesh(GetMesh());
     EquippedWeapon = NewWeapon;
 }
+
+/**
+ * Get the location of the pawn's view.
+ */
+FVector APGAS_EnemyCharacter::GetPawnViewLocation() const
+{
+    if (AISightSocketName != NAME_None)
+    {
+        if (GetMesh() && GetMesh()->DoesSocketExist(AISightSocketName))
+        {
+            return GetMesh()->GetSocketLocation(AISightSocketName);
+        }
+    }
+
+    // Fallback to default capsule location if socket missing
+    return Super::GetPawnViewLocation();
+}
+
+void APGAS_EnemyCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const 
+{
+    // Location: from the socket if available (keeps Step 1 behavior)
+    if (const USkeletalMeshComponent* MeshComp = GetMesh())
+    {
+        if (AISightSocketName != NAME_None && MeshComp->DoesSocketExist(AISightSocketName))
+        {
+            OutLocation = MeshComp->GetSocketLocation(AISightSocketName);
+        }
+        else
+        {
+            OutLocation = Super::GetPawnViewLocation();
+        }
+    }
+    else
+    {
+        OutLocation = Super::GetPawnViewLocation();
+    }
+
+    // Rotation: force a stable, forward-facing yaw; flatten pitch/roll
+    FRotator BaseRot;
+    if (bUseControllerYawForSight && Controller)
+    {
+        BaseRot = Controller->GetControlRotation();
+    }
+    else
+    {
+        BaseRot = GetActorRotation();
+    }
+
+    BaseRot.Pitch = 0.f;
+    BaseRot.Roll = 0.f;
+    OutRotation = BaseRot;
+
+    // Debug line
+    if (bDebugDrawSightLine)
+    {
+        const FVector End = OutLocation + OutRotation.Vector() * 300.f; // adjustable length
+        DrawDebugLine(GetWorld(), OutLocation, End, FColor::Green, false, -1.f, 0, 2.f);
+        DrawDebugSphere(GetWorld(), End, 8.f, 8, FColor::Red, false, -1.f);
+    }
+}

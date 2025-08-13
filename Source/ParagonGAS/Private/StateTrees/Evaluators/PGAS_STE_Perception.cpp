@@ -43,6 +43,9 @@ void UPGAS_STE_Perception::TreeStart(FStateTreeExecutionContext& Context)
     AIController->OnHearingStimulusForgotten.AddDynamic(this, &UPGAS_STE_Perception::HandleHearingStimulusForgotten);
     AIController->OnDamageStimulusDetected.AddDynamic(this, &UPGAS_STE_Perception::HandleDamageStimulus);
 
+    // Set the initial state
+    AIController->CurrentStateTreeState = EPGAS_StateTreeEvent::Unknown; // Update the AIController's state tree state
+
     // Get the Pawn from the AI Controller
     APawn* OwnerPawn = AIController->GetPawn();
     if (!OwnerPawn)
@@ -84,6 +87,8 @@ void UPGAS_STE_Perception::TreeStop(FStateTreeExecutionContext& Context)
         AIController->OnHearingStimulusDetected.RemoveDynamic(this, &UPGAS_STE_Perception::HandleHearingStimulus);
         AIController->OnHearingStimulusForgotten.RemoveDynamic(this, &UPGAS_STE_Perception::HandleHearingStimulusForgotten);
         AIController->OnDamageStimulusDetected.RemoveDynamic(this, &UPGAS_STE_Perception::HandleDamageStimulus);
+
+        AIController->CurrentStateTreeState = EPGAS_StateTreeEvent::Unknown; // Update the AIController's state tree state
     }
 
     StateTreeComp = nullptr; // Clear the StateTree component reference
@@ -93,20 +98,30 @@ void UPGAS_STE_Perception::TreeStop(FStateTreeExecutionContext& Context)
 // Broadcast handlers for perception events
 void UPGAS_STE_Perception::HandleDamageStimulus(AActor* Actor, const FAIStimulus& Stimulus)
 {
-    AcquiredTarget = Actor;
-    if (AIController.IsValid())
-        AIController->AcquiredTarget = Actor; // Clear the AIController's target
-    OnDamageStimulus(Actor, Stimulus);
-    SendEvent(EPGAS_StateTreeEvent::Attack); // Send event to StateTree
+    if (AIController->CurrentStateTreeState != EPGAS_StateTreeEvent::Attack)
+    {
+        AcquiredTarget = Actor;
+        if (AIController.IsValid())
+            AIController->AcquiredTarget = Actor; // Clear the AIController's target
+        OnDamageStimulus(Actor, Stimulus);
+
+        SendEvent(EPGAS_StateTreeEvent::Attack); // Send event to StateTree
+        AIController->CurrentStateTreeState = EPGAS_StateTreeEvent::Attack; // Update the AIController's state tree state
+    }
 }
 
 void UPGAS_STE_Perception::HandleSightStimulus(AActor* Actor, const FAIStimulus& Stimulus)
 {
-    AcquiredTarget = Actor;
-    if (AIController.IsValid())
-        AIController->AcquiredTarget = Actor; // Clear the AIController's target
-    OnSightStimulus(Actor, Stimulus);
-    SendEvent(EPGAS_StateTreeEvent::Attack); // Send event to StateTree
+    if (AIController->CurrentStateTreeState != EPGAS_StateTreeEvent::Attack)
+    {
+        AcquiredTarget = Actor;
+        if (AIController.IsValid())
+            AIController->AcquiredTarget = Actor; // Clear the AIController's target
+        OnSightStimulus(Actor, Stimulus);
+
+        SendEvent(EPGAS_StateTreeEvent::Attack); // Send event to StateTree
+        AIController->CurrentStateTreeState = EPGAS_StateTreeEvent::Attack; // Update the AIController's state tree state
+    }
 }
 
 void UPGAS_STE_Perception::HandleSightStimulusForgotten(AActor* Actor)
@@ -114,16 +129,21 @@ void UPGAS_STE_Perception::HandleSightStimulusForgotten(AActor* Actor)
     AcquiredTarget = nullptr;
     if (AIController.IsValid())
         AIController->AcquiredTarget = nullptr; // Clear the AIController's target
+    AIController->CurrentStateTreeState = EPGAS_StateTreeEvent::Unknown; // Update the AIController's state tree state
     OnSightStimulusForgotten(Actor);
 }
 
 void UPGAS_STE_Perception::HandleHearingStimulus(AActor* Actor, const FAIStimulus& Stimulus)
 {
-    AcquiredTarget = Actor;
-    if (AIController.IsValid())
-        AIController->AcquiredTarget = Actor; // Clear the AIController's target
-    OnHearingStimulus(Actor, Stimulus);
-    SendEvent(EPGAS_StateTreeEvent::Attack); // Send event to StateTree
+    if (AIController->CurrentStateTreeState != EPGAS_StateTreeEvent::Attack)
+    {
+        AcquiredTarget = Actor;
+        if (AIController.IsValid())
+            AIController->AcquiredTarget = Actor; // Clear the AIController's target
+        OnHearingStimulus(Actor, Stimulus);
+        SendEvent(EPGAS_StateTreeEvent::Attack); // Send event to StateTree
+        AIController->CurrentStateTreeState = EPGAS_StateTreeEvent::Attack; // Update the AIController's state tree state
+    }
 }
 
 void UPGAS_STE_Perception::HandleHearingStimulusForgotten(AActor* Actor)
@@ -131,5 +151,6 @@ void UPGAS_STE_Perception::HandleHearingStimulusForgotten(AActor* Actor)
     AcquiredTarget = nullptr;
     if (AIController.IsValid())
         AIController->AcquiredTarget = nullptr; // Clear the AIController's target
+    AIController->CurrentStateTreeState = EPGAS_StateTreeEvent::Unknown; // Update the AIController's state tree state
     OnHearingStimulusForgotten(Actor);
 }
