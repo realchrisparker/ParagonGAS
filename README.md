@@ -6,13 +6,17 @@ Version 5.6
 
 ## Epic Unreal Features
 - Open World
-- Gameplay Ability System
-- StateTree
-- Gameplay Tags
+- Gameplay Ability System and Gameplay Tags
+- StateTree (with EQS)
+- Asset Registry
+- Custom Subsystems
+- Safe Thread Animation
+- Custom Anim Notifiers
 
 # FAB Content Used
 - Paragon: Wukong (https://www.fab.com/listings/27054d0c-c26e-4fe3-b6f9-fa778dfcb8b6)
-- Shadow Knight Armor (https://www.fab.com/listings/397751e3-1ec5-4a76-b7e3-7850e4e1bbc2)
+- Seven Swords (https://www.fab.com/listings/9184a25a-4124-4b3f-8909-f7d2c6104c8e)
+- Kunai (https://www.fab.com/listings/bd0e0b2a-46c8-4f98-8df9-c8131a16a433)
 - Mixamo Animations
 
 # Engine Commands Used
