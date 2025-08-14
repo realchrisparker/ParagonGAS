@@ -598,10 +598,10 @@ void APGAS_PlayerCharacter::WeaponTrace()
         ObjectTypes,
         false,
         IgnoreActors, // Actors to ignore
-        EDrawDebugTrace::ForDuration,
+        EDrawDebugTrace::None,
         OutHits,
         true
-    );
+        );
 
     if (bHit)
     {

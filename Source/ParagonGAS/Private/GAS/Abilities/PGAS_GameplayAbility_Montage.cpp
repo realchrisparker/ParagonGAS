@@ -272,7 +272,7 @@ void UPGAS_GameplayAbility_Montage::WeaponTrace()
         IgnoreActors.Add(Character); // Ignore self in the trace
 
         TArray<FHitResult> OutHits;
-        bool bHit = Character->EquippedWeapon->SphereTraceBlade(SphereRadius, ObjectTypes, IgnoreActors, OutHits, true);
+        bool bHit = Character->EquippedWeapon->SphereTraceBlade(SphereRadius, ObjectTypes, IgnoreActors, OutHits, false);
         if (bHit)
         {
             for (const FHitResult& Hit : OutHits)

@@ -34,8 +34,8 @@ UCLASS(Blueprintable,
         DisplayName = "AI Perception Evaluator",
         category = "PGAS",
         ShortTooltip = "Evaluates the AI perception of the context actor.",
-        Tooltip = "Monitors the AI perception GAS attribute of the context actor.",
-        Icon = "Check_Circle")
+        Tooltip = "Monitors the AI perception GAS attribute of the context actor."
+    )
 )
 class PARAGONGAS_API UPGAS_STE_Perception : public UStateTreeEvaluatorBlueprintBase
 {
@@ -80,14 +80,6 @@ public:
             "PerceptionDesc",
             "Monitors the Context Actor's AI perceptions"
         );
-    };
-
-    virtual FName GetIconName() const {
-        return FName("Check_Circle");
-    };
-
-    virtual FColor GetIconColor() const {
-        return FColor::Red;
     };
 
 #endif

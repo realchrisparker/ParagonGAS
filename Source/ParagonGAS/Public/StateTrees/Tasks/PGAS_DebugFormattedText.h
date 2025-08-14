@@ -129,10 +129,6 @@ public:
         return FName("Info_Circle");
     };
 
-    // virtual FColor GetIconColor() const {
-    //     return FColor::Red;
-    // };
-
 #endif
 
 protected:

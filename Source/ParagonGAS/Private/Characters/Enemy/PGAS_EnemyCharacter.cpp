@@ -157,6 +157,6 @@ void APGAS_EnemyCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator&
     {
         const FVector End = OutLocation + OutRotation.Vector() * 300.f; // adjustable length
         DrawDebugLine(GetWorld(), OutLocation, End, FColor::Green, false, -1.f, 0, 2.f);
-        DrawDebugSphere(GetWorld(), End, 8.f, 8, FColor::Red, false, -1.f);
+        DrawDebugSphere(GetWorld(), End, 8.f, 8, FColor::Transparent, false, -1.f);
     }
 }
