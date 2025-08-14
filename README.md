@@ -1,5 +1,5 @@
 # Paragon GAS
-Paragon GAS (P-GAS) is an open-world gameplay ability system sample game design that teaches developers how to build open-world RPG games using GAS and free fab assets.
+Paragon GAS (P-GAS) is an open-world gameplay ability system sample game that teaches developers how to use several of Unreal Engine features together to build a playable world using free FAB store assets.
 
 Epic Engine
 Version 5.6
