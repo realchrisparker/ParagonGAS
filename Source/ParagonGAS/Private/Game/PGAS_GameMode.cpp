@@ -16,7 +16,8 @@
 APGAS_GameMode::APGAS_GameMode()
 {
     // Set default pawn class to our custom player character
-    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(TEXT("/Game/_Game/Characters/Players/Wukong/BP_Wukong.BP_Wukong_C"));
+    // static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(TEXT("/Game/_Game/Characters/Players/Wukong/BP_Wukong.BP_Wukong_C"));
+    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(TEXT("/Game/_Game/Characters/Players/Countess/BP_Countess.BP_Countess_C"));
     if (PlayerPawnClassFinder.Succeeded())
     {
        DefaultPawnClass = PlayerPawnClassFinder.Class;

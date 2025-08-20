@@ -60,6 +60,9 @@ APGAS_PlayerCharacter::APGAS_PlayerCharacter()
      */
     AttributeSet = CreateDefaultSubobject<UPlayerCharacterAttributeSet>(TEXT("AttributeSet"));
 
+    // Create the combat core component
+    CombatCoreComponent = CreateDefaultSubobject<UPGAS_CombatCoreComponent>(TEXT("Combat Core Component"));
+
     // Default character level
     SetCharacterLevel(1);
 
@@ -211,13 +214,13 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
             EnhancedInputComp->BindAction(IA_Sprint, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::SprintStartAction);
             EnhancedInputComp->BindAction(IA_Sprint, ETriggerEvent::Completed, this, &APGAS_PlayerCharacter::SprintReleaseAction);
         }
-        if (IA_PrimaryAttack)
+        if (IA_LeftHandLightAttack)
         {
-            EnhancedInputComp->BindAction(IA_PrimaryAttack, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::PrimaryAttackAction);
+            EnhancedInputComp->BindAction(IA_LeftHandLightAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::LeftHandLightAttackAction);
         }
-        if (IA_SecondaryAttack)
+        if (IA_RightHandLightAttack)
         {
-            EnhancedInputComp->BindAction(IA_SecondaryAttack, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::SecondaryAttackAction);
+            EnhancedInputComp->BindAction(IA_RightHandLightAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::RightHandLightAttackAction);
         }
         if (IA_Block)
         {
@@ -453,13 +456,13 @@ void APGAS_PlayerCharacter::BlockReleaseAction(const FInputActionValue& Value)
 }
 
 /*
- * PrimaryAttackAction function to handle primary attack input.
- * This function is called when the IA_PrimaryAttack input action is triggered.
+ * LeftHandLightAttackAction function to handle left hand attack input.
+ * This function is called when the IA_LeftHandLightAttack input action is triggered.
 */
-void APGAS_PlayerCharacter::PrimaryAttackAction(const FInputActionValue& Value)
+void APGAS_PlayerCharacter::LeftHandLightAttackAction(const FInputActionValue& Value)
 {
     // Activate the melee GAS ability.
-    if (ActivatePrimaryAttackAbility(true))
+    if (ActivateLeftHandAttackAbility(true))
     {
         SetIsAttacking(true); // Set the attacking flag to true
     }
@@ -469,10 +472,10 @@ void APGAS_PlayerCharacter::PrimaryAttackAction(const FInputActionValue& Value)
     bIdleAnimationPlayed = false;
 }
 
-void APGAS_PlayerCharacter::SecondaryAttackAction(const FInputActionValue& Value)
+void APGAS_PlayerCharacter::RightHandLightAttackAction(const FInputActionValue& Value)
 {
     // Activate the secondary attack GAS ability.
-    if (ActivateSecondaryAttackAbility(true))
+    if (ActivateRightHandLightAttackAbility(true))
     {
         SetIsAttacking(true); // Set the attacking flag to true
     }
@@ -509,11 +512,11 @@ void APGAS_PlayerCharacter::SetupDefaultAbilities()
     {
         // Give the player character a main attack ability.
         if (PrimaryAttackAbility)
-            PrimaryAttackAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(PrimaryAttackAbility, GetCharacterLevel(), INDEX_NONE, this));
+            LeftHandLightAttackAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(PrimaryAttackAbility, GetCharacterLevel(), INDEX_NONE, this));
 
         // Give the player character a secondary attack ability.
         if (SecondaryAttackAbility)
-            SecondaryAttackAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(SecondaryAttackAbility, GetCharacterLevel(), INDEX_NONE, this));
+            RightHandLightAttackAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(SecondaryAttackAbility, GetCharacterLevel(), INDEX_NONE, this));
     }
 }
 
@@ -576,7 +579,8 @@ void APGAS_PlayerCharacter::WeaponTrace()
     if (!World) return;
 
     // Get the start and end locations of the staff sockets.
-    FVector Start = bSecondaryAttacking ? GetStaffStartExtendedSocketLocation() : GetStaffStartSocketLocation();
+    // FVector Start = bSecondaryAttacking ? GetStaffStartExtendedSocketLocation() : GetStaffStartSocketLocation();
+    FVector Start = GetStaffStartSocketLocation();
     FVector End = GetStaffEndSocketLocation();
     float SphereRadius = 25.0f;
 
@@ -650,30 +654,31 @@ void APGAS_PlayerCharacter::WeaponTrace()
  * This function checks if the character can activate the melee ability and performs the activation.
  * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
 */
-bool APGAS_PlayerCharacter::ActivatePrimaryAttackAbility(bool AllowRemoteActivation)
+bool APGAS_PlayerCharacter::ActivateLeftHandAttackAbility(bool AllowRemoteActivation)
 {
     UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 
-    // Ensure the AbilitySystemComponent and PrimaryAttackAbilitySpecHandle are valid before proceeding
-    if (!ASC || !PrimaryAttackAbilitySpecHandle.IsValid())
+    // Ensure the AbilitySystemComponent and LeftHandLightAttackAbilitySpecHandle are valid before proceeding
+    if (!ASC || !LeftHandLightAttackAbilitySpecHandle.IsValid())
         return false;
 
-    // Bind to our events to handle montage state notifications in C++
-    UPGAS_GameplayAbility_Montage::OnMontageStateNotify.RemoveAll(this); // Unbind any previous bindings to avoid duplicates
-    UPGAS_GameplayAbility_Montage::OnMontageStateNotify.AddUObject(this, &APGAS_PlayerCharacter::HandleMontageStateNotify); // Bind
+    // // Bind to our events to handle montage state notifications in C++
+    // UPGAS_GameplayAbility_Montage::OnMontageStateNotify.RemoveAll(this); // Unbind any previous bindings to avoid duplicates
+    // UPGAS_GameplayAbility_Montage::OnMontageStateNotify.AddUObject(this, &APGAS_PlayerCharacter::HandleMontageStateNotify); // Bind
 
-    // Build the stamina reduction effect spec and apply it.
-    FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(UPGAS_GE_InstantStaminaReduction::StaticClass(), GetCharacterLevel(), ASC->MakeEffectContext());
-    if (SpecHandle.IsValid())
-    {
-        SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction")), -0.238f); // Set the magnitude
-        ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-    }
+    // // Build the stamina reduction effect spec and apply it.
+    // FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(UPGAS_GE_InstantStaminaReduction::StaticClass(), GetCharacterLevel(), ASC->MakeEffectContext());
+    // if (SpecHandle.IsValid())
+    // {
+    //     SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction")), -0.238f); // Set the magnitude
+    //     ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+    // }
 
-    bSecondaryAttacking = false;
+    bLeftHandAttacking = false;
 
     // Activate the ability
-    return ASC->TryActivateAbility(PrimaryAttackAbilitySpecHandle, AllowRemoteActivation);
+    return CombatCoreComponent->ActivateAbilityByTag(CombatCoreComponent->AttackActive_LeftTag, EPGAS_WeaponHand::Left);
+    // ASC->TryActivateAbility(LeftHandLightAttackAbilitySpecHandle, AllowRemoteActivation);
 }
 
 /**
@@ -681,12 +686,12 @@ bool APGAS_PlayerCharacter::ActivatePrimaryAttackAbility(bool AllowRemoteActivat
  * This function checks if the character can activate the secondary attack ability and performs the activation.
  * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
 */
-bool APGAS_PlayerCharacter::ActivateSecondaryAttackAbility(bool AllowRemoteActivation)
+bool APGAS_PlayerCharacter::ActivateRightHandLightAttackAbility(bool AllowRemoteActivation)
 {
     UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 
-    // Ensure the AbilitySystemComponent and SecondaryAttackAbilitySpecHandle are valid before proceeding
-    if (!ASC || !SecondaryAttackAbilitySpecHandle.IsValid())
+    // Ensure the AbilitySystemComponent and RightHandLightAttackAbilitySpecHandle are valid before proceeding
+    if (!ASC || !RightHandLightAttackAbilitySpecHandle.IsValid())
         return false;
 
     // Bind to our events to handle montage state notifications in C++
@@ -701,10 +706,11 @@ bool APGAS_PlayerCharacter::ActivateSecondaryAttackAbility(bool AllowRemoteActiv
         ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
     }
 
-    bSecondaryAttacking = true;
+    bRightHandAttacking = true;
 
     // Activate the ability
-    return ASC->TryActivateAbility(SecondaryAttackAbilitySpecHandle, AllowRemoteActivation);
+    return CombatCoreComponent->ActivateAbilityByTag(CombatCoreComponent->AttackActive_RightTag, EPGAS_WeaponHand::Right);
+    // return ASC->TryActivateAbility(RightHandLightAttackAbilitySpecHandle, AllowRemoteActivation);
 }
 
 /**

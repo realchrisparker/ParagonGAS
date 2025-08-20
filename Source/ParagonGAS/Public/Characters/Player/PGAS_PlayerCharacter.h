@@ -34,6 +34,7 @@
 #include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <UserWidgets/PGAS_InGame_HUD.h>
+#include <Components/PGAS_CombatCoreComponent.h>
 #include "PGAS_PlayerCharacter.generated.h"
 
 UCLASS()
@@ -56,7 +57,7 @@ public:
     */
     UFUNCTION(BlueprintCallable, Category = "Player|Abilities|Melee",
         meta = (DisplayName = "Activate Melee Ability", ToolTip = "Activates the character's melee ability. This function checks if the character can activate the melee ability and performs the activation."))
-    bool ActivatePrimaryAttackAbility(bool AllowRemoteActivation = true);
+    bool ActivateLeftHandAttackAbility(bool AllowRemoteActivation = true);
 
     /**
      * Activates the character's primary attack ability
@@ -65,7 +66,7 @@ public:
     */
     UFUNCTION(BlueprintCallable, Category = "Player|Abilities|Melee",
         meta = (DisplayName = "Activate Secondary Ability", ToolTip = "Activates the character's secondary ability. This function checks if the character can activate the secondary ability and performs the activation."))
-    bool ActivateSecondaryAttackAbility(bool AllowRemoteActivation = true);
+    bool ActivateRightHandLightAttackAbility(bool AllowRemoteActivation = true);
 
     /**
      * Traces the weapon to detect hits.
@@ -376,13 +377,13 @@ protected:
     /** Called by the IA_Sprint input action to handle sprinting when released. */
     void SprintReleaseAction(const FInputActionValue& Value);
 
-    /** Called by the IA_PrimaryAttack input action to handle primary attacking. */
+    /** Called by the IA_LeftHandLightAttack input action to handle left hand light attacking. */
     UFUNCTION()
-    void PrimaryAttackAction(const FInputActionValue& Value);
+    void LeftHandLightAttackAction(const FInputActionValue& Value);
 
-    /** Called by the IA_SecondaryAttack input action to handle secondary attacking. */
+    /** Called by the IA_RightHandLightAttack input action to handle right hand light attacking. */
     UFUNCTION()
-    void SecondaryAttackAction(const FInputActionValue& Value);
+    void RightHandLightAttackAction(const FInputActionValue& Value);
 
     /** Called by the IA_Block input action to handle blocking when started. */
     UFUNCTION()
@@ -446,18 +447,18 @@ protected:
     TObjectPtr<UInputAction> IA_Sprint;
 
     /**
-     * The Input Action asset for primary attacking (e.g. "IA_PrimaryAttack").
+     * The Input Action asset for left hand light attacking (e.g. "IA_LeftHandLightAttack").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Primary Attack Action"))
-    TObjectPtr<UInputAction> IA_PrimaryAttack;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Left Hand Light Attack Action"))
+    TObjectPtr<UInputAction> IA_LeftHandLightAttack;
 
     /**
-     * The Input Action asset for secondary attacking (e.g. "IA_SecondaryAttack").
+     * The Input Action asset for right hand light attacking (e.g. "IA_RightHandLightAttack").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Secondary Attack Action"))
-    TObjectPtr<UInputAction> IA_SecondaryAttack;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Right Hand Light Attack Action"))
+    TObjectPtr<UInputAction> IA_RightHandLightAttack;
 
     /**
      * The Input Action asset for blocking (e.g. "IA_Block").
@@ -484,11 +485,14 @@ private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UPlayerCharacterAttributeSet> AttributeSet;
 
-    UPROPERTY()
-    FGameplayAbilitySpecHandle PrimaryAttackAbilitySpecHandle;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UPGAS_CombatCoreComponent> CombatCoreComponent;
 
     UPROPERTY()
-    FGameplayAbilitySpecHandle SecondaryAttackAbilitySpecHandle;
+    FGameplayAbilitySpecHandle LeftHandLightAttackAbilitySpecHandle;
+
+    UPROPERTY()
+    FGameplayAbilitySpecHandle RightHandLightAttackAbilitySpecHandle;
 
     /**
      * Set of actors that have already been hit by the weapon trace
@@ -508,7 +512,8 @@ private:
     float IdleTime = 0.0f; // The time the character has been idle.
     bool bIdleAnimationPlayed = false; // Whether the idle animation has been played or not.
 
-    bool bSecondaryAttacking = false; // Whether the character is currently performing a secondary attack.
+    bool bLeftHandAttacking = false; // Whether the character is currently performing a left hand attack.
+    bool bRightHandAttacking = false; // Whether the character is currently performing a right hand attack.
 
     /*
     * Functions
