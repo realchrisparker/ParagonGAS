@@ -19,6 +19,7 @@
 #include <Characters/Enemy/PGAS_EnemyCharacter.h>
 #include <GAS/Abilities/PGAS_ReceiveMeleeDamageAbility.h>
 
+
 APGAS_EnemyCharacter::APGAS_EnemyCharacter()
 {
     // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -30,9 +31,6 @@ APGAS_EnemyCharacter::APGAS_EnemyCharacter()
 
     // Default character level
     SetCharacterLevel(1);
-
-    // Add default gameplay tags.
-    SetupDefaultGameplayTags();
 }
 
 // Called when the game starts or when spawned
@@ -54,17 +52,6 @@ void APGAS_EnemyCharacter::BeginPlay()
 void APGAS_EnemyCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-}
-
-/*
- * SetupDefaultGameplayTags function to set up default gameplay tags for this character.
- * This is typically called in the constructor or BeginPlay.
-*/
-void APGAS_EnemyCharacter::SetupDefaultGameplayTags()
-{
-    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Type.Enemy")));
-    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.State.Alive")));
-    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove")));
 }
 
 // Handles changes to the character's health attribute

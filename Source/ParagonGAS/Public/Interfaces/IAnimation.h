@@ -19,30 +19,36 @@
 
  #include "CoreMinimal.h"
  #include "UObject/Interface.h"
- #include "ICharacterCombat.generated.h"
+ #include "IAnimation.generated.h"
 
- UINTERFACE(BlueprintType, meta = (DisplayName = "Character Combat Interface"))
- class PARAGONGAS_API UICharacterCombat : public UInterface
+ UINTERFACE(BlueprintType, meta = (DisplayName = "PGAS Animation Interface"))
+     class PARAGONGAS_API UIAnimation : public UInterface
  {
      GENERATED_BODY()
  };
 
- class PARAGONGAS_API IICharacterCombat
+ class PARAGONGAS_API IIAnimation
  {
      GENERATED_BODY()
  
  public:
      
-    /**
-      * Performs a weapon trace to detect hits.
-      * This function should be implemented to perform a trace from Start to End.
-      * @return void.
-    */
-     UFUNCTION(Category = "Character|Combat", 
-        meta = (AllowPrivateAccess = "true", 
-            DisplayName = "Weapon Trace",
-            Keywords = "combat trace weapon hit detection", 
-            Tooltip = "Performs a weapon trace to detect hits."))
-     virtual void WeaponTrace() = 0;
+    // Starts blocking with the character.
+     UFUNCTION(Category = "Animation",
+    meta = (AllowPrivateAccess = "true",
+        DisplayName = "Start Blocking",
+        Keywords = "combat block",
+        Tooltip = "Starts blocking with the character.")
+    )
+    virtual void StartBlocking() = 0;
+
+    // Stops blocking with the character.
+    UFUNCTION(Category = "Animation",
+        meta = (AllowPrivateAccess = "true",
+            DisplayName = "Stop Blocking",
+            Keywords = "combat block",
+            Tooltip = "Stops blocking with the character.")
+    )
+    virtual void StopBlocking() = 0;
  };
   

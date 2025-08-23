@@ -14,6 +14,7 @@
  * PGAS_AnimInstanceBase.h
  * Base class for all Animation Instances in ParagonGAS.
  * This class serves as a foundation for custom animation instances, providing a common interface and functionality.
+ * Implements UAnimInstance and IIAnimation
 */
 
 #pragma once
@@ -22,13 +23,14 @@
 #include "Animation/AnimInstance.h"
 #include "KismetAnimationLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include <Interfaces/IAnimation.h>
 #include "PGAS_AnimInstanceBase.generated.h"
 
 /**
  * Base class for all Animation Instances in ParagonGAS
  */
 UCLASS(meta=(DisplayName="PGAS Anim Instance Base", ShortTooltip="Base class for all Animation Instances in ParagonGAS"))
-class PARAGONGAS_API UPGAS_AnimInstanceBase : public UAnimInstance
+class PARAGONGAS_API UPGAS_AnimInstanceBase : public UAnimInstance, public IIAnimation
 {
 	GENERATED_BODY()
 
@@ -49,6 +51,16 @@ public:
 	// This function is thread-safe and can be called from any thread.
 	UFUNCTION(BlueprintPure, Category = "Animation", meta = (BlueprintThreadSafe))
 	APawn* GetOwningPawn() { return OwningPawn.Get(); }
+
+	// Override functions from IIAnimation interface
+	virtual void StartBlocking() override
+	{
+		IsBlocking = true;
+	}
+	virtual void StopBlocking() override
+	{
+		IsBlocking = false;
+	}
 
 	/*
 	 * Properties
@@ -80,6 +92,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animation")
 	bool FullBody;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animation")
+	bool IsBlocking;
 
 protected:
 	/*

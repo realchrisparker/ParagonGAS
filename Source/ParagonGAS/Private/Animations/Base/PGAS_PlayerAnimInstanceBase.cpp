@@ -15,7 +15,7 @@
  * Base class for all Player Animation Instances in ParagonGAS.
 */
 
-#include "Animations/PGAS_PlayerAnimInstanceBase.h"
+#include "Animations/Base/PGAS_PlayerAnimInstanceBase.h"
 #include "Kismet/KismetMathLibrary.h"
 
 // Constructor

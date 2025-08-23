@@ -19,6 +19,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayEffect.h"
+#include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
 #include "PGAS_GE_InfiniteStaminaReduction.generated.h"
 
 UCLASS(BlueprintType, Blueprintable, Category = "Gameplay Ability System|Effects", meta = (DisplayName = "Infinite Stamina Reduction"))
@@ -27,7 +28,22 @@ class PARAGONGAS_API UPGAS_GE_InfiniteStaminaReduction : public UGameplayEffect
     GENERATED_BODY()
 
 public:
-    UPGAS_GE_InfiniteStaminaReduction();
+    // Constructor
+    UPGAS_GE_InfiniteStaminaReduction() {
+        DurationPolicy = EGameplayEffectDurationType::Infinite;
+
+        Period.Value = 0.35f; // How often the effect applies
+
+        FGameplayModifierInfo ModifierInfo;
+        ModifierInfo.Attribute = UPlayerCharacterAttributeSet::GetStaminaAttribute();
+        ModifierInfo.ModifierOp = EGameplayModOp::Additive;
+
+        FSetByCallerFloat SetByCaller;
+        SetByCaller.DataTag = StaminaReductionTag;
+        ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(SetByCaller);
+
+        Modifiers.Add(ModifierInfo);
+    }
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect|Config")
     FGameplayTag StaminaReductionTag = FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction"));

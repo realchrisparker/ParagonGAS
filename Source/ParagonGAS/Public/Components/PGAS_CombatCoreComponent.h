@@ -134,6 +134,12 @@ public:
     UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Hitbox")
     void Notify_HitboxStop(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both);
 
+    // Block window
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
+    void Notify_BlockWindowBegin(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both, float DurationSec = 0.f);
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
+    void Notify_BlockWindowEnd(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both);
+
     // ---------------------------
     // Events
     // ---------------------------
@@ -178,6 +184,8 @@ public:
     FGameplayTag ParryWindowTag;
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
     FGameplayTag DodgeIFrameTag;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
+    FGameplayTag BlockWindowTag;
 
     /** Per-hand overrides (if set, take precedence over generic) */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
@@ -200,6 +208,12 @@ public:
     FGameplayTag HandContext_LeftTag;  // e.g., Combat.Hand.Left
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
     FGameplayTag HandContext_RightTag; // e.g., Combat.Hand.Right
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
+    FGameplayTag BlockWindow_LeftTag;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
+    FGameplayTag BlockWindow_RightTag;
 
     /** Default duration to keep the hand-context tag after activation (<=0 uses one frame/tick). */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Config")

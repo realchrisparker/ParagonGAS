@@ -20,6 +20,8 @@
 #include "CoreMinimal.h"
 #include "Blueprint/StateTreeConditionBlueprintBase.h"
 #include "GameplayTagContainer.h"
+#include <Characters/Enemy/PGAS_EnemyCharacter.h>
+#include <Controllers/AI/PGAS_EnemyAIController.h>
 #include "PGAS_IsCharacterArmed.generated.h"
 
 

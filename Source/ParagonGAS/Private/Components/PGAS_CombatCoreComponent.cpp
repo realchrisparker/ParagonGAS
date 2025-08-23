@@ -209,6 +209,16 @@ void UPGAS_CombatCoreComponent::Notify_HitboxStop(EPGAS_WeaponHand Hand)
 	OnHitboxStopHanded.Broadcast(Hand);
 }
 
+void UPGAS_CombatCoreComponent::Notify_BlockWindowBegin(EPGAS_WeaponHand Hand, float DurationSec)
+{
+    ResolveAndApplyForHand(BlockWindowTag, BlockWindow_LeftTag, BlockWindow_RightTag, Hand, DurationSec, true);
+}
+
+void UPGAS_CombatCoreComponent::Notify_BlockWindowEnd(EPGAS_WeaponHand Hand)
+{
+    ResolveAndApplyForHand(BlockWindowTag, BlockWindow_LeftTag, BlockWindow_RightTag, Hand, 0.f, false);
+}
+
 // ---------------------------
 // Internals
 // ---------------------------

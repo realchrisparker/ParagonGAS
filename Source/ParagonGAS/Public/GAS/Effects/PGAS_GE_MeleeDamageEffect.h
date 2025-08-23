@@ -19,6 +19,9 @@
 
 #include "CoreMinimal.h"
 #include "GameplayEffect.h"
+#include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
+#include <GAS/AttributeSets/EnemyAttributeSet.h>
+#include <GAS/Effects/Calculations/PGAS_MeleeDamageExecutionCalc.h>
 #include "PGAS_GE_MeleeDamageEffect.generated.h"
 
  /**
@@ -30,7 +33,23 @@ class PARAGONGAS_API UPGAS_GE_MeleeDamageEffect : public UGameplayEffect
     GENERATED_BODY()
 
 public:
-    UPGAS_GE_MeleeDamageEffect();
+    // Constructor
+    UPGAS_GE_MeleeDamageEffect()
+    {
+        // All other inherited UGameplayEffect options (like DurationPolicy) can be set here as well.
+        DurationPolicy = EGameplayEffectDurationType::Instant;
+
+        // Remove direct Modifiers, execution handles all calculation
+        Modifiers.Empty();
+
+        // Setup execution calculation
+        FGameplayEffectExecutionDefinition ExecDef;
+        ExecDef.CalculationClass = UPGAS_MeleeDamageExecutionCalc::StaticClass();
+
+        // If you want to capture attributes for use in the execution calculation, add them to ExecDef.Modifiers
+
+        Executions.Add(ExecDef);
+    }
 
     /** Type of damage (physical, fire, ice, etc.), as a gameplay tag. */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage")

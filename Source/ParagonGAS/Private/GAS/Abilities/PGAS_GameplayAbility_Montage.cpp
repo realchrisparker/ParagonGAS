@@ -14,6 +14,10 @@
  * PGAS_GameplayAbility_Montage Implementation
  */
 
+////=======
+//// NO LONGER USED. WILL REMOVE FROM SOURCE CONTROL LATER 
+////=======
+
 #include "GAS/Abilities/PGAS_GameplayAbility_Montage.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemComponent.h"
@@ -63,11 +67,11 @@ void UPGAS_GameplayAbility_Montage::ActivateAbility(const FGameplayAbilitySpecHa
         if (ASC)
         {
             UPGAS_AbilitySystemComponent* Custom_ASC = Cast<UPGAS_AbilitySystemComponent>(ASC);
-            if (Custom_ASC)
-            {
-                // Set the current combo step in the ASC
-                Custom_ASC->CurrentComboStep = ComboStep;
-            }
+            // if (Custom_ASC)
+            // {
+            //     // Set the current combo step in the ASC
+            //     Custom_ASC->CurrentComboStep = ComboStep;
+            // }
 
             // Loop through the montage notifies and setup notifications we can trigger events from.
             for (const FAnimNotifyEvent& Notify : MontageToPlay->Notifies)

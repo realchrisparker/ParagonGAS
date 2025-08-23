@@ -20,7 +20,6 @@ UPGAS_AbilitySystemComponent::UPGAS_AbilitySystemComponent()
 {
     // Initialize
     LastActivatedAbility = nullptr;
-    // CurrentComboStep = EPGASComboStep::None;
 
     // Bind ability events
     AbilityActivatedCallbacks.AddUObject(this, &UPGAS_AbilitySystemComponent::HandleAbilityActivated);

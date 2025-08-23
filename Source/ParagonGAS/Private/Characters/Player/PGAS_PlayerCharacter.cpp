@@ -21,7 +21,6 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffectTypes.h"
 #include <GAS/Abilities/PGAS_GameplayAbility_Montage.h>
-#include <GAS/Abilities/PGAS_SprintAbility.h>
 #include <GAS/Effects/PGAS_GE_InstantStaminaReduction.h>
 #include <GAS/Effects/PGAS_GE_InfiniteStaminaReduction.h>
 #include <Data/PGAS_EventAdditionalData.h>
@@ -60,14 +59,8 @@ APGAS_PlayerCharacter::APGAS_PlayerCharacter()
      */
     AttributeSet = CreateDefaultSubobject<UPlayerCharacterAttributeSet>(TEXT("AttributeSet"));
 
-    // Create the combat core component
-    CombatCoreComponent = CreateDefaultSubobject<UPGAS_CombatCoreComponent>(TEXT("Combat Core Component"));
-
     // Default character level
     SetCharacterLevel(1);
-
-    // Add default gameplay tags.
-    SetupDefaultGameplayTags();
 }
 
 // Called when the game starts or when spawned
@@ -318,6 +311,7 @@ void APGAS_PlayerCharacter::LookAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::JumpAction(const FInputActionValue& Value)
 {
+    // Make sure character can Jump.
     if (HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))) == false)
     {
         return;
@@ -361,23 +355,8 @@ void APGAS_PlayerCharacter::JumpReleaseAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::SprintStartAction(const FInputActionValue& Value)
 {
-    if (HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))) == false)
-    {
-        return;
-    }
-
-    // Early-out if we're already falling (i.e., in the air).
-    if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
-    {
-        return;
-    }
-
-    // Activate by tag
-    static FGameplayTag SprintAbilityTag = FGameplayTag::RequestGameplayTag(FName("Character.Ability.Sprint"));
-    ActivateAbilitiesWithTags(FGameplayTagContainer(SprintAbilityTag), true);
-
-    // Add character's movement gameplay tags. (Any gameplay effects tied to movement tags will start.)
-    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Sprinting")));
+    // Activate by input ID
+    GetAbilitySystemComponent()->AbilityLocalInputPressed(static_cast<int32>(EPGAS_AbilityInputID::Sprint));
 
     // Reset idle time and animation flag when movement starts
     IdleTime = 0.f;
@@ -392,13 +371,9 @@ void APGAS_PlayerCharacter::SprintReleaseAction(const FInputActionValue& Value)
 {
     if (GetAbilitySystemComponent())
     {
-        // This deactivates all instances of the Sprint ability (robust for multiplayer, prediction, etc.)
-        static FGameplayTagContainer SprintAbilityTagContainer(FGameplayTag::RequestGameplayTag(FName("Character.Ability.Sprint")));
-        GetAbilitySystemComponent()->CancelAbilities(&SprintAbilityTagContainer, nullptr, nullptr);
+        // Release sprint input
+        GetAbilitySystemComponent()->AbilityLocalInputReleased(static_cast<int32>(EPGAS_AbilityInputID::Sprint));
     }
-
-    // Remove character's movement gameplay tags. (Any gameplay effects tied to movement tags will stop.)
-    RemoveGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Sprinting")));
 
     // Reset idle time and animation flag when movement stops
     IdleTime = 0.f;
@@ -411,23 +386,9 @@ void APGAS_PlayerCharacter::SprintReleaseAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::BlockStartedAction(const FInputActionInstance& Value)
 {
-    if (HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))) == false)
-    {
-        return;
-    }
-
-    // Early-out if we're already falling (i.e., in the air).
-    if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
-    {
-        return;
-    }
-
-    // Activate by tag
-    static FGameplayTag BlockAbilityTag = FGameplayTag::RequestGameplayTag(FName("Character.Ability.Block"));
-    ActivateAbilitiesWithTags(FGameplayTagContainer(BlockAbilityTag), true);
-
-    // Add character's blocking gameplay tags. (Any gameplay effects tied to movement tags will start.)
-    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Combat.Blocking")));
+    UE_LOG(LogTemp, Log, TEXT("BlockStartedAction called"));
+    // Activate by input ID
+    GetAbilitySystemComponent()->AbilityLocalInputPressed(static_cast<int32>(EPGAS_AbilityInputID::Block));
 
     // Reset idle time and animation flag when movement starts
     IdleTime = 0.f;
@@ -440,15 +401,12 @@ void APGAS_PlayerCharacter::BlockStartedAction(const FInputActionInstance& Value
 */
 void APGAS_PlayerCharacter::BlockReleaseAction(const FInputActionValue& Value)
 {
+    UE_LOG(LogTemp, Log, TEXT("BlockReleaseAction called"));
     if (GetAbilitySystemComponent())
     {
-        // This deactivates all instances of the Block ability (robust for multiplayer, prediction, etc.)
-        static FGameplayTagContainer BlockAbilityTagContainer(FGameplayTag::RequestGameplayTag(FName("Character.Ability.Block")));
-        GetAbilitySystemComponent()->CancelAbilities(&BlockAbilityTagContainer, nullptr, nullptr);
+        // Release block input
+        GetAbilitySystemComponent()->AbilityLocalInputReleased(static_cast<int32>(EPGAS_AbilityInputID::Block));
     }
-
-    // Remove character's blocking gameplay tags. (Any gameplay effects tied to movement tags will stop.)
-    RemoveGameplayTag(FGameplayTag::RequestGameplayTag(FName("Combat.Blocking")));
 
     // Reset idle time and animation flag when movement stops
     IdleTime = 0.f;
@@ -461,10 +419,17 @@ void APGAS_PlayerCharacter::BlockReleaseAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::LeftHandLightAttackAction(const FInputActionValue& Value)
 {
-    // Activate the melee GAS ability.
-    if (ActivateLeftHandAttackAbility(true))
+    UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent();
+    if (CoreComponent && CoreComponent->AttackActive_LeftTag.IsValid())
     {
-        SetIsAttacking(true); // Set the attacking flag to true
+        const bool bActivated = CoreComponent->ActivateAbilityByTag(CoreComponent->AttackActive_LeftTag, EPGAS_WeaponHand::Left);
+        SetIsAttacking(bActivated); // Set the attacking flag to true
+
+        // if (!bActivated)
+        // {
+        //     UE_LOG(LogTemp, Warning, TEXT("Countess: Failed to activate Left Hand Attack Ability (Tag: %s)"),
+        //         *CoreComponent->AttackActive_LeftTag.ToString());
+        // }
     }
 
     // Reset idle time and animation flag when movement starts
@@ -474,26 +439,22 @@ void APGAS_PlayerCharacter::LeftHandLightAttackAction(const FInputActionValue& V
 
 void APGAS_PlayerCharacter::RightHandLightAttackAction(const FInputActionValue& Value)
 {
-    // Activate the secondary attack GAS ability.
-    if (ActivateRightHandLightAttackAbility(true))
+    UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent();
+    if (CoreComponent && CoreComponent->AttackActive_RightTag.IsValid())
     {
-        SetIsAttacking(true); // Set the attacking flag to true
+        const bool bActivated = CoreComponent->ActivateAbilityByTag(CoreComponent->AttackActive_RightTag, EPGAS_WeaponHand::Right);
+        SetIsAttacking(bActivated); // Set the attacking flag to true
+
+        // if (!bActivated)
+        // {
+        //     UE_LOG(LogTemp, Warning, TEXT("Countess: Failed to activate Right Hand Attack Ability (Tag: %s)"),
+        //         *CoreComponent->AttackActive_RightTag.ToString());
+        // }
     }
 
     // Reset idle time and animation flag when movement starts
     IdleTime = 0.f;
     bIdleAnimationPlayed = false;
-}
-
-/*
- * SetupDefaultGameplayTags function to set up default gameplay tags for this character.
- * This is typically called in the constructor or BeginPlay.
-*/
-void APGAS_PlayerCharacter::SetupDefaultGameplayTags()
-{
-    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Type.Player")));
-    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.State.Alive")));
-    AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove")));
 }
 
 /*
@@ -506,18 +467,7 @@ void APGAS_PlayerCharacter::SetupDefaultAbilities()
     // Call the base class implementation to ensure any inherited functionality is executed.
     Super::SetupDefaultAbilities();
 
-    // Check if the Ability System Component is valid.
-    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
-    if (ASC)
-    {
-        // Give the player character a main attack ability.
-        if (PrimaryAttackAbility)
-            LeftHandLightAttackAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(PrimaryAttackAbility, GetCharacterLevel(), INDEX_NONE, this));
-
-        // Give the player character a secondary attack ability.
-        if (SecondaryAttackAbility)
-            RightHandLightAttackAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(SecondaryAttackAbility, GetCharacterLevel(), INDEX_NONE, this));
-    }
+    // Optional, add player character specific default abilities here.
 }
 
 // Handles changes to the character's health attribute
@@ -647,70 +597,6 @@ void APGAS_PlayerCharacter::WeaponTrace()
             UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(HitActor, DamageEventTag, EventData);
         }
     }
-}
-
-/**
- * Activates the character's melee ability
- * This function checks if the character can activate the melee ability and performs the activation.
- * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
-*/
-bool APGAS_PlayerCharacter::ActivateLeftHandAttackAbility(bool AllowRemoteActivation)
-{
-    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
-
-    // Ensure the AbilitySystemComponent and LeftHandLightAttackAbilitySpecHandle are valid before proceeding
-    if (!ASC || !LeftHandLightAttackAbilitySpecHandle.IsValid())
-        return false;
-
-    // // Bind to our events to handle montage state notifications in C++
-    // UPGAS_GameplayAbility_Montage::OnMontageStateNotify.RemoveAll(this); // Unbind any previous bindings to avoid duplicates
-    // UPGAS_GameplayAbility_Montage::OnMontageStateNotify.AddUObject(this, &APGAS_PlayerCharacter::HandleMontageStateNotify); // Bind
-
-    // // Build the stamina reduction effect spec and apply it.
-    // FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(UPGAS_GE_InstantStaminaReduction::StaticClass(), GetCharacterLevel(), ASC->MakeEffectContext());
-    // if (SpecHandle.IsValid())
-    // {
-    //     SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction")), -0.238f); // Set the magnitude
-    //     ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-    // }
-
-    bLeftHandAttacking = false;
-
-    // Activate the ability
-    return CombatCoreComponent->ActivateAbilityByTag(CombatCoreComponent->AttackActive_LeftTag, EPGAS_WeaponHand::Left);
-    // ASC->TryActivateAbility(LeftHandLightAttackAbilitySpecHandle, AllowRemoteActivation);
-}
-
-/**
- * Activates the character's secondary attack ability
- * This function checks if the character can activate the secondary attack ability and performs the activation.
- * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
-*/
-bool APGAS_PlayerCharacter::ActivateRightHandLightAttackAbility(bool AllowRemoteActivation)
-{
-    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
-
-    // Ensure the AbilitySystemComponent and RightHandLightAttackAbilitySpecHandle are valid before proceeding
-    if (!ASC || !RightHandLightAttackAbilitySpecHandle.IsValid())
-        return false;
-
-    // Bind to our events to handle montage state notifications in C++
-    UPGAS_GameplayAbility_Montage::OnMontageStateNotify.RemoveAll(this); // Unbind any previous bindings to avoid duplicates
-    UPGAS_GameplayAbility_Montage::OnMontageStateNotify.AddUObject(this, &APGAS_PlayerCharacter::HandleMontageStateNotify); // Bind
-
-    // Build the stamina reduction effect spec and apply it.
-    FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(UPGAS_GE_InstantStaminaReduction::StaticClass(), GetCharacterLevel(), ASC->MakeEffectContext());
-    if (SpecHandle.IsValid())
-    {
-        SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction")), -0.5f); // Set the magnitude
-        ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-    }
-
-    bRightHandAttacking = true;
-
-    // Activate the ability
-    return CombatCoreComponent->ActivateAbilityByTag(CombatCoreComponent->AttackActive_RightTag, EPGAS_WeaponHand::Right);
-    // return ASC->TryActivateAbility(RightHandLightAttackAbilitySpecHandle, AllowRemoteActivation);
 }
 
 /**

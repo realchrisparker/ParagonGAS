@@ -177,9 +177,9 @@ private:
     * Functions
     */
 
-    // Sets up the default gameplay tags for this character.
-    // This is typically called in the constructor or BeginPlay.
-    void SetupDefaultGameplayTags();
+    // // Sets up the default gameplay tags for this character.
+    // // This is typically called in the constructor or BeginPlay.
+    // void SetupDefaultGameplayTags();
 
     FVector GetWeaponStartSocketLocation() const
     {

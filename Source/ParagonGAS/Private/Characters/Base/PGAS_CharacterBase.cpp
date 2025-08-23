@@ -16,13 +16,20 @@
 
 #include <Characters/Base/PGAS_CharacterBase.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
+#include <Interfaces/IAnimation.h>
 #include "AbilitySystemGlobals.h"
 
 // Sets default values
 APGAS_CharacterBase::APGAS_CharacterBase()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	// Create the combat core component
+	CombatCoreComponent = CreateDefaultSubobject<UPGAS_CombatCoreComponent>(TEXT("Combat Core Component"));
+
+	// Create the hitbox component.
+	HitboxComponent = CreateDefaultSubobject<UPGAS_HitboxComponent>(TEXT("Hitbox Component"));
 
 	// Set up the hit reaction component.
 	// This component handles hit reactions for the enemy character.
@@ -38,7 +45,16 @@ APGAS_CharacterBase::APGAS_CharacterBase()
 void APGAS_CharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	ApplyStartingGameplayTags(); // Apply starting gameplay tags
+}
+
+void APGAS_CharacterBase::ApplyStartingGameplayTags()
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->AddLooseGameplayTags(StartingGameplayTags);
+	}
 }
 
 /// Adds a gameplay tag to this character
@@ -183,7 +199,20 @@ void APGAS_CharacterBase::SetupDefaultAbilities()
 			}
 			if (!bAlreadyGranted)
 			{
-				AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, 0));
+				// Determine if this is an ability that needs to use the Enhanced Input System
+				const UGameplayAbility* DefaultAbilityCDO = AbilityClass->GetDefaultObject<UGameplayAbility>();
+				if (DefaultAbilityCDO && DefaultAbilityCDO->GetAssetTags().HasTagExact(FGameplayTag::RequestGameplayTag("Character.Ability.Sprint")))
+				{
+					AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, (int32)EPGAS_AbilityInputID::Sprint));
+				}
+				else if (DefaultAbilityCDO && DefaultAbilityCDO->GetAssetTags().HasTagExact(FGameplayTag::RequestGameplayTag("Character.Ability.Block")))
+				{
+					AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, (int32)EPGAS_AbilityInputID::Block));
+				}
+				else
+				{
+					AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, INDEX_NONE));
+				}
 			}
 		}
 	}
@@ -195,4 +224,32 @@ void APGAS_CharacterBase::RemoveDefaultAttributeEffects()
 	FGameplayEffectQuery Query;
 	Query.EffectSource = this;
 	AbilitySystemComponent->RemoveActiveEffects(Query);
+}
+
+// Starts blocking (Helper function)
+void APGAS_CharacterBase::StartBlocking()
+{
+	// Make sure we have an anim instance.
+	if (UAnimInstance* AnimInst = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr)
+	{
+		// Make sure our anim instance implements the IAnimation interface
+		if (IIAnimation* AnimInterface = Cast<IIAnimation>(AnimInst))
+		{
+			AnimInterface->StartBlocking(); // Starts blocking
+		}
+	}
+}
+
+// Stops blocking (Helper function)
+void APGAS_CharacterBase::StopBlocking()
+{
+	// Make sure we have an anim instance.
+	if (UAnimInstance* AnimInst = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr)
+	{
+		// Make sure our anim instance implements the IAnimation interface
+		if (IIAnimation* AnimInterface = Cast<IIAnimation>(AnimInst))
+		{
+			AnimInterface->StopBlocking(); // Stops blocking
+		}
+	}
 }

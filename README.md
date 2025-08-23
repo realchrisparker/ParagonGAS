@@ -15,6 +15,7 @@ Version 5.6
 
 # FAB Content Used
 - Paragon: Wukong (https://www.fab.com/listings/27054d0c-c26e-4fe3-b6f9-fa778dfcb8b6)
+- Paragon: Paragon: Countess (https://www.fab.com/listings/0bf014eb-f2ed-4029-adda-81a855eb5220)
 - Seven Swords (https://www.fab.com/listings/9184a25a-4124-4b3f-8909-f7d2c6104c8e)
 - Kunai (https://www.fab.com/listings/bd0e0b2a-46c8-4f98-8df9-c8131a16a433)
 - Mixamo Animations

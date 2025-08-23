@@ -68,6 +68,10 @@
 		{
 			"Name": "Paper2D",
 			"Enabled": false
+		},
+		{
+			"Name": "Locomotor",
+			"Enabled": true
 		}
 	]
 }

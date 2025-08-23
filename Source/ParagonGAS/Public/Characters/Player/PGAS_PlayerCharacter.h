@@ -34,7 +34,6 @@
 #include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <UserWidgets/PGAS_InGame_HUD.h>
-#include <Components/PGAS_CombatCoreComponent.h>
 #include "PGAS_PlayerCharacter.generated.h"
 
 UCLASS()
@@ -49,24 +48,6 @@ public:
 
     // Constructor
     APGAS_PlayerCharacter();
-
-    /**
-     * Activates the character's melee ability
-     * This function checks if the character can activate the melee ability and performs the activation.
-     * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
-    */
-    UFUNCTION(BlueprintCallable, Category = "Player|Abilities|Melee",
-        meta = (DisplayName = "Activate Melee Ability", ToolTip = "Activates the character's melee ability. This function checks if the character can activate the melee ability and performs the activation."))
-    bool ActivateLeftHandAttackAbility(bool AllowRemoteActivation = true);
-
-    /**
-     * Activates the character's primary attack ability
-     * This function checks if the character can activate the primary attack ability and performs the activation.
-     * @param AllowRemoteActivation Whether to allow remote activation of the ability (default: true
-    */
-    UFUNCTION(BlueprintCallable, Category = "Player|Abilities|Melee",
-        meta = (DisplayName = "Activate Secondary Ability", ToolTip = "Activates the character's secondary ability. This function checks if the character can activate the secondary ability and performs the activation."))
-    bool ActivateRightHandLightAttackAbility(bool AllowRemoteActivation = true);
 
     /**
      * Traces the weapon to detect hits.
@@ -226,11 +207,11 @@ public:
     void OnCharacterLevelUp();
 
     /*
-    * Handles the character's health change
-    * This function is called whenever the character's health changes.
-    * @param DeltaValue The change in health value (positive or negative).
-    * @param Causer The actor that caused the health change (e.g., damage dealer
-    */
+     * Handles the character's health change
+     * This function is called whenever the character's health changes.
+     * @param DeltaValue The change in health value (positive or negative).
+     * @param Causer The actor that caused the health change (e.g., damage dealer
+     */
     virtual void HandleHealthChange(float DeltaValue, AActor* Causer);
 
     /*
@@ -408,16 +389,6 @@ protected:
     UPROPERTY(BlueprintReadOnly, Category = "Player|HUD")
     TObjectPtr<APGAS_HUD> MyPlayerHUD;
 
-    // Primary Attack ability class to be used by the character.
-    // This is typically set in the editor or loaded in code.
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|GAS|Combat")
-    TSubclassOf<class UGameplayAbility> PrimaryAttackAbility;
-
-    // Secondary Attack ability class to be used by the character.
-    // This is typically set in the editor or loaded in code.
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|GAS|Combat")
-    TSubclassOf<class UGameplayAbility> SecondaryAttackAbility;
-
     /**
      * The Input Action asset for moving the character (e.g. "IA_Move").
      * This is typically set in the editor or loaded in code.
@@ -485,15 +456,6 @@ private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UPlayerCharacterAttributeSet> AttributeSet;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UPGAS_CombatCoreComponent> CombatCoreComponent;
-
-    UPROPERTY()
-    FGameplayAbilitySpecHandle LeftHandLightAttackAbilitySpecHandle;
-
-    UPROPERTY()
-    FGameplayAbilitySpecHandle RightHandLightAttackAbilitySpecHandle;
-
     /**
      * Set of actors that have already been hit by the weapon trace
      * This is used to prevent hitting the same actor multiple times in a single trace.
@@ -512,16 +474,9 @@ private:
     float IdleTime = 0.0f; // The time the character has been idle.
     bool bIdleAnimationPlayed = false; // Whether the idle animation has been played or not.
 
-    bool bLeftHandAttacking = false; // Whether the character is currently performing a left hand attack.
-    bool bRightHandAttacking = false; // Whether the character is currently performing a right hand attack.
-
     /*
     * Functions
     */
-
-    // Sets up the default gameplay tags for this character.
-    // This is typically called in the constructor or BeginPlay.
-    void SetupDefaultGameplayTags();
 
     FVector GetStaffStartSocketLocation() const
     {

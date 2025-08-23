@@ -21,7 +21,10 @@
 #include "GameplayTagContainer.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include <Components/PGAS_CombatCoreComponent.h>
+#include <Components/PGAS_HitboxComponent.h>
 #include <Components/PGAS_HitReactionComponent.h>
+#include <Enums/EPGAS_AbilityInputID.h>
 #include "PGAS_CharacterBase.generated.h"
 
 // Delegates
@@ -35,7 +38,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeathSignature);
  * Base class for all characters in the game.
  */
 UCLASS()
-class PARAGONGAS_API APGAS_CharacterBase : public ACharacter, public IAbilitySystemInterface//, public IICharacterCombat
+class PARAGONGAS_API APGAS_CharacterBase : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -127,10 +130,6 @@ public:
 		UE_LOG(LogTemp, Warning, TEXT("Set Is Attacking: %s"), bIsAttacking ? TEXT("True") : TEXT("False"));
 	}
 
-	/*
-	* Properties
-	*/
-
 	// Returns the Ability System Component for this character
 	// This is required for the Ability System Interface (IAbilitySystemInterface)
 	UAbilitySystemComponent* GetAbilitySystemComponent() const
@@ -140,10 +139,50 @@ public:
 
 	// Returns the Hit Reaction Component for this character
 	// This component handles hit reactions for the enemy character.
+	UPGAS_CombatCoreComponent* GetCombatCoreComponent() const
+	{
+		return CombatCoreComponent;
+	}
+
+	// Returns the Hitbox Component for this character
+	// This component handles hit detection for the character.
+	UPGAS_HitboxComponent* GetHitboxComponent() const
+	{
+		return HitboxComponent;
+	}
+
+	// Returns the Hit Reaction Component for this character
+	// This component handles hit reactions for the enemy character.
 	UPGAS_HitReactionComponent* GetHitReactionComponent() const
 	{
 		return HitReactionComponent;
 	}
+
+	/** Tell the AnimInstance (if it implements IIAnimation) to start blocking */
+	UFUNCTION(BlueprintCallable, Category = "Player|Combat",
+		meta = (DisplayName = "Start Blocking",
+			Tooltip = "Starts blocking with the character. (Helper Function)",
+			Description = "This function tells the animation instance to start blocking.",
+			Keywords = "combat block")
+	)
+	void StartBlocking();
+
+	/** Tell the AnimInstance (if it implements IIAnimation) to stop blocking */
+	UFUNCTION(BlueprintCallable, Category = "Player|Combat",
+		meta = (DisplayName = "Stop Blocking",
+			Tooltip = "Stops blocking with the character. (Helper Function)",
+			Description = "This function tells the animation instance to stop blocking.",
+			Keywords = "combat block")
+	)
+	void StopBlocking();
+
+	/*
+	* Properties
+	*/
+
+	/** Gameplay tags to apply at the start */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|GAS")
+	FGameplayTagContainer StartingGameplayTags;
 
 	/* Default Abilities */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|GAS",
@@ -169,12 +208,27 @@ protected:
 
 private:
 	/*
+	* Functions
+	*/
+
+	// Applies starting gameplay tags to the character.
+	void ApplyStartingGameplayTags();
+
+	/*
 	* Properties
 	*/
 
 	// Ability System Component for managing abilities and effects
 	UPROPERTY()
 	class UAbilitySystemComponent* AbilitySystemComponent;
+
+	// Combat core component for handling combat-related functionality
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPGAS_CombatCoreComponent> CombatCoreComponent;
+
+	// Hitbox component for handling hit detection
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPGAS_HitboxComponent> HitboxComponent;
 
 	// Hit reaction component for handling hit reactions
 	// This component handles hit reactions for the enemy character.

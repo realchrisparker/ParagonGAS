@@ -19,6 +19,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayEffect.h"
+#include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
 #include "PGAS_GE_JoggingStaminaReduction.generated.h"
 
 UCLASS(BlueprintType, Blueprintable, Category = "Gameplay Ability System|Effects", meta = (DisplayName = "Jogging Stamina Reduction"))
@@ -27,5 +28,27 @@ class PARAGONGAS_API UPGAS_GE_JoggingStaminaReduction : public UGameplayEffect
     GENERATED_BODY()
 
 public:
-    UPGAS_GE_JoggingStaminaReduction();
+    // Constructor
+    UPGAS_GE_JoggingStaminaReduction() {
+        // Set default values for the gameplay effect
+        DurationPolicy = EGameplayEffectDurationType::Infinite;
+
+        // Periodic application settings
+        Period.Value = 0.35f;
+
+        // Add a modifier to increase stamina over time
+        FGameplayModifierInfo ModifierInfo;
+        ModifierInfo.Attribute = UPlayerCharacterAttributeSet::GetStaminaAttribute();
+        ModifierInfo.ModifierOp = EGameplayModOp::Additive;
+        ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(FScalableFloat(-2.0f));
+
+        // Set the target tags for this modifier
+        ModifierInfo.TargetTags.RequireTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Jogging")));
+        ModifierInfo.TargetTags.RequireTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Character.State.Alive")));
+
+        // Ignore tags that should not trigger this effect
+        // ModifierInfo.TargetTags.IgnoreTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Combat")));
+
+        Modifiers.Add(ModifierInfo);
+    }
 };

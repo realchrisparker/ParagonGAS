@@ -41,10 +41,6 @@ public:
     * Properties
     */
 
-    /** The current step in the combo sequence */
-    UPROPERTY(BlueprintReadWrite, Category = "Combo")
-    EPGASComboStep CurrentComboStep;
-
     /** The last activated ability */
     UPROPERTY(BlueprintReadOnly, Category = "Abilities", meta=(DisplayName = "Last Activated Ability"))
     UGameplayAbility* LastActivatedAbility;
