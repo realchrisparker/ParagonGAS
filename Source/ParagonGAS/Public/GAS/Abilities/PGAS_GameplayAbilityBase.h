@@ -22,7 +22,7 @@
 #include "PGAS_GameplayAbilityBase.generated.h"
 
 
- /**
+/**
  * Base class for all Gameplay Abilities in the Paragon GAS project.
  */
 UCLASS(Blueprintable, Abstract, meta=(DisplayName="GAS Gameplay Ability Base"))
@@ -38,7 +38,7 @@ public:
      * Functions
      */
     
-     /**
+    /**
      * Called when the ability is activated.
      * Override this in child classes to implement ability logic.
      */

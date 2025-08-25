@@ -8,7 +8,7 @@
 #include "PGAS_GameMode.generated.h"
 
 /**
- * 
+ * Game Mode class for ParagonGAS
  */
 UCLASS()
 class PARAGONGAS_API APGAS_GameMode : public AGameModeBase

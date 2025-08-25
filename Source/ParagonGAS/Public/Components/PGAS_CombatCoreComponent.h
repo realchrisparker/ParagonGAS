@@ -23,6 +23,7 @@
 #include "Components/ActorComponent.h"
 #include "GameplayTagContainer.h"
 #include "Enums/PGAS_WeaponHand.h"
+#include <Data/Assets/PGAS_WeaponDataAsset.h>
 #include "PGAS_CombatCoreComponent.generated.h"
 
 class UAbilitySystemComponent;
@@ -49,7 +50,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPGAS_CombatHitboxHandedEvent, EPGAS
  *
  * NOTE: Actual attacks/defense live in Gameplay Abilities & Effects.
  */
-UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS), meta = (BlueprintSpawnableComponent, DisplayName = "PGAS Combat Core Component"))
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS), 
+    meta = (BlueprintSpawnableComponent, DisplayName = "Combat Core Component", Icon = "Resources/T_sword.png")
+)
 class PARAGONGAS_API UPGAS_CombatCoreComponent : public UActorComponent
 {
     GENERATED_BODY()
@@ -223,10 +226,10 @@ public:
     // Optional weapon profiles (placeholders you can replace with your own asset class)
     // ---------------------------
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Weapon")
-    TObjectPtr<UObject> LeftWeaponProfile = nullptr;
+    TObjectPtr<UPGAS_WeaponDataAsset> LeftWeaponProfile = nullptr;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Weapon")
-    TObjectPtr<UObject> RightWeaponProfile = nullptr;
+    TObjectPtr<UPGAS_WeaponDataAsset> RightWeaponProfile = nullptr;
 
 protected:
     virtual void BeginPlay() override;

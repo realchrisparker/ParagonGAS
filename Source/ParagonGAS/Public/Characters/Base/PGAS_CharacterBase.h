@@ -214,6 +214,37 @@ private:
 	// Applies starting gameplay tags to the character.
 	void ApplyStartingGameplayTags();
 
+	// Combat Window Handlers
+
+	/** 
+	 * Called when a combat window is started 
+	 * This function is responsible for starting hit detection in the hitbox component.
+	 */
+	UFUNCTION()
+	void HandleCombatWindowStartHanded(FGameplayTag WindowTag, EPGAS_WeaponHand Hand);
+
+	/**
+	 * Called when a combat window is ended
+	 * This function is responsible for stopping hit detection in the hitbox component.
+	 */
+	UFUNCTION()
+	void HandleCombatWindowEndHanded(FGameplayTag WindowTag, EPGAS_WeaponHand Hand);
+
+	/*
+	 * Helper function to get the hand name from the weapon hand enum
+	 * @param Hand - The weapon hand enum value
+	 */
+	FName HandToSetName(EPGAS_WeaponHand Hand) const
+	{
+		switch (Hand)
+		{
+			case EPGAS_WeaponHand::Left:  return TEXT("LeftHand");
+			case EPGAS_WeaponHand::Right: return TEXT("RightHand");
+			case EPGAS_WeaponHand::Both:  return NAME_None; // NAME_None -> “all sets” in our Hitbox
+			default:                      return NAME_None;
+		}
+	}
+
 	/*
 	* Properties
 	*/

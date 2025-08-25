@@ -7,11 +7,14 @@ Version 5.6
 ## Epic Unreal Features
 - Open World
 - Gameplay Ability System and Gameplay Tags
+- Gameplay Ability System Combat System
 - StateTree (with EQS)
 - Asset Registry
+- Custom Tools (New Item Menu Category & Items)
 - Custom Subsystems
 - Safe Thread Animation
 - Custom Anim Notifiers
+-
 
 # FAB Content Used
 - Paragon: Wukong (https://www.fab.com/listings/27054d0c-c26e-4fe3-b6f9-fa778dfcb8b6)

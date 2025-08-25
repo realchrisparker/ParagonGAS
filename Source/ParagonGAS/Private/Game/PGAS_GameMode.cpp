@@ -8,10 +8,6 @@
 #include <Game/PGAS_PlayerState.h>
 #include <Controllers/Player/PGAS_PlayerController.h>
 #include <Characters/Player/PGAS_PlayerCharacter.h>
-#include "DrawDebugHelpers.h"
-#include "Perception/AISense_Sight.h"
-#include "Perception/AISense_Hearing.h"
-#include "Perception/AISense_Damage.h"
 
 APGAS_GameMode::APGAS_GameMode()
 {

@@ -24,7 +24,9 @@
 #include "PGAS_HitReactionComponent.generated.h"
 
 
-UCLASS(Blueprintable, BlueprintType, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent, DisplayName = "Hit Reaction Component"))
+UCLASS(Blueprintable, BlueprintType, ClassGroup = (PGAS),
+	meta = (BlueprintSpawnableComponent, DisplayName = "Hit Reaction Component", Icon = "Resources/T_sword.png")
+)
 class PARAGONGAS_API UPGAS_HitReactionComponent : public UActorComponent
 {
 	GENERATED_BODY()

@@ -24,10 +24,18 @@
 #include "GameplayEffectTypes.h"
 #include "PGAS_HitboxComponent.generated.h"
 
+/*
+ * Forward declarations
+ */
+
 class UAbilitySystemComponent;
 class UGameplayEffect;
 class USkeletalMeshComponent;
 
+
+/*
+ * Hitbox shape enumeration.
+ */
 UENUM(BlueprintType)
 enum class EPGAS_HitboxShape : uint8
 {
@@ -36,8 +44,11 @@ enum class EPGAS_HitboxShape : uint8
     // Box can be added later; sphere/capsule cover most melee cases efficiently.
 };
 
+/*
+ * Weapon trace structure.
+ */
 USTRUCT(BlueprintType)
-struct PARAGONGAS_API FPGAS_BladeTrace
+struct PARAGONGAS_API FPGAS_WeaponTrace
 {
     GENERATED_BODY()
 
@@ -62,6 +73,9 @@ struct PARAGONGAS_API FPGAS_BladeTrace
     EPGAS_HitboxShape Shape = EPGAS_HitboxShape::Sphere;
 };
 
+/*
+ * Hitbox set structure.
+ */
 USTRUCT(BlueprintType)
 struct PARAGONGAS_API FPGAS_HitboxSet
 {
@@ -71,22 +85,25 @@ struct PARAGONGAS_API FPGAS_HitboxSet
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
     FName SetName = TEXT("Default");
 
-    /** Mesh to read sockets from (defaults to Owner's first skeletal mesh if not set). */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
-    TObjectPtr<USkeletalMeshComponent> Mesh = nullptr;
-
     /** One or more blade traces that will be evaluated each tick while active. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
-    TArray<FPGAS_BladeTrace> Traces;
+    TArray<FPGAS_WeaponTrace> Traces;
 };
 
+/*
+ * Delegates
+ */
+
+// Hitbox hit delegate
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FPGAS_OnHitboxHitSignature, AActor*, HitActor, const FHitResult&, HitResult, FName, HitboxSetName, FGameplayTag, AttackTag);
 
 /**
  * Socket-driven melee hitbox component.
  * Call StartHitDetection/StopHitDetection from Ability (or Anim Notifies).
  */
-UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS), meta = (BlueprintSpawnableComponent, DisplayName = "PGAS Hitbox Component"))
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS), 
+    meta = (BlueprintSpawnableComponent, DisplayName = "Hitbox Component", Icon = "Resources/T_sword.png")
+)
 class PARAGONGAS_API UPGAS_HitboxComponent : public UActorComponent
 {
     GENERATED_BODY()
@@ -199,7 +216,7 @@ private:
     void UpdatePrevTransforms(const FPGAS_HitboxSet& Set, USkeletalMeshComponent* Mesh);
 
     void SweepSet(const FPGAS_HitboxSet& Set);
-    void SweepBetween(const FVector& From, const FVector& To, const FPGAS_BladeTrace& Def, FName SetName);
+    void SweepBetween(const FVector& From, const FVector& To, const FPGAS_WeaponTrace& Def, FName SetName);
 
     void HandleHit(AActor* HitActor, const FHitResult& Hit, FName SetName);
     void ApplyGameplayEffectIfConfigured(AActor* TargetActor, const FHitResult& Hit) const;

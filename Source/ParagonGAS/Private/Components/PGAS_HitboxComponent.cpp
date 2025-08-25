@@ -24,6 +24,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "GenericTeamAgentInterface.h"
+#include <Characters/Base/PGAS_CharacterBase.h>
 
 UPGAS_HitboxComponent::UPGAS_HitboxComponent()
 {
@@ -38,6 +39,65 @@ void UPGAS_HitboxComponent::BeginPlay()
 {
     Super::BeginPlay();
     CacheOwnerASC();
+
+    // Auto-build hitbox sets from CombatCore weapon profiles
+    if (APGAS_CharacterBase* OwnerChar = Cast<APGAS_CharacterBase>(GetOwner()))
+    {
+        if (UPGAS_CombatCoreComponent* Core = OwnerChar->GetCombatCoreComponent())
+        {
+            TArray<FPGAS_HitboxSet> AutoSets;
+
+            // ---- LEFT HAND ----
+            if (UPGAS_WeaponDataAsset* LeftAsset = Cast<UPGAS_WeaponDataAsset>(Core->LeftWeaponProfile))
+            {
+                const FPGAS_HitboxProfile& Profile = LeftAsset->LeftHandProfile.HitboxProfile;
+
+                if (Profile.StartSocket != NAME_None && Profile.EndSocket != NAME_None)
+                {
+                    FPGAS_HitboxSet LeftSet;
+                    LeftSet.SetName = TEXT("LeftHand");
+
+                    FPGAS_WeaponTrace Trace;
+                    Trace.StartSocket = Profile.StartSocket;
+                    Trace.EndSocket = Profile.EndSocket;
+                    Trace.Radius = Profile.Radius;
+                    Trace.Shape = EPGAS_HitboxShape::Sphere; // Or expose in asset if you like
+                    Trace.CapsuleHalfHeight = 0.f;
+
+                    LeftSet.Traces.Add(Trace);
+                    AutoSets.Add(LeftSet);
+                }
+            }
+
+            // ---- RIGHT HAND ----
+            if (UPGAS_WeaponDataAsset* RightAsset = Cast<UPGAS_WeaponDataAsset>(Core->RightWeaponProfile))
+            {
+                const FPGAS_HitboxProfile& Profile = RightAsset->RightHandProfile.HitboxProfile;
+
+                if (Profile.StartSocket != NAME_None && Profile.EndSocket != NAME_None)
+                {
+                    FPGAS_HitboxSet RightSet;
+                    RightSet.SetName = TEXT("RightHand");
+
+                    FPGAS_WeaponTrace Trace;
+                    Trace.StartSocket = Profile.StartSocket;
+                    Trace.EndSocket = Profile.EndSocket;
+                    Trace.Radius = Profile.Radius;
+                    Trace.Shape = EPGAS_HitboxShape::Sphere;
+                    Trace.CapsuleHalfHeight = 0.f;
+
+                    RightSet.Traces.Add(Trace);
+                    AutoSets.Add(RightSet);
+                }
+            }
+
+            // Apply
+            if (AutoSets.Num() > 0)
+            {
+                SetHitboxSets(AutoSets);
+            }
+        }
+    }
 }
 
 void UPGAS_HitboxComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -159,15 +219,18 @@ bool UPGAS_HitboxComponent::IsSetActive(FName SetName) const
 
 USkeletalMeshComponent* UPGAS_HitboxComponent::ResolveMeshForSet(const FPGAS_HitboxSet& Set) const
 {
-    if (Set.Mesh)
-    {
-        return Set.Mesh.Get();
-    }
-    // Fallback: first skeletal mesh on owner
+    // Get the owning actor
     if (const AActor* OwnerActor = GetOwner())
     {
-        return OwnerActor->FindComponentByClass<USkeletalMeshComponent>();
+        // Check if the owner is a pawn
+        if (const APawn* PawnOwner = Cast<APawn>(OwnerActor))
+        {
+            // Get the mesh component from the pawn
+            return PawnOwner->FindComponentByClass<USkeletalMeshComponent>();
+        }
     }
+
+    // Fallback: first skeletal mesh on owner (usually will be null)
     return nullptr;
 }
 
@@ -175,7 +238,11 @@ void UPGAS_HitboxComponent::CacheOwnerASC()
 {
     if (AActor* OwnerActor = GetOwner())
     {
-        OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OwnerActor);
+        // Convert to APGAS_CharacterBase
+        if (APGAS_CharacterBase* Character = Cast<APGAS_CharacterBase>(OwnerActor))
+        {
+            OwnerASC = Character->GetAbilitySystemComponent(); // Cache the Ability System Component
+        }
     }
 }
 
@@ -194,7 +261,7 @@ void UPGAS_HitboxComponent::EnsurePrevTransforms(const FPGAS_HitboxSet& Set, USk
 {
     TMap<FName, FTransform>& Cache = PrevSocketTransforms.FindOrAdd(Set.SetName);
 
-    for (const FPGAS_BladeTrace& Def : Set.Traces)
+    for (const FPGAS_WeaponTrace& Def : Set.Traces)
     {
         if (Def.StartSocket != NAME_None && !Cache.Contains(Def.StartSocket))
         {
@@ -211,7 +278,7 @@ void UPGAS_HitboxComponent::UpdatePrevTransforms(const FPGAS_HitboxSet& Set, USk
 {
     if (TMap<FName, FTransform>* Cache = PrevSocketTransforms.Find(Set.SetName))
     {
-        for (const FPGAS_BladeTrace& Def : Set.Traces)
+        for (const FPGAS_WeaponTrace& Def : Set.Traces)
         {
             if (Def.StartSocket != NAME_None)
             {
@@ -269,7 +336,7 @@ void UPGAS_HitboxComponent::SweepSet(const FPGAS_HitboxSet& Set)
     const TMap<FName, FTransform>* Prev = PrevSocketTransforms.Find(Set.SetName);
     if (!Prev) return;
 
-    for (const FPGAS_BladeTrace& Def : Set.Traces)
+    for (const FPGAS_WeaponTrace& Def : Set.Traces)
     {
         if (Def.StartSocket == NAME_None || Def.EndSocket == NAME_None) continue;
 
@@ -293,7 +360,7 @@ void UPGAS_HitboxComponent::SweepSet(const FPGAS_HitboxSet& Set)
     }
 }
 
-void UPGAS_HitboxComponent::SweepBetween(const FVector& From, const FVector& To, const FPGAS_BladeTrace& Def, FName SetName)
+void UPGAS_HitboxComponent::SweepBetween(const FVector& From, const FVector& To, const FPGAS_WeaponTrace& Def, FName SetName)
 {
     UWorld* World = GetWorld();
     if (!World) return;
@@ -316,7 +383,7 @@ void UPGAS_HitboxComponent::SweepBetween(const FVector& From, const FVector& To,
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
                 // Debug
                 // DrawDebugLine(World, From, To, FColor::Red, false, 0.03f, 0, 1.0f);
-                // DrawDebugSphere(World, To, Def.Radius, 12, FColor::Red, false, 0.03f);
+                DrawDebugSphere(World, To, Def.Radius, 12, FColor::Red, false, 0.03f);
 #endif
                 break;
             }
@@ -327,7 +394,7 @@ void UPGAS_HitboxComponent::SweepBetween(const FVector& From, const FVector& To,
                 const FCollisionShape Shape = FCollisionShape::MakeCapsule(Def.Radius, Def.CapsuleHalfHeight);
                 World->SweepMultiByObjectType(Hits, From, To, Rot, ObjParams, Shape, Params);
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-                // DrawDebugCapsule(World, To, Def.CapsuleHalfHeight, Def.Radius, Rot, FColor::Red, false, 0.03f);
+                DrawDebugCapsule(World, To, Def.CapsuleHalfHeight, Def.Radius, Rot, FColor::Red, false, 0.03f);
 #endif
                 break;
             }

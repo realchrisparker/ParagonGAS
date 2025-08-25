@@ -13,7 +13,6 @@
 	* =============================================================================
 */
 
-
 #include <Characters/Base/PGAS_CharacterBase.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Interfaces/IAnimation.h>
@@ -47,6 +46,13 @@ void APGAS_CharacterBase::BeginPlay()
 	Super::BeginPlay();
 
 	ApplyStartingGameplayTags(); // Apply starting gameplay tags
+
+	// Bind CombatCore -> windowing events.
+	if (UPGAS_CombatCoreComponent* Core = GetCombatCoreComponent())
+	{
+		Core->OnWindowStartedHanded.AddDynamic(this, &APGAS_CharacterBase::HandleCombatWindowStartHanded);
+		Core->OnWindowEndedHanded.AddDynamic(this, &APGAS_CharacterBase::HandleCombatWindowEndHanded);
+	}
 }
 
 void APGAS_CharacterBase::ApplyStartingGameplayTags()
@@ -251,5 +257,38 @@ void APGAS_CharacterBase::StopBlocking()
 		{
 			AnimInterface->StopBlocking(); // Stops blocking
 		}
+	}
+}
+
+/** 
+ * Called when a combat window is started 
+ * This function is responsible for starting hit detection in the hitbox component.
+ */
+void APGAS_CharacterBase::HandleCombatWindowStartHanded(FGameplayTag WindowTag, EPGAS_WeaponHand Hand)
+{
+	UE_LOG(LogTemp, Warning, TEXT("APGAS_CharacterBase::HandleCombatWindowStartHanded: WindowTag=%s, Hand=%s"), *WindowTag.ToString(), *UEnum::GetValueAsString(Hand));
+
+	if (!HasAuthority()) return;
+
+	if (auto* Hitbox = GetHitboxComponent())
+	{
+		// Forward the gameplay tag + hand into Hitbox
+		Hitbox->StartHitDetection(HandToSetName(Hand), WindowTag);
+	}
+}
+
+/**
+ * Called when a combat window is ended
+ * This function is responsible for stopping hit detection in the hitbox component.
+ */
+void APGAS_CharacterBase::HandleCombatWindowEndHanded(FGameplayTag WindowTag, EPGAS_WeaponHand Hand)
+{
+	UE_LOG(LogTemp, Warning, TEXT("APGAS_CharacterBase::HandleCombatWindowEndHanded: WindowTag=%s, Hand=%s"), *WindowTag.ToString(), *UEnum::GetValueAsString(Hand));
+	
+	if (!HasAuthority()) return;
+
+	if (auto* Hitbox = GetHitboxComponent())
+	{
+		Hitbox->StopHitDetection(HandToSetName(Hand));
 	}
 }
