@@ -316,7 +316,7 @@ void UPGAS_HitboxComponent::SweepBetween(const FVector& From, const FVector& To,
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
                 // Debug
                 // DrawDebugLine(World, From, To, FColor::Red, false, 0.03f, 0, 1.0f);
-                // DrawDebugSphere(World, To, Def.Radius, 12, FColor::Red, false, 0.03f);
+                DrawDebugSphere(World, To, Def.Radius, 12, FColor::Red, false, 0.03f);
 #endif
                 break;
             }
@@ -327,7 +327,7 @@ void UPGAS_HitboxComponent::SweepBetween(const FVector& From, const FVector& To,
                 const FCollisionShape Shape = FCollisionShape::MakeCapsule(Def.Radius, Def.CapsuleHalfHeight);
                 World->SweepMultiByObjectType(Hits, From, To, Rot, ObjParams, Shape, Params);
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-                // DrawDebugCapsule(World, To, Def.CapsuleHalfHeight, Def.Radius, Rot, FColor::Red, false, 0.03f);
+                DrawDebugCapsule(World, To, Def.CapsuleHalfHeight, Def.Radius, Rot, FColor::Red, false, 0.03f);
 #endif
                 break;
             }
