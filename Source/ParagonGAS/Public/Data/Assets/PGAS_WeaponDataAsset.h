@@ -28,7 +28,11 @@
 /**
  * Hitbox profile for weapon attacks, defining the start and end sockets, radius, and max hit count.
  */
+<<<<<<< HEAD
 USTRUCT(BlueprintType, meta=(DisplayName="Hitbox Profile"))
+=======
+USTRUCT(BlueprintType)
+>>>>>>> 0d025d5a21a8ae2ea10a969535b24b3e069911f3
 struct PARAGONGAS_API FPGAS_HitboxProfile
 {
     GENERATED_BODY()
@@ -44,15 +48,22 @@ struct PARAGONGAS_API FPGAS_HitboxProfile
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hitbox")
     int32 MaxHitCount = 1;
+<<<<<<< HEAD
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hitbox")
     bool bDebugDraw = false;
+=======
+>>>>>>> 0d025d5a21a8ae2ea10a969535b24b3e069911f3
 };
 
 /**
  * Hand profile for weapon attacks, defining the attack montages, GAS tags, and hitbox profile.
  */
+<<<<<<< HEAD
 USTRUCT(BlueprintType, meta=(DisplayName="Weapon Hand Profile"))
+=======
+USTRUCT(BlueprintType)
+>>>>>>> 0d025d5a21a8ae2ea10a969535b24b3e069911f3
 struct PARAGONGAS_API FPGAS_WeaponHandProfile
 {
     GENERATED_BODY()
@@ -100,7 +111,11 @@ struct PARAGONGAS_API FPGAS_WeaponHandProfile
 /**
  * Struct returned by query helper
  */
+<<<<<<< HEAD
 USTRUCT(BlueprintType, meta=(DisplayName="Weapon Attack Data"))
+=======
+USTRUCT(BlueprintType)
+>>>>>>> 0d025d5a21a8ae2ea10a969535b24b3e069911f3
 struct PARAGONGAS_API FPGAS_AttackData
 {
     GENERATED_BODY()
