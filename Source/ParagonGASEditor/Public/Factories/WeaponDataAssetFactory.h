@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Factories/Factory.h"
+#include "AssetToolsModule.h"
 #include "AssetTypeCategories.h"
 #include <Data/Assets/PGAS_WeaponDataAsset.h>
 #include "WeaponDataAssetFactory.generated.h"
@@ -55,11 +56,19 @@ public:
         return true;
     }
 
+    /*
+    * Get the display name for this factory.
+    * @return The display name for this factory.
+    */
     virtual FText GetDisplayName() const override
     {
-        return NSLOCTEXT("WeaponDataAssetFactory", "DisplayName", "Weapon Data Asset (PGAS)");
+        return NSLOCTEXT("WeaponDataAssetFactory", "DisplayName", "Weapon Data Asset");
     }
 
+    /*
+    * Get the tooltip for this factory.
+    * @return The tooltip for this factory.
+    */
     virtual FText GetToolTip() const override
     {
         return NSLOCTEXT("WeaponDataAssetFactory", "ToolTip", "Create a new PGAS Weapon Data Asset");

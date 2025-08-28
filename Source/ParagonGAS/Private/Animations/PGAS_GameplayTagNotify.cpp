@@ -22,11 +22,10 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include <Characters/Base/PGAS_CharacterBase.h>
 
-UPGAS_GameplayTagNotify::UPGAS_GameplayTagNotify()
-{
-}
 
+// Begin notification logic
 void UPGAS_GameplayTagNotify::NotifyBegin(USkeletalMeshComponent *MeshComp, UAnimSequenceBase *Animation, float TotalDuration)
 {
     if (!MeshComp) return;
@@ -34,40 +33,53 @@ void UPGAS_GameplayTagNotify::NotifyBegin(USkeletalMeshComponent *MeshComp, UAni
     AActor* Owner = MeshComp->GetOwner();
     if (!Owner) return;
 
-    // Check required tag
-    if (RequiredTag.IsValid())
+    CachedCharacter = Cast<APGAS_CharacterBase>(Owner);
+    if (CachedCharacter)
     {
-        const IGameplayTagAssetInterface* TagInterface = Cast<IGameplayTagAssetInterface>(Owner);
-        if (TagInterface && !TagInterface->HasMatchingGameplayTag(RequiredTag))
+        CachedASC = CachedCharacter->GetAbilitySystemComponent();
+        if (CachedASC)
         {
-            return; // Do not trigger if RequiredTag is not present
+            // Add monitoring tag for combat windows
+            if (MonitorGameplayTag.IsValid())
+            {
+                CachedASC->AddLooseGameplayTag(MonitorGameplayTag);
+
+                if (bDebug)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("NotifyBegin: Added MonitorGameplayTag %s"), *MonitorGameplayTag.ToString());
+                }
+            }
+
+            // Still apply any extra Add/Remove tags if designer wants them
+            if (!AddGameplayTags.IsEmpty())
+            {
+                CachedASC->AddLooseGameplayTags(AddGameplayTags);
+            }
+            if (!RemoveGameplayTags.IsEmpty())
+            {
+                CachedASC->RemoveLooseGameplayTags(RemoveGameplayTags);
+            }
+
+            // Fire gameplay event if BeginNotifyTag is provided
+            if (BeginNotifyTag.IsValid())
+            {
+                FGameplayEventData EventData;
+                EventData.Instigator = Owner;
+                EventData.Target = Owner;
+                EventData.OptionalObject = MeshComp;
+                EventData.OptionalObject2 = this;
+                EventData.EventMagnitude = Magnitude;
+                EventData.EventTag = BeginNotifyTag;
+
+                CachedASC->HandleGameplayEvent(EventData.EventTag, &EventData);
+            }
         }
-    }
-
-    // Add/Remove tags if AbilitySystemComponent (ASC) exists
-    if (UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner))
-    {
-        ASC->AddLooseGameplayTags(AddGameplayTags);
-        ASC->RemoveLooseGameplayTags(RemoveGameplayTags);
-
-        // Construct a payload
-        // This is useful for notifying the ASC about the start of a combo or attack sequence
-        FGameplayEventData EventData;
-        EventData.Instigator = Owner;
-        EventData.Target = Owner; // Assuming the target is the same as the instigator
-        EventData.OptionalObject = MeshComp; // Optional object can be the mesh component
-        EventData.OptionalObject2 = this; // Optional object can be the notify itself
-        EventData.EventMagnitude = Magnitude; // Optional magnitude
-        EventData.EventTag = BeginNotifyTag;
-
-        // Broadcast the event to the ASC
-        // This allows the ASC to handle any gameplay logic associated with the start of the notify
-        ASC->HandleGameplayEvent(EventData.EventTag, &EventData);
-    }
+    }    
 
     OnGameplayTagNotifyBeginDelegate.Broadcast(this);
 }
 
+// End notification logic
 void UPGAS_GameplayTagNotify::NotifyEnd(USkeletalMeshComponent *MeshComp, UAnimSequenceBase *Animation)
 {
     if (!MeshComp) return;
@@ -75,31 +87,43 @@ void UPGAS_GameplayTagNotify::NotifyEnd(USkeletalMeshComponent *MeshComp, UAnimS
     AActor* Owner = MeshComp->GetOwner();
     if (!Owner) return;
 
-    // Revert tags if AbilitySystemComponent (ASC) exists
-    if (UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner))
+    if (CachedASC)
     {
-        ASC->RemoveLooseGameplayTags(AddGameplayTags);
-        ASC->AddLooseGameplayTags(RemoveGameplayTags);
+        // Remove monitoring tag for combat windows
+        if (MonitorGameplayTag.IsValid())
+        {
+            CachedASC->RemoveLooseGameplayTag(MonitorGameplayTag);
 
-        // Construct a payload
-        // This is useful for notifying the ASC about the end of a combo or attack sequence
-        FGameplayEventData EventData;
-        EventData.Instigator = Owner;
-        EventData.Target = Owner; // Assuming the target is the same as the instigator
-        EventData.OptionalObject = MeshComp; // Optional object can be the mesh component
-        EventData.OptionalObject2 = this; // Optional object can be the notify itself
-        EventData.EventMagnitude = Magnitude; // Optional magnitude
-        EventData.EventTag = EndNotifyTag;
+            if (bDebug)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("NotifyEnd: Removed MonitorGameplayTag %s"), *MonitorGameplayTag.ToString());
+            }
+        }
 
-        // Broadcast the event to the ASC
-        // This allows the ASC to handle any gameplay logic associated with the end of the notify
-        ASC->HandleGameplayEvent(EventData.EventTag, &EventData);
+        // Revert tags if specified
+        if (!AddGameplayTags.IsEmpty())
+        {
+            CachedASC->RemoveLooseGameplayTags(AddGameplayTags);
+        }
+        if (!RemoveGameplayTags.IsEmpty())
+        {
+            CachedASC->AddLooseGameplayTags(RemoveGameplayTags);
+        }
+
+        // Fire gameplay event if EndNotifyTag is provided
+        if (EndNotifyTag.IsValid())
+        {
+            FGameplayEventData EventData;
+            EventData.Instigator = Owner;
+            EventData.Target = Owner;
+            EventData.OptionalObject = MeshComp;
+            EventData.OptionalObject2 = this;
+            EventData.EventMagnitude = Magnitude;
+            EventData.EventTag = EndNotifyTag;
+
+            CachedASC->HandleGameplayEvent(EventData.EventTag, &EventData);
+        }
     }
 
     OnGameplayTagNotifyEndDelegate.Broadcast(this);
-}
-
-FString UPGAS_GameplayTagNotify::GetNotifyName_Implementation() const
-{
-    return Id.IsEmpty() ? GetNotifyName() : Id;
 }

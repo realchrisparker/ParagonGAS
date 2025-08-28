@@ -24,12 +24,6 @@ APGAS_CharacterBase::APGAS_CharacterBase()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Create the combat core component
-	CombatCoreComponent = CreateDefaultSubobject<UPGAS_CombatCoreComponent>(TEXT("Combat Core Component"));
-
-	// Create the hitbox component.
-	HitboxComponent = CreateDefaultSubobject<UPGAS_HitboxComponent>(TEXT("Hitbox Component"));
-
 	// Set up the hit reaction component.
 	// This component handles hit reactions for the enemy character.
 	HitReactionComponent = CreateDefaultSubobject<UPGAS_HitReactionComponent>(TEXT("Hit Reaction Component"));
@@ -46,13 +40,6 @@ void APGAS_CharacterBase::BeginPlay()
 	Super::BeginPlay();
 
 	ApplyStartingGameplayTags(); // Apply starting gameplay tags
-
-	// Bind CombatCore -> windowing events.
-	if (UPGAS_CombatCoreComponent* Core = GetCombatCoreComponent())
-	{
-		Core->OnWindowStartedHanded.AddDynamic(this, &APGAS_CharacterBase::HandleCombatWindowStartHanded);
-		Core->OnWindowEndedHanded.AddDynamic(this, &APGAS_CharacterBase::HandleCombatWindowEndHanded);
-	}
 }
 
 void APGAS_CharacterBase::ApplyStartingGameplayTags()
@@ -257,38 +244,5 @@ void APGAS_CharacterBase::StopBlocking()
 		{
 			AnimInterface->StopBlocking(); // Stops blocking
 		}
-	}
-}
-
-/** 
- * Called when a combat window is started 
- * This function is responsible for starting hit detection in the hitbox component.
- */
-void APGAS_CharacterBase::HandleCombatWindowStartHanded(FGameplayTag WindowTag, EPGAS_WeaponHand Hand)
-{
-	UE_LOG(LogTemp, Warning, TEXT("APGAS_CharacterBase::HandleCombatWindowStartHanded: WindowTag=%s, Hand=%s"), *WindowTag.ToString(), *UEnum::GetValueAsString(Hand));
-
-	if (!HasAuthority()) return;
-
-	if (auto* Hitbox = GetHitboxComponent())
-	{
-		// Forward the gameplay tag + hand into Hitbox
-		Hitbox->StartHitDetection(HandToSetName(Hand), WindowTag);
-	}
-}
-
-/**
- * Called when a combat window is ended
- * This function is responsible for stopping hit detection in the hitbox component.
- */
-void APGAS_CharacterBase::HandleCombatWindowEndHanded(FGameplayTag WindowTag, EPGAS_WeaponHand Hand)
-{
-	UE_LOG(LogTemp, Warning, TEXT("APGAS_CharacterBase::HandleCombatWindowEndHanded: WindowTag=%s, Hand=%s"), *WindowTag.ToString(), *UEnum::GetValueAsString(Hand));
-	
-	if (!HasAuthority()) return;
-
-	if (auto* Hitbox = GetHitboxComponent())
-	{
-		Hitbox->StopHitDetection(HandToSetName(Hand));
 	}
 }

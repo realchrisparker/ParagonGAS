@@ -122,7 +122,6 @@ public:
     virtual FVector GetPawnViewLocation() const override;
     virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
 
-
     /*
     * Properties
     */

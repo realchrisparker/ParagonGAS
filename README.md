@@ -13,8 +13,7 @@ Version 5.6
 - Custom Tools (New Item Menu Category & Items)
 - Custom Subsystems
 - Safe Thread Animation
-- Custom Anim Notifiers
--
+- Custom Anim Notifiers (Windowing, etc.)
 
 # FAB Content Used
 - Paragon: Wukong (https://www.fab.com/listings/27054d0c-c26e-4fe3-b6f9-fa778dfcb8b6)

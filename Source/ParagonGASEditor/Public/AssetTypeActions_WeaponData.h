@@ -4,6 +4,8 @@
 #include "ParagonGAS/Public/Data/Assets/PGAS_WeaponDataAsset.h"
 #include "ParagonGASEditorStyle.h"
 
+extern EAssetTypeCategories::Type ParagonGASCategory;
+
 /**
  * Customizes how UPGAS_WeaponDataAsset appears in the Content Browser
  */
@@ -31,7 +33,7 @@ public:
     // Which category in the Content Browser
     virtual uint32 GetCategories() override
     {
-        return EAssetTypeCategories::Gameplay;
+        return ParagonGASCategory;
     }
 
     // 🔥 Here’s the magic — use our custom icon

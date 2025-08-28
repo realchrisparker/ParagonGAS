@@ -12,6 +12,8 @@
     * Date: 6-28-2025
     * =============================================================================
     * Custom AnimNotifyState that adds/removes gameplay tags to actors during animation states. Supports conditions and Blueprint delegates.
+    * This notify state is designed to work with Unreal Engine's Gameplay Ability System (GAS) and provides a flexible way to manage gameplay
+    * tags during animations. It has two systems within. It can use GameplayTags for windowing and Gameplay Events for triggering specific actions.
 */
 
 #pragma once
@@ -20,6 +22,14 @@
 #include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "GameplayTagContainer.h"
 #include "PGAS_GameplayTagNotify.generated.h"
+
+
+/*
+ * Forward Declarations
+ */
+
+class UAbilitySystemComponent;
+class APGAS_CharacterBase;
 
 /*
     * Delegates
@@ -32,17 +42,22 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameplayTagNotifyBegin, UPGAS_Gam
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameplayTagNotifyEnd, UPGAS_GameplayTagNotify*, NotifyInstance);
 
 /*
-    * Gameplay Tag Notify State
-    * This notify state adds/removes gameplay tags to/from the actor during animation states.
-    * It supports conditions based on required tags and provides Blueprint delegates for begin/end events.
-*/
-UCLASS(Blueprintable, meta = (DisplayName = "Gameplay Tag Notify State"))
+ * Gameplay Tag Notify State
+ * This notify state adds/removes gameplay tags to/from the actor during animation states.
+ * It supports conditions based on required tags and provides Blueprint delegates for begin/end events.
+ */
+UCLASS(Blueprintable,
+    meta = (DisplayName = "PGAS Gameplay Tag Notify State", 
+        Description = "Triggers gameplay events and manages gameplay tags during animation states.",
+        Tooltip = "Triggers gameplay events and manages gameplay tags during animation states.",
+        Keywords = "Gameplay, Tag, Notify, Animation"
+    )
+)
 class PARAGONGAS_API UPGAS_GameplayTagNotify : public UAnimNotifyState
 {
     GENERATED_BODY()
 
 public:
-    UPGAS_GameplayTagNotify();
 
     /*
      * Functions
@@ -55,7 +70,7 @@ public:
     virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation) override;
 
     // Name displayed in editor
-    virtual FString GetNotifyName_Implementation() const override;
+    virtual FString GetNotifyName_Implementation() const override { return Id.IsEmpty() ? GetNotifyName() : Id; }
 
     // Color displayed in editor (optional, only works if you implement editor extension)
     virtual FLinearColor GetEditorColor() override { return NotifyColor; }
@@ -65,9 +80,14 @@ public:
     */
 
     // Notify name for identification
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify|Identification",
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify",
         meta = (DisplayName = "Notify Id", ToolTip = "Unique identifier for this notify. Used in code/editor."))
     FString Id = TEXT("Enter Notify Id Here");
+
+    // Enable debug print
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify",
+        meta = (DisplayName = "Debug Print", ToolTip = "Print debug messages when notify triggers."))
+    bool bDebug = false;
 
     // Gameplay tags to add to the actor
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify|Gameplay",
@@ -87,23 +107,27 @@ public:
     FGameplayTag RequiredTag;
 
     // Tag that must be present for this notify to activate
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify|GameplayTags",
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify|Events",
         meta = (DisplayName = "Begin Notify Tag", ToolTip = "Gameplay tag used to signal the beginning of the notify."))
     FGameplayTag BeginNotifyTag;
 
     // Tag that must be present for this notify to activate
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify|GameplayTags",
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify|Events",
         meta = (DisplayName = "End Notify Tag", ToolTip = "Gameplay tag used to signal the end of the notify."))
     FGameplayTag EndNotifyTag;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify|Advanced",
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify|Events",
         meta = (DisplayName = "Magnitude", ToolTip = "Magnitude of the notify event."))
     float Magnitude = 1.0f;
 
-    // Enable debug print
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify|Debug",
-        meta = (DisplayName = "Debug Print", ToolTip = "Print debug messages when notify triggers."))
-    bool bDebug = false;
+    // Gameplay tag that this notify will add/remove for monitoring windows
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Notify|Windowing",
+        meta = (DisplayName = "Monitor Tag", ToolTip = "Tag to add on NotifyBegin and remove on NotifyEnd. Used by CombatCoreComponent to track windows."))
+    FGameplayTag MonitorGameplayTag;
+
+    //--------------
+    // Events
+    //--------------
 
     // Delegate: called on notify begin
     UPROPERTY(BlueprintAssignable, Category = "Notify")
@@ -112,5 +136,18 @@ public:
     // Delegate: called on notify end
     UPROPERTY(BlueprintAssignable, Category = "Notify")
     FOnGameplayTagNotifyEnd OnGameplayTagNotifyEndDelegate;
+
+private:
+
+    /*
+     * Properties
+    */
+
+    // ---------------------------
+    // Cached owner pointers
+    // ---------------------------
+
+    TObjectPtr<APGAS_CharacterBase> CachedCharacter; // Cached reference to the owning character
+    TObjectPtr<UAbilitySystemComponent> CachedASC; // Cached reference to the ability system component
 };
     

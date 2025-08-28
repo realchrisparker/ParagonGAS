@@ -6,19 +6,28 @@ public class ParagonGASEditor : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PrivateDependencyModuleNames.AddRange(
-            new string[]
-            {
-                "Core",
-                "CoreUObject",
-                "Engine",
-                "UnrealEd",       // Required for editor-only stuff
-                "AssetTools",     // Required for custom asset type actions
-                "Slate",
-                "SlateCore",
-                "Projects",
-                "ParagonGAS"      // Our runtime module
-            }
-        );
+        PublicDependencyModuleNames.AddRange(new[] {
+            "Core",
+            "CoreUObject",
+            "Engine"
+        });
+
+        PrivateDependencyModuleNames.AddRange(new[] {
+            "Slate",
+            "SlateCore",
+            "UnrealEd",
+            "AssetTools",
+            "AssetRegistry",
+            "ToolMenus",
+            "ContentBrowser",
+            "Kismet",
+            "Projects",
+            "InputCore",
+            "EditorSubsystem",
+            "ParagonGAS",
+            "KismetCompiler",
+            "KismetWidgets",
+            "BlueprintGraph"
+        });
     }
 }

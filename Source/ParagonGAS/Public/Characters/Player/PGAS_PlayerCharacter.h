@@ -33,6 +33,8 @@
 #include <Game/PGAS_HUD.h>
 #include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
+#include <Components/PGAS_CombatCoreComponent.h>
+#include <Components/PGAS_HitboxComponent.h>
 #include <UserWidgets/PGAS_InGame_HUD.h>
 #include "PGAS_PlayerCharacter.generated.h"
 
@@ -271,6 +273,20 @@ public:
         return false;
     }
 
+    // Returns the Hit Reaction Component for this character
+    // This component handles hit reactions for the enemy character.
+    UPGAS_CombatCoreComponent* GetCombatCoreComponent() const
+    {
+        return CombatCoreComponent;
+    }
+
+    // Returns the Hitbox Component for this character
+    // This component handles hit detection for the character.
+    UPGAS_HitboxComponent* GetHitboxComponent() const
+    {
+        return HitboxComponent;
+    }
+
     /*
     * Properties
     */
@@ -281,9 +297,11 @@ public:
     TObjectPtr<UAnimMontage> IdleBreakMontage;
 
 protected:
+
     /*
     * Functions
     */
+    
     // Called when the game starts or when spawned
     virtual void BeginPlay() override;
 
@@ -451,6 +469,14 @@ private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Camera", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UCameraComponent> FollowCamera;
 
+    // Combat core component for handling combat-related functionality
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UPGAS_CombatCoreComponent> CombatCoreComponent;
+
+    // Combat hitbox component for handling hit detection
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UPGAS_HitboxComponent> HitboxComponent;
+
     // Attribute Set for managing character attributes (health, mana, etc.)
     // This is where you define your character's attributes like health, mana, etc.
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
@@ -460,7 +486,7 @@ private:
      * Set of actors that have already been hit by the weapon trace
      * This is used to prevent hitting the same actor multiple times in a single trace.
      * It is a transient property, meaning it will not be saved or replicated.
-    */
+     */
     UPROPERTY(Transient)
     TSet<TWeakObjectPtr<AActor>> AlreadyHitActors;
 
@@ -546,4 +572,35 @@ private:
             GetMesh()->GetAnimInstance()->Montage_Play(IdleBreakMontage);
         }
     }
+
+    // Combat Window Handlers
+
+    /**
+     * Called when a combat window is started
+     * This function is responsible for starting hit detection in the hitbox component.
+     */
+    UFUNCTION()
+    void HandleCombatWindowStartHanded(FPGAS_AttackType AttackData);
+
+    /**
+     * Called when a combat window is ended
+     * This function is responsible for stopping hit detection in the hitbox component.
+     */
+    UFUNCTION()
+    void HandleCombatWindowEndHanded(FPGAS_AttackType AttackData);
+
+	/*
+	 * Helper function to get the hand name from the weapon hand enum
+	 * @param Hand - The weapon hand enum value
+	 */
+	FName HandToSetName(EPGAS_WeaponHand Hand) const
+	{
+		switch (Hand)
+		{
+			case EPGAS_WeaponHand::Left:  return TEXT("LeftHand");
+			case EPGAS_WeaponHand::Right: return TEXT("RightHand");
+			case EPGAS_WeaponHand::Both:  return NAME_None; // NAME_None -> “all sets” in our Hitbox
+			default:                      return NAME_None;
+		}
+	}
 };

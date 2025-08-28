@@ -22,6 +22,7 @@
 #include "Components/ActorComponent.h"
 #include "GameplayTagContainer.h"
 #include "GameplayEffectTypes.h"
+#include <Components/PGAS_CombatCoreComponent.h>
 #include "PGAS_HitboxComponent.generated.h"
 
 /*
@@ -97,12 +98,13 @@ struct PARAGONGAS_API FPGAS_HitboxSet
 // Hitbox hit delegate
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FPGAS_OnHitboxHitSignature, AActor*, HitActor, const FHitResult&, HitResult, FName, HitboxSetName, FGameplayTag, AttackTag);
 
+
 /**
  * Socket-driven melee hitbox component.
  * Call StartHitDetection/StopHitDetection from Ability (or Anim Notifies).
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS), 
-    meta = (BlueprintSpawnableComponent, DisplayName = "Hitbox Component", Icon = "Resources/T_sword.png")
+    meta = (BlueprintSpawnableComponent, DisplayName = "Hitbox Component")
 )
 class PARAGONGAS_API UPGAS_HitboxComponent : public UActorComponent
 {

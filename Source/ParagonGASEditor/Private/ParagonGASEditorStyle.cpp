@@ -18,7 +18,6 @@ void FParagonGASEditorStyle::Initialize()
     const FVector2D Icon16(16.f, 16.f);
     const FVector2D Icon64(64.f, 64.f);
 
-
     FString IconPath = StyleSet->RootToContentDir(TEXT("T_sword.png"));
     UE_LOG(LogTemp, Warning, TEXT("WeaponDataAsset Icon Path: %s"), *IconPath);
 

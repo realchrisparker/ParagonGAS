@@ -11,7 +11,7 @@
  * Author: Christopher D. Parker
  * Date: 8-19-2025
  * =============================================================================
- * PGAS_ComboStep
+ * EPGAS_WeaponHand
  * An enumeration for Which weapon/hand a window or action applies to.
  * This enum is used to determine the active weapon or hand for combat actions.
  */
@@ -27,4 +27,15 @@ enum class EPGAS_WeaponHand : uint8
     Left  UMETA(DisplayName = "Left"),
     Right UMETA(DisplayName = "Right"),
     Both  UMETA(DisplayName = "Both")
+};
+
+/** Which weapon/hand a window or action applies to. */
+UENUM(BlueprintType, meta = (DisplayName = "Weapon Attack Type"))
+enum class EPGAS_WeaponAttackType : uint8
+{
+    Light  UMETA(DisplayName = "Light"),
+    Medium UMETA(DisplayName = "Medium"),
+    Heavy  UMETA(DisplayName = "Heavy"),
+    Jump   UMETA(DisplayName = "Jump"),
+    Land   UMETA(DisplayName = "Land")
 };

@@ -22,7 +22,7 @@
 UPGAS_PlayerAnimInstanceBase::UPGAS_PlayerAnimInstanceBase(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    UE_LOG(LogTemp, Log, TEXT("UPGAS_PlayerAnimInstanceBase Constructor called"));
+    // UE_LOG(LogTemp, Log, TEXT("UPGAS_PlayerAnimInstanceBase Constructor called"));
 }
 
 // Called when the animation instance is destorying

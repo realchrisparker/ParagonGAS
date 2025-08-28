@@ -51,6 +51,12 @@ APGAS_PlayerCharacter::APGAS_PlayerCharacter()
     GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f); // controls how fast the character turns
     GetCharacterMovement()->bUseControllerDesiredRotation = false;   // only rotate to movement, not camera
 
+    // Create the combat core component
+    CombatCoreComponent = CreateDefaultSubobject<UPGAS_CombatCoreComponent>(TEXT("Combat Core Component"));
+
+    // Create the hitbox component.
+    HitboxComponent = CreateDefaultSubobject<UPGAS_HitboxComponent>(TEXT("Hitbox Component"));
+
     /**
      * Set up the character's attribute set.
      * This is where you define your character's attributes like health, mana, etc.
@@ -122,6 +128,13 @@ void APGAS_PlayerCharacter::BeginPlay()
             ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetAdrenalineAttribute()).AddUObject(
                 this, &APGAS_PlayerCharacter::OnAdrenalineAttributeChanged);
         }
+    }
+
+    // Bind CombatCore -> windowing events.
+    if (UPGAS_CombatCoreComponent* Core = GetCombatCoreComponent())
+    {
+        Core->OnCombatWindowOpen.AddDynamic(this, &APGAS_PlayerCharacter::HandleCombatWindowStartHanded);
+        Core->OnCombatWindowClose.AddDynamic(this, &APGAS_PlayerCharacter::HandleCombatWindowEndHanded);
     }
 }
 
@@ -284,7 +297,7 @@ void APGAS_PlayerCharacter::MoveStopAction(const FInputActionInstance& Value)
 
 /*
  * Look function to handle looking around input.
- * This function is called when the IA_Look input action is triggered.
+     * This function is called when the IA_Look input action is triggered.
 */
 void APGAS_PlayerCharacter::LookAction(const FInputActionValue& Value)
 {
@@ -419,17 +432,15 @@ void APGAS_PlayerCharacter::BlockReleaseAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::LeftHandLightAttackAction(const FInputActionValue& Value)
 {
-    UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent();
-    if (CoreComponent && CoreComponent->AttackActive_LeftTag.IsValid())
+    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
     {
-        const bool bActivated = CoreComponent->ActivateAbilityByTag(CoreComponent->AttackActive_LeftTag, EPGAS_WeaponHand::Left);
-        SetIsAttacking(bActivated); // Set the attacking flag to true
-
-        // if (!bActivated)
-        // {
-        //     UE_LOG(LogTemp, Warning, TEXT("Countess: Failed to activate Left Hand Attack Ability (Tag: %s)"),
-        //         *CoreComponent->AttackActive_LeftTag.ToString());
-        // }
+        // Get the first attack of the specified type
+        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndHand(EPGAS_WeaponAttackType::Light, EPGAS_WeaponHand::Left);
+        if (Attack.AbilityTag.IsValid())
+        {
+            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+            SetIsAttacking(bActivated); // Set the attacking flag to true
+        }
     }
 
     // Reset idle time and animation flag when movement starts
@@ -437,19 +448,21 @@ void APGAS_PlayerCharacter::LeftHandLightAttackAction(const FInputActionValue& V
     bIdleAnimationPlayed = false;
 }
 
+/**
+ * RightHandLightAttackAction function to handle right hand attack input.
+ * This function is called when the IA_RightHandLightAttack input action is triggered.
+ */
 void APGAS_PlayerCharacter::RightHandLightAttackAction(const FInputActionValue& Value)
 {
-    UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent();
-    if (CoreComponent && CoreComponent->AttackActive_RightTag.IsValid())
+    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
     {
-        const bool bActivated = CoreComponent->ActivateAbilityByTag(CoreComponent->AttackActive_RightTag, EPGAS_WeaponHand::Right);
-        SetIsAttacking(bActivated); // Set the attacking flag to true
-
-        // if (!bActivated)
-        // {
-        //     UE_LOG(LogTemp, Warning, TEXT("Countess: Failed to activate Right Hand Attack Ability (Tag: %s)"),
-        //         *CoreComponent->AttackActive_RightTag.ToString());
-        // }
+        // Get the first attack of the specified type
+        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndHand(EPGAS_WeaponAttackType::Light, EPGAS_WeaponHand::Right);
+        if (Attack.AbilityTag.IsValid())
+        {
+            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+            SetIsAttacking(bActivated); // Set the attacking flag to true
+        }
     }
 
     // Reset idle time and animation flag when movement starts
@@ -671,5 +684,38 @@ void APGAS_PlayerCharacter::OnAdrenalineAttributeChanged(const FOnAttributeChang
     if (MyPlayerHUD)
     {
         MyPlayerHUD->UpdateAdrenalineBar(NewValue, GetMaxAdrenaline());
+    }
+}
+
+/**
+ * Called when a combat window is started
+ * This function is responsible for starting hit detection in the hitbox component.
+ */
+void APGAS_PlayerCharacter::HandleCombatWindowStartHanded(FPGAS_AttackType AttackData)
+{
+    UE_LOG(LogTemp, Warning, TEXT("APGAS_PlayerCharacter::HandleCombatWindowStartHanded: CombatTag=%s, Hand=%s"), *AttackData.AbilityTag.ToString(), *UEnum::GetValueAsString(AttackData.Hand));
+
+    if (!HasAuthority()) return; // exit if no authority
+
+    if (UPGAS_HitboxComponent* Component = GetHitboxComponent())
+    {
+        // Forward the gameplay tag + hand into Hitbox
+        // Component->StartHitDetection(HandToSetName(Hand), CombatTag);
+    }
+}
+
+/**
+ * Called when a combat window is ended
+ * This function is responsible for stopping hit detection in the hitbox component.
+ */
+void APGAS_PlayerCharacter::HandleCombatWindowEndHanded(FPGAS_AttackType AttackData)
+{
+    UE_LOG(LogTemp, Warning, TEXT("APGAS_PlayerCharacter::HandleCombatWindowEndHanded: CombatTag=%s, Hand=%s"), *AttackData.AbilityTag.ToString(), *UEnum::GetValueAsString(AttackData.Hand));
+
+    if (!HasAuthority()) return; // exit if no authority
+
+    if (UPGAS_HitboxComponent* Component = GetHitboxComponent())
+    {
+        // Component->StopHitDetection(HandToSetName(Hand));
     }
 }

@@ -24,7 +24,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "GenericTeamAgentInterface.h"
-#include <Characters/Base/PGAS_CharacterBase.h>
+#include <Characters/Player/PGAS_PlayerCharacter.h>
 
 UPGAS_HitboxComponent::UPGAS_HitboxComponent()
 {
@@ -41,68 +41,75 @@ void UPGAS_HitboxComponent::BeginPlay()
     CacheOwnerASC();
 
     // Auto-build hitbox sets from CombatCore weapon profiles
-    if (APGAS_CharacterBase* OwnerChar = Cast<APGAS_CharacterBase>(GetOwner()))
-    {
-        if (UPGAS_CombatCoreComponent* Core = OwnerChar->GetCombatCoreComponent())
-        {
-            TArray<FPGAS_HitboxSet> AutoSets;
+    // if (APGAS_PlayerCharacter* OwnerChar = Cast<APGAS_PlayerCharacter>(GetOwner()))
+    // {
+    //     if (UPGAS_CombatCoreComponent* Core = OwnerChar->GetCombatCoreComponent())
+    //     {
+    //         TArray<FPGAS_HitboxSet> AutoSets;
 
-            // ---- LEFT HAND ----
-            if (UPGAS_WeaponDataAsset* LeftAsset = Cast<UPGAS_WeaponDataAsset>(Core->LeftWeaponProfile))
-            {
-                const FPGAS_HitboxProfile& Profile = LeftAsset->LeftHandProfile.HitboxProfile;
+    //         // ---- LEFT HAND ----
+    //         if (UPGAS_WeaponDataAsset* LeftAsset = Cast<UPGAS_WeaponDataAsset>(Core->LeftWeaponProfile))
+    //         {
+    //             const FPGAS_HitboxProfile& Profile = LeftAsset->LeftHandProfile.HitboxProfile;
 
-                if (Profile.StartSocket != NAME_None && Profile.EndSocket != NAME_None)
-                {
-                    FPGAS_HitboxSet LeftSet;
-                    LeftSet.SetName = TEXT("LeftHand");
+    //             if (Profile.StartSocket != NAME_None && Profile.EndSocket != NAME_None)
+    //             {
+    //                 FPGAS_HitboxSet LeftSet;
+    //                 LeftSet.SetName = TEXT("LeftHand");
 
-                    FPGAS_WeaponTrace Trace;
-                    Trace.StartSocket = Profile.StartSocket;
-                    Trace.EndSocket = Profile.EndSocket;
-                    Trace.Radius = Profile.Radius;
-                    Trace.Shape = EPGAS_HitboxShape::Sphere; // Or expose in asset if you like
-                    Trace.CapsuleHalfHeight = 0.f;
+    //                 FPGAS_WeaponTrace Trace;
+    //                 Trace.StartSocket = Profile.StartSocket;
+    //                 Trace.EndSocket = Profile.EndSocket;
+    //                 Trace.Radius = Profile.Radius;
+    //                 Trace.Shape = EPGAS_HitboxShape::Sphere; // Or expose in asset if you like
+    //                 Trace.CapsuleHalfHeight = 0.f;
 
-                    LeftSet.Traces.Add(Trace);
-                    AutoSets.Add(LeftSet);
-                }
-            }
+    //                 LeftSet.Traces.Add(Trace);
+    //                 AutoSets.Add(LeftSet);
+    //             }
+    //         }
 
-            // ---- RIGHT HAND ----
-            if (UPGAS_WeaponDataAsset* RightAsset = Cast<UPGAS_WeaponDataAsset>(Core->RightWeaponProfile))
-            {
-                const FPGAS_HitboxProfile& Profile = RightAsset->RightHandProfile.HitboxProfile;
+    //         // ---- RIGHT HAND ----
+    //         if (UPGAS_WeaponDataAsset* RightAsset = Cast<UPGAS_WeaponDataAsset>(Core->RightWeaponProfile))
+    //         {
+    //             const FPGAS_HitboxProfile& Profile = RightAsset->RightHandProfile.HitboxProfile;
 
-                if (Profile.StartSocket != NAME_None && Profile.EndSocket != NAME_None)
-                {
-                    FPGAS_HitboxSet RightSet;
-                    RightSet.SetName = TEXT("RightHand");
+    //             if (Profile.StartSocket != NAME_None && Profile.EndSocket != NAME_None)
+    //             {
+    //                 FPGAS_HitboxSet RightSet;
+    //                 RightSet.SetName = TEXT("RightHand");
 
-                    FPGAS_WeaponTrace Trace;
-                    Trace.StartSocket = Profile.StartSocket;
-                    Trace.EndSocket = Profile.EndSocket;
-                    Trace.Radius = Profile.Radius;
-                    Trace.Shape = EPGAS_HitboxShape::Sphere;
-                    Trace.CapsuleHalfHeight = 0.f;
+    //                 FPGAS_WeaponTrace Trace;
+    //                 Trace.StartSocket = Profile.StartSocket;
+    //                 Trace.EndSocket = Profile.EndSocket;
+    //                 Trace.Radius = Profile.Radius;
+    //                 Trace.Shape = EPGAS_HitboxShape::Sphere;
+    //                 Trace.CapsuleHalfHeight = 0.f;
 
-                    RightSet.Traces.Add(Trace);
-                    AutoSets.Add(RightSet);
-                }
-            }
+    //                 RightSet.Traces.Add(Trace);
+    //                 AutoSets.Add(RightSet);
+    //             }
+    //         }
 
-            // Apply
-            if (AutoSets.Num() > 0)
-            {
-                SetHitboxSets(AutoSets);
-            }
-        }
-    }
+    //         // Apply
+    //         if (AutoSets.Num() > 0)
+    //         {
+    //             SetHitboxSets(AutoSets);
+    //         }
+    //     }
+    // }
 }
 
 void UPGAS_HitboxComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+    // UE_LOG(LogTemp, Warning, TEXT("Tick on %s's Hitbox [%p], ActiveSets.Num=%d"),
+    //     *GetOwner()->GetName(), this, ActiveSets.Num());
+    // for (auto& S : ActiveSets)
+    // {
+    //     UE_LOG(LogTemp, Warning, TEXT("   %s"), *S.ToString());
+    // }
 
     if (ActiveSets.Num() == 0)
     {
@@ -139,7 +146,7 @@ void UPGAS_HitboxComponent::SetHitboxSets(const TArray<FPGAS_HitboxSet>& InSets)
 }
 
 void UPGAS_HitboxComponent::StartHitDetection(FName SetName, FGameplayTag InAttackTag)
-{
+{    
     if (SetName.IsNone())
     {
         // Activate all sets if none specified.
@@ -152,6 +159,13 @@ void UPGAS_HitboxComponent::StartHitDetection(FName SetName, FGameplayTag InAtta
     else
     {
         ActiveSets.Add(SetName);
+
+        UE_LOG(LogTemp, Warning, TEXT("StartHitDetection(%s) on %s [%p]"), *SetName.ToString(), *GetName(), this);
+        for (auto& S : ActiveSets)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("   %s"), *S.ToString());
+        }
+
         AlreadyHitPerSet.FindOrAdd(SetName).Reset();
     }
     CurrentAttackTag = InAttackTag;
@@ -238,8 +252,8 @@ void UPGAS_HitboxComponent::CacheOwnerASC()
 {
     if (AActor* OwnerActor = GetOwner())
     {
-        // Convert to APGAS_CharacterBase
-        if (APGAS_CharacterBase* Character = Cast<APGAS_CharacterBase>(OwnerActor))
+        // Convert to APGAS_PlayerCharacter
+        if (APGAS_PlayerCharacter* Character = Cast<APGAS_PlayerCharacter>(OwnerActor))
         {
             OwnerASC = Character->GetAbilitySystemComponent(); // Cache the Ability System Component
         }

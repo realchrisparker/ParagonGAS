@@ -17,6 +17,7 @@
  * - Delegates have handed variants; legacy delegates remain for backward compat.
  * - Abilities still do the gameplay work; the core coordinates & signals.
  */
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -26,21 +27,52 @@
 #include <Data/Assets/PGAS_WeaponDataAsset.h>
 #include "PGAS_CombatCoreComponent.generated.h"
 
+ /*
+  * Forward Declarations
+ */
+
 class UAbilitySystemComponent;
 class APGAS_CharacterBase;
 
+/*
+ * Structs
+*/
 
-/** Generic window tag events (legacy, single-channel). */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPGAS_CombatWindowTagEvent, FGameplayTag, WindowTag);
+USTRUCT(BlueprintType, meta = (DisplayName = "PGAS Attack Type", Description = "Represents an attack type in the PGAS Combat System"))
+struct PARAGONGAS_API FPGAS_AttackType
+{
+    GENERATED_BODY()
 
-/** Handed window tag events (preferred for dual-wield). */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPGAS_CombatWindowTagHandedEvent, FGameplayTag, WindowTag, EPGAS_WeaponHand, Hand);
+public:
 
-/** Simple start/stop notifications (legacy). */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPGAS_CombatSimpleEvent);
+    // The gameplay tag that identifies the ability or attack
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat", meta = (DisplayName = "Ability Tag", Description = "The gameplay tag that identifies the ability or attack"))
+    FGameplayTag AbilityTag;
 
-/** Handed hitbox start/stop notifications. */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPGAS_CombatHitboxHandedEvent, EPGAS_WeaponHand, Hand);
+    // Which hand performs this attack (left/right/both)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat", meta = (DisplayName = "Attack Hand", Description = "Which hand performs this attack (left/right/both)"))
+    EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Right;
+
+    // The weapon data asset associated with this attack
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat", meta = (DisplayName = "Weapon Data", Description = "The weapon data asset associated with this attack"))
+    TObjectPtr<UPGAS_WeaponDataAsset> WeaponData = nullptr;
+
+    // The type of attack (light, medium, heavy)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat", meta = (DisplayName = "Attack Type", Description = "The type of attack (light, medium, heavy, etc.)"))
+    EPGAS_WeaponAttackType AttackType = EPGAS_WeaponAttackType::Light;
+};
+
+
+/*
+ * Delegates
+*/
+
+// Delegate for combat windows
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FPGAS_CombatWindowEventSignature,
+    FPGAS_AttackType, AttackData
+);
+
 
 /**
  * The central coordinator for combat timing & state.
@@ -51,211 +83,125 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPGAS_CombatHitboxHandedEvent, EPGAS
  * NOTE: Actual attacks/defense live in Gameplay Abilities & Effects.
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS), 
-    meta = (BlueprintSpawnableComponent, DisplayName = "Combat Core Component", Icon = "Resources/T_sword.png")
+    meta = (BlueprintSpawnableComponent, 
+        DisplayName = "PGAS Combat Core Component", 
+        Description = "Central coordinator for combat timing & state.", 
+        Tooltip = "Handles combat windows and state management.")
 )
 class PARAGONGAS_API UPGAS_CombatCoreComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
+    // Constructor
     UPGAS_CombatCoreComponent();
 
-    // ---------------------------
-    // Query
-    // ---------------------------
-    UFUNCTION(BlueprintPure, Category = "PGAS|Combat|Tags")
-    bool HasCombatTag(const FGameplayTag& Tag) const;
+    /*
+     * Properties
+    */
+
+    /**
+     * All available attacks for this character.
+     * Designers can add/remove entries in the editor.
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Attacks")
+    TArray<FPGAS_AttackType> AttackTypes;
 
     // ---------------------------
-    // Window control (hand-aware)
+    // Windowing
     // ---------------------------
 
-    /** Open a specific window tag for a given hand (or Both). Duration<=0 keeps it open until closed. */
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Tags")
-    void OpenWindowTagForHand(const FGameplayTag& Tag, EPGAS_WeaponHand Hand, float Duration = 0.f);
+    /** Delegate broadcast when a combat window is opened or closed */
+    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
+    FPGAS_CombatWindowEventSignature OnCombatWindowOpen;
 
-    /** Close a specific window tag for a given hand (or Both). */
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Tags")
-    void CloseWindowTagForHand(const FGameplayTag& Tag, EPGAS_WeaponHand Hand);
+    /** Delegate broadcast when a combat window is closed */
+    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
+    FPGAS_CombatWindowEventSignature OnCombatWindowClose;
 
-    /** Legacy helpers (single-channel). */
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Tags", meta = (DisplayName = "Open Window Tag (Legacy)"))
-    void OpenWindowTag(const FGameplayTag& Tag, float Duration = 0.f) { OpenWindowTagForHand(Tag, EPGAS_WeaponHand::Both, Duration); }
-
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Tags", meta = (DisplayName = "Close Window Tag (Legacy)"))
-    void CloseWindowTag(const FGameplayTag& Tag) { CloseWindowTagForHand(Tag, EPGAS_WeaponHand::Both); }
+    /*
+     * Functions
+    */
 
     // ---------------------------
     // Ability helpers
     // ---------------------------
 
     /**
-     * Activate an ability by tag. Optionally stamps a brief hand-context tag
-     * (e.g., Combat.Hand.Left/Right) so the ability can branch on the active hand.
+     * Activate an ability by tag.
+     * @param AttackData The attack data to use for activation.
      */
     UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Abilities")
-    bool ActivateAbilityByTag(const FGameplayTag& AbilityTag,
-        EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both,
-        bool bAllowRemoteActivation = true,
-        bool bSetHandContextTag = true,
-        float ContextTagDuration = -1.f);
+    bool ActivateAbilityByTag(const FGameplayTag& AbilityTag);
 
+    /**
+     * Cancel abilities by tag.
+     * @param AttackData The combat tag type to cancel abilities for.
+     */
     UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Abilities")
-    void CancelAbilitiesByTag(const FGameplayTag& AbilityTag);
+    void CancelAbilityByTag(const FGameplayTag& AbilityTag);
 
     // ---------------------------
-    // Notify-friendly helpers (handed)
+    // Attack Lookup Helpers
     // ---------------------------
 
-    // Attack Active window
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
-    void Notify_AttackWindowBegin(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both, float DurationSec = 0.f);
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
-    void Notify_AttackWindowEnd(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both);
+    /** Return the first attack matching an AttackType (Light, Heavy, etc.) */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
+    FPGAS_AttackType GetFirstAttackByType(EPGAS_WeaponAttackType InType) const;
 
-    // Attack CanChain window
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
-    void Notify_CanChainBegin(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both, float DurationSec = 0.f);
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
-    void Notify_CanChainEnd(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both);
+    /** Return all attacks matching an AttackType */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
+    TArray<FPGAS_AttackType> GetAllAttacksByType(EPGAS_WeaponAttackType InType) const;
 
-    // Parry window
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
-    void Notify_ParryWindowBegin(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both, float DurationSec = 0.f);
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
-    void Notify_ParryWindowEnd(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both);
+    /** Return the first attack matching a Hand (Left, Right, Both) */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
+    FPGAS_AttackType GetFirstAttackByHand(EPGAS_WeaponHand InHand) const;
 
-    // Dodge i-frames (usually global; hand kept for parity)
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
-    void Notify_DodgeIFramesBegin(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both, float DurationSec = 0.f);
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
-    void Notify_DodgeIFramesEnd(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both);
+    /** Return all attacks matching a Hand */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
+    TArray<FPGAS_AttackType> GetAllAttacksByHand(EPGAS_WeaponHand InHand) const;
 
-    // Hitbox start/stop (handed + legacy)
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Hitbox")
-    void Notify_HitboxStart(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both);
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Hitbox")
-    void Notify_HitboxStop(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both);
+    /** Return the attack that matches a specific GameplayTag */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
+    FPGAS_AttackType GetAttackByTag(const FGameplayTag& InTag) const;
 
-    // Block window
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
-    void Notify_BlockWindowBegin(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both, float DurationSec = 0.f);
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Windows")
-    void Notify_BlockWindowEnd(EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Both);
-
-    // ---------------------------
-    // Events
-    // ---------------------------
-
-    // Legacy (single-channel)
-    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
-    FPGAS_CombatWindowTagEvent OnWindowStarted;
-    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
-    FPGAS_CombatWindowTagEvent OnWindowEnded;
-    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
-    FPGAS_CombatSimpleEvent OnHitboxStartLegacy;
-    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
-    FPGAS_CombatSimpleEvent OnHitboxStopLegacy;
-
-    // Preferred (hand-aware)
-    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
-    FPGAS_CombatWindowTagHandedEvent OnWindowStartedHanded;
-    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
-    FPGAS_CombatWindowTagHandedEvent OnWindowEndedHanded;
-
-    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
-    FPGAS_CombatHitboxHandedEvent OnHitboxStartHanded;
-    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
-    FPGAS_CombatHitboxHandedEvent OnHitboxStopHanded;
-
-    // ---------------------------
-    // Debug
-    // ---------------------------
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Debug")
-    bool bDebugWindows = false;
-
-    // ---------------------------
-    // Configurable Tags (generic + per-hand overrides)
-    // ---------------------------
-
-    /** Generic tags */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag AttackActiveTag;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag AttackCanChainTag;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag ParryWindowTag;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag DodgeIFrameTag;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag BlockWindowTag;
-
-    /** Per-hand overrides (if set, take precedence over generic) */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag AttackActive_LeftTag;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag AttackActive_RightTag;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag AttackCanChain_LeftTag;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag AttackCanChain_RightTag;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag ParryWindow_LeftTag;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag ParryWindow_RightTag;
-
-    /** Optional: hand-context tags to stamp briefly when activating abilities */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag HandContext_LeftTag;  // e.g., Combat.Hand.Left
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag HandContext_RightTag; // e.g., Combat.Hand.Right
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag BlockWindow_LeftTag;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Tags|Config", meta = (Categories = "Gameplay"))
-    FGameplayTag BlockWindow_RightTag;
-
-    /** Default duration to keep the hand-context tag after activation (<=0 uses one frame/tick). */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Config")
-    float DefaultHandContextDuration = 0.2f;
-
-    // ---------------------------
-    // Optional weapon profiles (placeholders you can replace with your own asset class)
-    // ---------------------------
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Weapon")
-    TObjectPtr<UPGAS_WeaponDataAsset> LeftWeaponProfile = nullptr;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Weapon")
-    TObjectPtr<UPGAS_WeaponDataAsset> RightWeaponProfile = nullptr;
+    /** Return the first attack matching both AttackType and Hand */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
+    FPGAS_AttackType GetAttackByTypeAndHand(EPGAS_WeaponAttackType InType, EPGAS_WeaponHand InHand) const;
 
 protected:
     virtual void BeginPlay() override;
-
-    /** Cached owner pointers */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Owner", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<APGAS_CharacterBase> CachedCharacter;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Owner", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UAbilitySystemComponent> CachedASC;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-    // Internal helpers
-    void AddWindowTag_Internal(const FGameplayTag& Tag, float Duration, EPGAS_WeaponHand Hand);
-    void RemoveWindowTag_Internal(const FGameplayTag& Tag, EPGAS_WeaponHand Hand);
 
-    /** Resolve per-hand override; falls back to Generic if override not set. */
-    FGameplayTag ResolveHandTag(const FGameplayTag& Generic, const FGameplayTag& Left, const FGameplayTag& Right, EPGAS_WeaponHand Hand) const;
+    /*
+     * Properties
+    */
 
-    /** Unique-collect resolved tags for Both so we don't double-add same tag. */
-    void ResolveAndApplyForHand(const FGameplayTag& Generic, const FGameplayTag& Left, const FGameplayTag& Right,
-        EPGAS_WeaponHand Hand, float Duration, bool bOpen);
+    // ---------------------------
+    // Cached owner pointers
+    // ---------------------------
 
-    /** Timer handles per concrete tag (left/right tags are different FGameplayTags). */
-    TMap<FGameplayTag, FTimerHandle> WindowTimers;
+    TObjectPtr<APGAS_CharacterBase> CachedCharacter; // Cached reference to the owning character
+    TObjectPtr<UAbilitySystemComponent> CachedASC; // Cached reference to the ability system component
 
-    /** Debug print helper. */
-    void DebugPrint(const FString& Msg) const;
+    FPGAS_AttackType LastKnownAttack; // Last known attack
+    TArray<FDelegateHandle> RegisteredTagHandles; // Array to hold registered tag handles
+
+    /*
+     * Functions
+    */
+
+    /** Resolve a GameplayTag from the given combat tag enum */
+    // FGameplayTag ResolveTagFromEnum(EPGAS_CombatTagType CombatTag) const;
+
+    // /** Resolve a CombatTag enum type from a GameplayTag property */
+    // EPGAS_CombatTagType ResolveEnumFromTag(const FGameplayTag& Tag) const;
+
+    // /** Set the last known attack hand from the given combat tag enum */
+    // void SetLastKnownAttackHandFromEnum(EPGAS_CombatTagType CombatTag);
+
+    /** Handle changes to the attack window tag */
+    void HandleAttackWindowTagChanged(const FGameplayTag Tag, int32 NewCount);
 };

@@ -26,7 +26,7 @@
 #include "StateTreeExecutionContext.h"
 #include "PGAS_StateTreeAIComponent.generated.h"
 
-UCLASS(ClassGroup = (AI), meta = (BlueprintSpawnableComponent, DisplayName = "PGAS State Tree AI Component"))
+UCLASS(ClassGroup = (PGAS), meta = (BlueprintSpawnableComponent, DisplayName = "PGAS State Tree AI Component"))
 class PARAGONGAS_API UPGAS_StateTreeAIComponent : public UStateTreeAIComponent
 {
     GENERATED_BODY()

@@ -25,7 +25,7 @@
 
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup = (PGAS),
-	meta = (BlueprintSpawnableComponent, DisplayName = "Hit Reaction Component", Icon = "Resources/T_sword.png")
+	meta = (BlueprintSpawnableComponent, DisplayName = "Hit Reaction Component")
 )
 class PARAGONGAS_API UPGAS_HitReactionComponent : public UActorComponent
 {
