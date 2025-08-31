@@ -35,6 +35,7 @@
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Components/PGAS_CombatCoreComponent.h>
 #include <Components/PGAS_HitboxComponent.h>
+#include <Components/PGAS_BlockComponent.h>
 #include <UserWidgets/PGAS_InGame_HUD.h>
 #include <Components/PGAS_LockOnComponent.h>
 #include "PGAS_PlayerCharacter.generated.h"
@@ -158,57 +159,57 @@ public:
     }
 
     /*
-    * Called when health is changed.
-    * This function is called whenever the character's health changes.
-    * @param DeltaValue The change in health value (positive or negative).
-    * @param Instigator The actor that caused the health change (e.g., damage dealer).
-    * @note This function is intended to be overridden in derived classes to handle health changes.
-    */
+     * Called when health is changed.
+     * This function is called whenever the character's health changes.
+     * @param DeltaValue The change in health value (positive or negative).
+     * @param Instigator The actor that caused the health change (e.g., damage dealer).
+     * @note This function is intended to be overridden in derived classes to handle health changes.
+     */
     UFUNCTION(BlueprintImplementableEvent, Category = "Player|Health", meta = (DisplayName = "On Health Changed"))
     void OnHealthChanged(float DeltaValue, AActor* Causer);
 
     /*
-    * Called when the character dies.
-    * This function is called when the character's health reaches zero.
-    */
+     * Called when the character dies.
+     * This function is called when the character's health reaches zero.
+     */
     UFUNCTION(BlueprintImplementableEvent, Category = "Player|Health", meta = (DisplayName = "On Death"))
     void OnDeath();
 
     /*
-    * Called when stamina is changed.
-    * This function is called whenever the character's stamina changes.
-    * @param DeltaValue The change in stamina value (positive or negative).
-    * @param Instigator The actor that caused the stamina change (e.g., damage dealer).
-    * @note This function is intended to be overridden in derived classes to handle stamina changes.
-    */
+     * Called when stamina is changed.
+     * This function is called whenever the character's stamina changes.
+     * @param DeltaValue The change in stamina value (positive or negative).
+     * @param Instigator The actor that caused the stamina change (e.g., damage dealer).
+     * @note This function is intended to be overridden in derived classes to handle stamina changes.
+     */
     UFUNCTION(BlueprintImplementableEvent, Category = "Player|Stamina", meta = (DisplayName = "On Stamina Changed"))
     void OnStaminaChanged(float DeltaValue, AActor* Causer);
 
     /*
-    * Called when adrenaline is changed.
-    * This function is called whenever the character's adrenaline changes.
-    * @param DeltaValue The change in adrenaline value (positive or negative).
-    * @param Instigator The actor that caused the adrenaline change (e.g., damage dealer).
-    * @note This function is intended to be overridden in derived classes to handle adrenaline changes.
-    */
+     * Called when adrenaline is changed.
+     * This function is called whenever the character's adrenaline changes.
+     * @param DeltaValue The change in adrenaline value (positive or negative).
+     * @param Instigator The actor that caused the adrenaline change (e.g., damage dealer).
+     * @note This function is intended to be overridden in derived classes to handle adrenaline changes.
+     */
     UFUNCTION(BlueprintImplementableEvent, Category = "Player|Adrenaline", meta = (DisplayName = "On Adrenaline Changed"))
     void OnAdrenalineChanged(float DeltaValue, AActor* Causer);
 
     /*
-    * Called when experience points are changed.
-    * This function is called whenever the character's experience points changes.
-    * @param DeltaValue The change in experience points value (positive or negative).
-    * @note This function is intended to be overridden in derived classes to handle experience points changes.
-    */
+     * Called when experience points are changed.
+     * This function is called whenever the character's experience points changes.
+     * @param DeltaValue The change in experience points value (positive or negative).
+     * @note This function is intended to be overridden in derived classes to handle experience points changes.
+     */
     UFUNCTION(BlueprintImplementableEvent, Category = "Player|Experience", meta = (DisplayName = "On Experience Points Changed"))
     void OnExperiencePointsChanged(float DeltaValue);
 
     /*
-    * Called when the character levels up.
-    * This function is called when the character's level increases.
-    * It can be used to trigger level-up effects, animations, or UI updates.
-    * @note This function is intended to be overridden in derived classes to handle level-up events.
-    */
+     * Called when the character levels up.
+     * This function is called when the character's level increases.
+     * It can be used to trigger level-up effects, animations, or UI updates.
+     * @note This function is intended to be overridden in derived classes to handle level-up events.
+     */
     UFUNCTION(BlueprintImplementableEvent, Category = "Player|Experience", meta = (DisplayName = "On Character Level Up"))
     void OnCharacterLevelUp();
 
@@ -221,39 +222,36 @@ public:
     virtual void HandleHealthChange(float DeltaValue, AActor* Causer);
 
     /*
-    * Handles the character's stamina change
-    * This function is called whenever the character's stamina changes.
-    * @param DeltaValue The change in stamina value (positive or negative).
-    * @param Causer The actor that caused the stamina change (e.g., damage dealer).
-    */
+     * Handles the character's stamina change
+     * This function is called whenever the character's stamina changes.
+     * @param DeltaValue The change in stamina value (positive or negative).
+     * @param Causer The actor that caused the stamina change (e.g., damage dealer).
+     */
     virtual void HandleStaminaChange(float DeltaValue, AActor* Causer);
 
     /*
-    * Handles the character's adrenaline change
-    * This function is called whenever the character's adrenaline changes.
-    * @param DeltaValue The change in adrenaline value (positive or negative).
-    * @param Causer The actor that caused the adrenaline change (e.g., damage dealer).
-    */
+     * Handles the character's adrenaline change
+     * This function is called whenever the character's adrenaline changes.
+     * @param DeltaValue The change in adrenaline value (positive or negative).
+     * @param Causer The actor that caused the adrenaline change (e.g., damage dealer).
+     */
     virtual void HandleAdrenalineChange(float DeltaValue, AActor* Causer);
 
     /*
-    * Handles the character's experience points change
-    * This function is called whenever the character's experience points change.
-    * @param DeltaValue The change in experience points value (positive or negative).
-    */
+     * Handles the character's experience points change
+     * This function is called whenever the character's experience points change.
+     * @param DeltaValue The change in experience points value (positive or negative).
+     */
     virtual void HandleExperiencePointsChange(float DeltaValue);
 
     /*
-    * Handles the character's level-up logic
-    */
+     * Handles the character's level-up logic
+     */
     virtual void HandleCharacterLevelUp();
 
     // Sets up default abilities for the enemy character.
     // This function can be used to set up default abilities for the enemy character.
     virtual void SetupDefaultAbilities() override;
-
-    // /** Update the in-game HUD with the current player status. */
-    // void UpdateInGameHUD();
 
     // Gets the current idle time of the character.
     UFUNCTION(BlueprintCallable, Category = "Player|Camera")
@@ -304,9 +302,16 @@ public:
         return LockOnComponent;
     }
 
+    // Returns the Block Component for this character
+    // This component handles blocking mechanics for the character.
+    UPGAS_BlockComponent* GetBlockComponent() const
+    {
+        return BlockComponent;
+    }
+
     /*
-    * Properties
-    */
+     * Properties
+     */
 
     /** Animation Montage for idle state break */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Animations|Idle", meta = (DisplayName = "Idle Break Montage",
@@ -316,8 +321,8 @@ public:
 protected:
 
     /*
-    * Functions
-    */
+     * Functions
+     */
     
     // Called when the game starts or when spawned
     virtual void BeginPlay() override;
@@ -335,15 +340,15 @@ protected:
     virtual void OnRep_PlayerState() override;
 
     /**
-    * Called when the Health attribute is changed.
-    * @param Data The data associated with the attribute change.
-    */
+     * Called when the Health attribute is changed.
+     * @param Data The data associated with the attribute change.
+     */
     virtual void OnHealthAttributeChanged(const FOnAttributeChangeData& Data);
 
     /**
-    * Called when the Stamina attribute is changed.
-    * @param Data The data associated with the attribute change.
-    */
+     * Called when the Stamina attribute is changed.
+     * @param Data The data associated with the attribute change.
+     */
     virtual void OnStaminaAttributeChanged(const FOnAttributeChangeData& Data);
 
     /**
@@ -413,8 +418,8 @@ protected:
     void LockOnAction(const FInputActionValue& Value);
 
     /*
-    * Properties
-    */
+     * Properties
+     */
 
     // Reference to the owning PlayerState, exposed to Blueprints
     UPROPERTY(BlueprintReadOnly, Category = "Player|State")
@@ -482,9 +487,10 @@ protected:
     TObjectPtr<class UInputAction> IA_LockOn;
 
 private:
+    
     /*
-    * Properties
-    */
+     * Properties
+     */
 
     // Camera boom positioning the camera behind the character
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Camera", meta = (AllowPrivateAccess = "true"))
@@ -505,6 +511,10 @@ private:
     // Combat lock-on component for handling lock-on targeting
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UPGAS_LockOnComponent> LockOnComponent;
+
+    // Combat block component for handling blocking mechanics
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UPGAS_BlockComponent> BlockComponent;
 
     // Attribute Set for managing character attributes (health, mana, etc.)
     // This is where you define your character's attributes like health, mana, etc.
@@ -530,8 +540,8 @@ private:
     bool bIdleAnimationPlayed = false; // Whether the idle animation has been played or not.
 
     /*
-    * Functions
-    */
+     * Functions
+     */
 
     FVector GetStaffStartSocketLocation() const
     {

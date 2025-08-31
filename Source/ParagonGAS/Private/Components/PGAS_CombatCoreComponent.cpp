@@ -261,3 +261,24 @@ FPGAS_AttackType UPGAS_CombatCoreComponent::GetAttackByTypeAndHand(EPGAS_WeaponA
 
 	return Found ? *Found : FPGAS_AttackType();
 }
+
+UPGAS_WeaponDataAsset* UPGAS_CombatCoreComponent::GetEquippedWeaponData() const
+{
+	// Case 1: If we have a "last known attack", trust its weapon data
+	if (LastKnownAttack.WeaponData)
+	{
+		return LastKnownAttack.WeaponData;
+	}
+
+	// Case 2: Try to find any attack that has a weapon
+	for (const FPGAS_AttackType& Attack : AttackTypes)
+	{
+		if (Attack.WeaponData)
+		{
+			return Attack.WeaponData;
+		}
+	}
+
+	// Case 3: Nothing equipped
+	return nullptr;
+}

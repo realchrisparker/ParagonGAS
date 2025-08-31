@@ -85,6 +85,11 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|FX")
     USoundCue* SwingSound;
 
+    /** The defense buff value to apply while blocking with this weapon */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|Block",
+        meta = (DisplayName = "Block Buff Value", ToolTip = "How much defense this weapon grants while blocking."))
+    float BlockBuffValue = 0.f;
+
     /** Override for primary asset ID */
     virtual FPrimaryAssetId GetPrimaryAssetId() const override
     {

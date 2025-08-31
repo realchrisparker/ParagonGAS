@@ -20,6 +20,7 @@ Version 5.6
 - Paragon: Paragon: Countess (https://www.fab.com/listings/0bf014eb-f2ed-4029-adda-81a855eb5220)
 - Seven Swords (https://www.fab.com/listings/9184a25a-4124-4b3f-8909-f7d2c6104c8e)
 - Kunai (https://www.fab.com/listings/bd0e0b2a-46c8-4f98-8df9-c8131a16a433)
+- Free Realistic Sword Sound Effects Pack (https://www.fab.com/listings/041c5773-f40e-4ae6-bb8b-8a3f36b20c27)
 - Mixamo Animations
 
 # Engine Commands Used

@@ -41,10 +41,7 @@ class UPGAS_WeaponDataAsset;
 */
 
 // Delegate for combat windows
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
-    FPGAS_CombatWindowEventSignature,
-    FPGAS_AttackType, AttackData
-);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPGAS_CombatWindowEventSignature, FPGAS_AttackType, AttackData);
 
 
 /**
@@ -141,6 +138,13 @@ public:
     /** Return the first attack matching both AttackType and Hand */
     UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
     FPGAS_AttackType GetAttackByTypeAndHand(EPGAS_WeaponAttackType InType, EPGAS_WeaponHand InHand) const;
+
+    /** Returns the equipped weapon data asset.
+     *  If dual wielding, returns the last known attack's weapon data.
+     *  If none, returns nullptr.
+     */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
+    UPGAS_WeaponDataAsset* GetEquippedWeaponData() const;
 
 protected:
     virtual void BeginPlay() override;

@@ -62,6 +62,9 @@ APGAS_PlayerCharacter::APGAS_PlayerCharacter()
     // Create the lock-on component.
     LockOnComponent = CreateDefaultSubobject<UPGAS_LockOnComponent>(TEXT("Lock On Component"));
 
+    // Create the block component.
+    BlockComponent = CreateDefaultSubobject<UPGAS_BlockComponent>(TEXT("Block Component"));
+
     /**
      * Set up the character's attribute set.
      * This is where you define your character's attributes like health, mana, etc.
@@ -265,6 +268,11 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 */
 void APGAS_PlayerCharacter::MoveStartedAction(const FInputActionInstance& Value)
 {
+    if (HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))) == false)
+    {
+        return;
+    }
+    
     AddGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Jogging"))); // This tag indicates the character is jogging or moving.
 }
 
@@ -453,9 +461,10 @@ void APGAS_PlayerCharacter::SprintReleaseAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::BlockStartedAction(const FInputActionInstance& Value)
 {
-    UE_LOG(LogTemp, Log, TEXT("BlockStartedAction called"));
-    // Activate by input ID
-    GetAbilitySystemComponent()->AbilityLocalInputPressed(static_cast<int32>(EPGAS_AbilityInputID::Block));
+    if (UPGAS_BlockComponent* BlockComp = GetBlockComponent())
+    {
+        BlockComp->StartBlock();
+    }
 
     // Reset idle time and animation flag when movement starts
     IdleTime = 0.f;
@@ -468,11 +477,9 @@ void APGAS_PlayerCharacter::BlockStartedAction(const FInputActionInstance& Value
 */
 void APGAS_PlayerCharacter::BlockReleaseAction(const FInputActionValue& Value)
 {
-    UE_LOG(LogTemp, Log, TEXT("BlockReleaseAction called"));
-    if (GetAbilitySystemComponent())
+    if (UPGAS_BlockComponent* BlockComp = GetBlockComponent())
     {
-        // Release block input
-        GetAbilitySystemComponent()->AbilityLocalInputReleased(static_cast<int32>(EPGAS_AbilityInputID::Block));
+        BlockComp->StopBlock();
     }
 
     // Reset idle time and animation flag when movement stops
