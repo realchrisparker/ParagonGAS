@@ -77,6 +77,10 @@
 		{
 			"Name": "Locomotor",
 			"Enabled": true
+		},
+		{
+			"Name": "CascadeToNiagaraConverter",
+			"Enabled": true
 		}
 	]
 }

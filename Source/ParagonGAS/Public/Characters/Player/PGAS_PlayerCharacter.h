@@ -36,7 +36,11 @@
 #include <Components/PGAS_CombatCoreComponent.h>
 #include <Components/PGAS_HitboxComponent.h>
 #include <UserWidgets/PGAS_InGame_HUD.h>
+#include <Components/PGAS_LockOnComponent.h>
 #include "PGAS_PlayerCharacter.generated.h"
+
+class UNiagaraSystem;
+class USoundBase;
 
 UCLASS()
 class PARAGONGAS_API APGAS_PlayerCharacter : public APGAS_CharacterBase
@@ -254,7 +258,13 @@ public:
     // Gets the current idle time of the character.
     UFUNCTION(BlueprintCallable, Category = "Player|Camera")
     float GetIdleTime() const { return IdleTime; }
-
+    
+    /**
+	 * Checks if the character is dead.
+	 * This function is used to determine if the character is dead.
+	 * @return bool True if the character is dead, false otherwise.
+	 * For event driven systems, consider using the OnDeath event. This checker is good for components like LockOnComponent.
+	 */
     UFUNCTION(BlueprintCallable, Category = "Player|Health")
     bool IsDead() const
     {
@@ -285,6 +295,13 @@ public:
     UPGAS_HitboxComponent* GetHitboxComponent() const
     {
         return HitboxComponent;
+    }
+
+    // Returns the LockOn Component for this character
+    // This component handles lock-on targeting for the character.
+    UPGAS_LockOnComponent* GetLockOnComponent() const
+    {
+        return LockOnComponent;
     }
 
     /*
@@ -391,6 +408,10 @@ protected:
     /** Called by the IA_Block input action to handle blocking when released. */
     void BlockReleaseAction(const FInputActionValue& Value);
 
+    /** Called by the IA_LockOn input action to handle locking on to a target. */
+    UFUNCTION()
+    void LockOnAction(const FInputActionValue& Value);
+
     /*
     * Properties
     */
@@ -456,6 +477,10 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Block Action"))
     TObjectPtr<UInputAction> IA_Block;
 
+    /** Lock-On input action (set in editor or constructor) */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
+    TObjectPtr<class UInputAction> IA_LockOn;
+
 private:
     /*
     * Properties
@@ -476,6 +501,10 @@ private:
     // Combat hitbox component for handling hit detection
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UPGAS_HitboxComponent> HitboxComponent;
+
+    // Combat lock-on component for handling lock-on targeting
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UPGAS_LockOnComponent> LockOnComponent;
 
     // Attribute Set for managing character attributes (health, mana, etc.)
     // This is where you define your character's attributes like health, mana, etc.
@@ -589,6 +618,10 @@ private:
     UFUNCTION()
     void HandleCombatWindowEndHanded(FPGAS_AttackType AttackData);
 
+
+    UFUNCTION()
+    void HandleHitboxHit(AActor* HitActor, const FHitResult& Hit, FPGAS_AttackType AttackType);
+
 	/*
 	 * Helper function to get the hand name from the weapon hand enum
 	 * @param Hand - The weapon hand enum value
@@ -602,5 +635,23 @@ private:
 			case EPGAS_WeaponHand::Both:  return NAME_None; // NAME_None -> “all sets” in our Hitbox
 			default:                      return NAME_None;
 		}
-	}
+    }
+
+    //----------------
+    // Lock On
+    //----------------
+
+    /** Threshold for detecting a right stick flick on X axis */
+    UPROPERTY(EditDefaultsOnly, Category = "Input|LockOn")
+    float StickFlickThreshold = 0.7f;
+
+    /** Minimum delay between flick switches (prevents rapid toggling) */
+    UPROPERTY(EditDefaultsOnly, Category = "Input|LockOn")
+    float FlickCooldown = 0.35f;
+
+    /** Tracks last flick time */
+    float LastFlickTime = -1.f;
+
+    /** Tracks whether stick is currently considered at rest (prevents retriggering while held) */
+    bool bStickAtRest = true;
 };

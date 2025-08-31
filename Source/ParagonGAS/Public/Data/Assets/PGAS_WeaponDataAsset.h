@@ -23,108 +23,21 @@
 #include "GameplayEffectTypes.h"
 #include "GameplayEffect.h"
 #include "Animation/AnimMontage.h"
+#include "Sound/SoundCue.h"
+#include "Sound/SoundBase.h"
 #include "PGAS_WeaponDataAsset.generated.h"
 
-/**
- * Hitbox profile for weapon attacks, defining the start and end sockets, radius, and max hit count.
+/*
+ * Forward Declarations
  */
-USTRUCT(BlueprintType, meta=(DisplayName="Hitbox Profile"))
-struct PARAGONGAS_API FPGAS_HitboxProfile
-{
-    GENERATED_BODY()
+class UNiagaraSystem;
+class USoundBase;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hitbox")
-    FName StartSocket;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hitbox")
-    FName EndSocket;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hitbox")
-    float Radius = 15.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hitbox")
-    int32 MaxHitCount = 1;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hitbox")
-    bool bDebugDraw = false;
-};
-
-/**
- * Hand profile for weapon attacks, defining the attack montages, GAS tags, and hitbox profile.
- */
-USTRUCT(BlueprintType, meta=(DisplayName="Weapon Hand Profile"))
-struct PARAGONGAS_API FPGAS_WeaponHandProfile
-{
-    GENERATED_BODY()
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montages")
-    TObjectPtr<UAnimMontage> LightAttackMontage;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montages")
-    TObjectPtr<UAnimMontage> HeavyAttackMontage;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montages")
-    TObjectPtr<UAnimMontage> BlockMontage;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GAS")
-    FGameplayTag LightAttackAbilityTag;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GAS")
-    FGameplayTag HeavyAttackAbilityTag;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GAS")
-    FGameplayTag BlockAbilityTag;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GAS")
-    TArray<TSubclassOf<UGameplayEffect>> OnHitEffects;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GAS")
-    TArray<TSubclassOf<UGameplayEffect>> PassiveEffects;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hitbox")
-    FPGAS_HitboxProfile HitboxProfile;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Costs")
-    float LightAttackStaminaCost = 10.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Costs")
-    float HeavyAttackStaminaCost = 25.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
-    float LightAttackDamage = 15.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
-    float HeavyAttackDamage = 35.f;
-};
-
-/**
- * Struct returned by query helper
- */
-USTRUCT(BlueprintType, meta=(DisplayName="Weapon Attack Data"))
-struct PARAGONGAS_API FPGAS_AttackData
-{
-    GENERATED_BODY()
-
-    UPROPERTY(BlueprintReadOnly, Category = "Attack")
-    float Damage = 0.f;
-
-    UPROPERTY(BlueprintReadOnly, Category = "Attack")
-    float StaminaCost = 0.f;
-
-    UPROPERTY(BlueprintReadOnly, Category = "Attack")
-    TObjectPtr<UAnimMontage> AttackMontage;
-
-    UPROPERTY(BlueprintReadOnly, Category = "Attack")
-    TArray<TSubclassOf<UGameplayEffect>> OnHitEffects;
-
-    UPROPERTY(BlueprintReadOnly, Category = "Attack")
-    FGameplayTag AbilityTag;
-};
 
 /**
  * Weapon data asset class, holding all weapon-related data.
  */
-UCLASS(BlueprintType, meta=(DisplayName="Weapon Data Asset"))
+UCLASS(BlueprintType, Blueprintable, meta = (DisplayName = "Weapon Data Asset"))
 class PARAGONGAS_API UPGAS_WeaponDataAsset : public UPrimaryDataAsset
 {
     GENERATED_BODY()
@@ -134,41 +47,43 @@ public:
     * Properties
     */
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    UPROPERTY(EditAnywhere, Category = "UI", meta = (DisplayName = "Weapon Name"))
     FText WeaponName;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    UPROPERTY(EditAnywhere, Category = "UI", meta = (DisplayName = "Weapon Icon"))
     TObjectPtr<UTexture2D> WeaponIcon;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Visuals")
+    UPROPERTY(EditAnywhere, Category = "Visuals", meta = (DisplayName = "Weapon Mesh"))
     TObjectPtr<USkeletalMesh> WeaponMesh;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montages")
+    UPROPERTY(EditAnywhere, Category = "Montages", meta = (DisplayName = "Equip Montage"))
     TObjectPtr<UAnimMontage> EquipMontage;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montages")
+    UPROPERTY(EditAnywhere, Category = "Montages", meta = (DisplayName = "Unequip Montage"))
     TObjectPtr<UAnimMontage> UnequipMontage;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Profiles")
-    FPGAS_WeaponHandProfile LeftHandProfile;
+    UPROPERTY(EditAnywhere, Category = "Combat", meta = (DisplayName = "Base Damage", Description = "The base damage of this weapon"))
+    float BaseDamage = 10.f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Profiles")
-    FPGAS_WeaponHandProfile RightHandProfile;
+    // Gameplay effects applied while weapon is equipped
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+    TArray<TSubclassOf<UGameplayEffect>> WeaponEffects;   
 
-    /*
-    * Functions
-    */
+    /** FX to play when we land a hit (particle system, Niagara, etc.) */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|FX")
+    UNiagaraSystem* HitImpactFX;
 
-    /** Existing helpers */
-    UFUNCTION(BlueprintCallable, Category = "Weapon")
-    float GetAttackDamage(bool bIsLeftHand, bool bIsHeavyAttack) const;
+    /** Sound to play when hit lands */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|FX")
+    USoundCue* HitImpactSound;
 
-    UFUNCTION(BlueprintCallable, Category = "Weapon")
-    float GetAttackStaminaCost(bool bIsLeftHand, bool bIsHeavyAttack) const;
+    /** FX to play when we swing the weapon (particle system, Niagara, etc.) */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|FX")
+    UNiagaraSystem* SwingFX;
 
-    /** New combined query helper */
-    UFUNCTION(BlueprintCallable, Category = "Weapon")
-    FPGAS_AttackData GetAttackData(bool bIsLeftHand, bool bIsHeavyAttack) const;
+    /** Sound to play when swinging the weapon */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|FX")
+    USoundCue* SwingSound;
 
     /** Override for primary asset ID */
     virtual FPrimaryAssetId GetPrimaryAssetId() const override

@@ -119,7 +119,34 @@ public:
         return false;
     }
 
+    /**
+     * Checks if the character is dead.
+     * This function is used to determine if the character is dead.
+     * @return bool True if the character is dead, false otherwise.
+     * For event driven systems, consider using the OnDeath event. This checker is good for components like LockOnComponent.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Player|Health")
+    bool IsDead() const
+    {
+        // Check health.
+        if (GetHealth() <= 0)
+        {
+            return true;
+        }
+
+        // Check alive state.
+        if (!HasGameplayTag(FGameplayTag::RequestGameplayTag("Character.State.Alive")))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /** Returns the location of the character's eyes in world space */
     virtual FVector GetPawnViewLocation() const override;
+
+    /** Returns the rotation of the character's eyes in world space */
     virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
 
     /*
@@ -238,4 +265,4 @@ private:
         // Get the location of the health bar socket on the character's mesh. In world location.
         return GetMesh()->GetSocketLocation(HealthbarSocketName);
     }
-};
+};    

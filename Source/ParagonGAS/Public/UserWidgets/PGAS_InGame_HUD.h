@@ -1,4 +1,19 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+* ========================================================================
+* Copyright © 2025 God's Studio
+* All Rights Reserved.
+*
+* Free for all to use, copy, and distribute. I hope you learn from this as I learned creating it.
+* =============================================================================
+*
+* Project: Paragon GAS Sample
+* This is a sample project demonstrating the use of Unreal Engine's Gameplay Ability System (GAS) & open world.
+* Author: Christopher D. Parker
+* Date: 7-6-2025
+* =============================================================================
+* PGAS_InGame_HUD.h
+* This file defines the in-game HUD widget.
+*/
 
 #pragma once
 
@@ -10,7 +25,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(BlueprintType, Blueprintable, meta = (BlueprintSpawnableComponent, DisplayName = "In-Game HUD"))
 class PARAGONGAS_API UPGAS_InGame_HUD : public UUserWidget
 {
 	GENERATED_BODY()

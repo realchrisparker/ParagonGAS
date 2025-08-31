@@ -72,6 +72,11 @@ void UPGAS_PlayerAnimInstanceBase::NativeThreadSafeUpdateAnimation(float DeltaSe
         IsInAir = GetMovementComponent()->IsFalling();
 
         /**
+         * Update velocity.
+         */
+        Velocity = GetMovementComponent()->Velocity;
+
+        /**
          * Update speed.
         */
         Speed = GetOwningPawn()->GetVelocity().Length();
@@ -89,6 +94,11 @@ void UPGAS_PlayerAnimInstanceBase::NativeThreadSafeUpdateAnimation(float DeltaSe
         Roll = DeltaRot.Roll;
         Pitch = DeltaRot.Pitch;
         Yaw = DeltaRot.Yaw;
+
+        /**
+         * Update Direction based on velocity and actor rotation.
+         */
+        Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, ActorRotation);
 
         /**
          * Update Yaw Delta for leans

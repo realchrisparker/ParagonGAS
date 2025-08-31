@@ -50,5 +50,14 @@
             Tooltip = "Stops blocking with the character.")
     )
     virtual void StopBlocking() = 0;
+
+    // Sets target lock state.
+    UFUNCTION(Category = "Animation",
+        meta = (AllowPrivateAccess = "true",
+            DisplayName = "Set Target Lock",
+            Keywords = "combat lock targeting",
+            Tooltip = "Sets target lock state.")
+    )
+    virtual void SetTargetLock(bool locked) = 0;
  };
   

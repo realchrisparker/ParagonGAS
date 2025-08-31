@@ -15,30 +15,7 @@
  * hitbox profiles, attack montages, gameplay effects, and GAS tags.
  */
 
-#include "Data/Assets/PGAS_WeaponDataAsset.h"
+#include <Data/Assets/PGAS_WeaponDataAsset.h>
+#include "NiagaraFunctionLibrary.h"
+#include "Sound/SoundBase.h"
 
-float UPGAS_WeaponDataAsset::GetAttackDamage(bool bIsLeftHand, bool bIsHeavyAttack) const
-{
-    const FPGAS_WeaponHandProfile& Profile = bIsLeftHand ? LeftHandProfile : RightHandProfile;
-    return bIsHeavyAttack ? Profile.HeavyAttackDamage : Profile.LightAttackDamage;
-}
-
-float UPGAS_WeaponDataAsset::GetAttackStaminaCost(bool bIsLeftHand, bool bIsHeavyAttack) const
-{
-    const FPGAS_WeaponHandProfile& Profile = bIsLeftHand ? LeftHandProfile : RightHandProfile;
-    return bIsHeavyAttack ? Profile.HeavyAttackStaminaCost : Profile.LightAttackStaminaCost;
-}
-
-FPGAS_AttackData UPGAS_WeaponDataAsset::GetAttackData(bool bIsLeftHand, bool bIsHeavyAttack) const
-{
-    const FPGAS_WeaponHandProfile& Profile = bIsLeftHand ? LeftHandProfile : RightHandProfile;
-
-    FPGAS_AttackData Data;
-    Data.Damage = bIsHeavyAttack ? Profile.HeavyAttackDamage : Profile.LightAttackDamage;
-    Data.StaminaCost = bIsHeavyAttack ? Profile.HeavyAttackStaminaCost : Profile.LightAttackStaminaCost;
-    Data.AttackMontage = bIsHeavyAttack ? Profile.HeavyAttackMontage : Profile.LightAttackMontage;
-    Data.OnHitEffects = Profile.OnHitEffects;
-    Data.AbilityTag = bIsHeavyAttack ? Profile.HeavyAttackAbilityTag : Profile.LightAttackAbilityTag;
-
-    return Data;
-}

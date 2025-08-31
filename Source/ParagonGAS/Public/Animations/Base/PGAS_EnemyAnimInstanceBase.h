@@ -53,14 +53,23 @@ public:
     UFUNCTION(BlueprintPure, Category = "Animation", meta = (BlueprintThreadSafe))
     APawn* GetOwningPawn() { return OwningPawn.Get(); }
 
-    // Override functions from IIAnimation interface
+    //----------------------
+    // IIAnimation Interface
+    //----------------------
+
     virtual void StartBlocking() override
     {
         IsBlocking = true;
     }
+
     virtual void StopBlocking() override
     {
         IsBlocking = false;
+    }
+
+    virtual void SetTargetLock(bool locked) override
+    {
+        IsTargetLocked = locked;
     }
 
     /*
@@ -96,6 +105,10 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animation")
     bool IsBlocking;
+
+    // Whether the player is currently locked on to a target
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animation")
+    bool IsTargetLocked;
 
 protected:
     /*

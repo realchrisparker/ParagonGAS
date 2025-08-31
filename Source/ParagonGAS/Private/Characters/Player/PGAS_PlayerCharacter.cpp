@@ -20,6 +20,8 @@
 #include "Engine/World.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffectTypes.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include <GAS/Abilities/PGAS_GameplayAbility_Montage.h>
 #include <GAS/Effects/PGAS_GE_InstantStaminaReduction.h>
 #include <GAS/Effects/PGAS_GE_InfiniteStaminaReduction.h>
@@ -56,6 +58,9 @@ APGAS_PlayerCharacter::APGAS_PlayerCharacter()
 
     // Create the hitbox component.
     HitboxComponent = CreateDefaultSubobject<UPGAS_HitboxComponent>(TEXT("Hitbox Component"));
+
+    // Create the lock-on component.
+    LockOnComponent = CreateDefaultSubobject<UPGAS_LockOnComponent>(TEXT("Lock On Component"));
 
     /**
      * Set up the character's attribute set.
@@ -135,6 +140,20 @@ void APGAS_PlayerCharacter::BeginPlay()
     {
         Core->OnCombatWindowOpen.AddDynamic(this, &APGAS_PlayerCharacter::HandleCombatWindowStartHanded);
         Core->OnCombatWindowClose.AddDynamic(this, &APGAS_PlayerCharacter::HandleCombatWindowEndHanded);
+    }
+
+    // Bind hitbox events.
+    if (UPGAS_HitboxComponent* HB = GetHitboxComponent())
+    {
+        HB->OnHitboxHit.AddDynamic(this, &APGAS_PlayerCharacter::HandleHitboxHit);
+    }
+
+    // Bind lockon events.
+    if (UPGAS_LockOnComponent* LockOn = GetLockOnComponent())
+    {
+        // LockOn->OnLocked.AddDynamic(this, &APGAS_PlayerCharacter::HandleLockOnTargetChanged);
+        // LockOn->OnUnlocked.AddDynamic(this, &APGAS_PlayerCharacter::HandleLockOnTargetChanged);
+        // LockOn->OnTargetChanged.AddDynamic(this, &APGAS_PlayerCharacter::HandleLockOnTargetChanged);
     }
 }
 
@@ -233,6 +252,10 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
             EnhancedInputComp->BindAction(IA_Block, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::BlockStartedAction);
             EnhancedInputComp->BindAction(IA_Block, ETriggerEvent::Completed, this, &APGAS_PlayerCharacter::BlockReleaseAction);
         }
+        if (IA_LockOn)
+        {
+            EnhancedInputComp->BindAction(IA_LockOn, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::LockOnAction);
+        }
     }
 }
 
@@ -301,16 +324,47 @@ void APGAS_PlayerCharacter::MoveStopAction(const FInputActionInstance& Value)
 */
 void APGAS_PlayerCharacter::LookAction(const FInputActionValue& Value)
 {
+    if (!Controller) return;
+
     // IA_Look is set up to provide a 2D axis (X = turn, Y = look up/down).
     const FVector2D LookAxisValue = Value.Get<FVector2D>();
 
-    if (Controller)
-    {
-        // Add yaw input (horizontal turn).
-        AddControllerYawInput(LookAxisValue.X);
+    // --- Camera Control ---
 
-        // Add pitch input (vertical look).
-        AddControllerPitchInput(LookAxisValue.Y);
+    AddControllerYawInput(LookAxisValue.X); // Add yaw input (horizontal turn).    
+    AddControllerPitchInput(LookAxisValue.Y); // Add pitch input (vertical look).
+
+    // --- Stick Flick Detection ---
+    const float CurrentTime = GetWorld()->GetTimeSeconds();
+
+    if (UPGAS_LockOnComponent* LockComp = GetLockOnComponent())
+    {
+        if (LockComp->IsLockedOn())
+        {
+            // Check X axis for flick (ignore mouse since it won't usually hit threshold)
+            if (bStickAtRest && FMath::Abs(LookAxisValue.X) >= StickFlickThreshold)
+            {
+                if (CurrentTime - LastFlickTime >= FlickCooldown)
+                {
+                    if (LookAxisValue.X > 0.f)
+                    {
+                        LockComp->SwitchTargetRight();
+                    }
+                    else
+                    {
+                        LockComp->SwitchTargetLeft();
+                    }
+
+                    LastFlickTime = CurrentTime;
+                    bStickAtRest = false; // must return to rest before next flick
+                }
+            }
+            else if (FMath::Abs(LookAxisValue.X) < 0.2f)
+            {
+                // Stick returned near center → ready to detect next flick
+                bStickAtRest = true;
+            }
+        }
     }
 
     // Reset idle time and animation flag when movement starts
@@ -468,6 +522,23 @@ void APGAS_PlayerCharacter::RightHandLightAttackAction(const FInputActionValue& 
     // Reset idle time and animation flag when movement starts
     IdleTime = 0.f;
     bIdleAnimationPlayed = false;
+}
+
+void APGAS_PlayerCharacter::LockOnAction(const FInputActionValue& Value)
+{
+    if (UPGAS_LockOnComponent* LockComp = FindComponentByClass<UPGAS_LockOnComponent>())
+    {
+        if (LockComp->IsLockedOn())
+        {
+            // Already locked, so toggle off
+            LockComp->Unlock();
+        }
+        else
+        {
+            // Try to lock onto nearest target
+            LockComp->TryLockOnNearest();
+        }
+    }
 }
 
 /*
@@ -700,7 +771,7 @@ void APGAS_PlayerCharacter::HandleCombatWindowStartHanded(FPGAS_AttackType Attac
     if (UPGAS_HitboxComponent* Component = GetHitboxComponent())
     {
         // Forward the gameplay tag + hand into Hitbox
-        // Component->StartHitDetection(HandToSetName(Hand), CombatTag);
+        Component->StartHitDetection(AttackData);
     }
 }
 
@@ -716,6 +787,62 @@ void APGAS_PlayerCharacter::HandleCombatWindowEndHanded(FPGAS_AttackType AttackD
 
     if (UPGAS_HitboxComponent* Component = GetHitboxComponent())
     {
-        // Component->StopHitDetection(HandToSetName(Hand));
+        Component->StopHitDetection();
+    }
+}
+
+/**
+ * Handle hit events from the hitbox component.
+ * We use this to apply damage to the hit actor.
+ */
+void APGAS_PlayerCharacter::HandleHitboxHit(AActor* HitActor, const FHitResult& Hit, FPGAS_AttackType AttackType)
+{
+    if (!HitActor || !GetAbilitySystemComponent()) return;
+
+    // Play FX & Sound from the Weapon DataAsset
+    if (AttackType.WeaponData)
+    {
+        if (AttackType.WeaponData->HitImpactFX)
+        {
+            UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+                GetWorld(),
+                AttackType.WeaponData->HitImpactFX,
+                Hit.ImpactPoint,
+                Hit.ImpactNormal.Rotation()
+            );
+        }
+
+        if (AttackType.WeaponData->HitImpactSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(
+                GetWorld(),
+                AttackType.WeaponData->HitImpactSound,
+                Hit.ImpactPoint
+            );
+        }
+    }
+
+    // Get target ASC
+    UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);
+    if (!TargetASC) return;
+
+    // Create effect context (contains instigator, source object, hit result)
+    FGameplayEffectContextHandle Context = GetAbilitySystemComponent()->MakeEffectContext();
+    Context.AddSourceObject(this);
+    Context.AddHitResult(Hit);
+
+    // Use the damage effect from AttackType (defaults to PGAS_GE_MeleeDamageEffect)
+    if (AttackType.DamageEffect)
+    {
+        FGameplayEffectSpecHandle SpecHandle = GetAbilitySystemComponent()->MakeOutgoingSpec(AttackType.DamageEffect, 1.f, Context);
+
+        if (SpecHandle.IsValid())
+        {
+            // SetByCaller magnitude if you want attacks to vary in damage
+            static FGameplayTag DamageTag = FGameplayTag::RequestGameplayTag(FName("Combat.Damage.Event.Melee"));
+            SpecHandle.Data->SetSetByCallerMagnitude(DamageTag, AttackType.WeaponData->BaseDamage > 0 ? AttackType.WeaponData->BaseDamage : 1.f);
+
+            GetAbilitySystemComponent()->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+        }
     }
 }

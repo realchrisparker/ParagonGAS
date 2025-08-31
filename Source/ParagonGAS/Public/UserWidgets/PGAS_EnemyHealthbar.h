@@ -25,7 +25,7 @@
 /**
  * Enemy Healthbar Widget
 */
-UCLASS(meta= (DisplayName = "Enemy Healthbar Widget"))
+UCLASS(BlueprintType, Blueprintable, meta = (BlueprintSpawnableComponent, DisplayName = "Enemy Healthbar Widget"))
 class PARAGONGAS_API UPGAS_EnemyHealthbar : public UUserWidget
 {
 	GENERATED_BODY()

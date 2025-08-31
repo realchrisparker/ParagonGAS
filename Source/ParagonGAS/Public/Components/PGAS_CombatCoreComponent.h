@@ -24,7 +24,7 @@
 #include "Components/ActorComponent.h"
 #include "GameplayTagContainer.h"
 #include "Enums/PGAS_WeaponHand.h"
-#include <Data/Assets/PGAS_WeaponDataAsset.h>
+#include <Structs/PGAS_AttackType.h>
 #include "PGAS_CombatCoreComponent.generated.h"
 
  /*
@@ -33,34 +33,7 @@
 
 class UAbilitySystemComponent;
 class APGAS_CharacterBase;
-
-/*
- * Structs
-*/
-
-USTRUCT(BlueprintType, meta = (DisplayName = "PGAS Attack Type", Description = "Represents an attack type in the PGAS Combat System"))
-struct PARAGONGAS_API FPGAS_AttackType
-{
-    GENERATED_BODY()
-
-public:
-
-    // The gameplay tag that identifies the ability or attack
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat", meta = (DisplayName = "Ability Tag", Description = "The gameplay tag that identifies the ability or attack"))
-    FGameplayTag AbilityTag;
-
-    // Which hand performs this attack (left/right/both)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat", meta = (DisplayName = "Attack Hand", Description = "Which hand performs this attack (left/right/both)"))
-    EPGAS_WeaponHand Hand = EPGAS_WeaponHand::Right;
-
-    // The weapon data asset associated with this attack
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat", meta = (DisplayName = "Weapon Data", Description = "The weapon data asset associated with this attack"))
-    TObjectPtr<UPGAS_WeaponDataAsset> WeaponData = nullptr;
-
-    // The type of attack (light, medium, heavy)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat", meta = (DisplayName = "Attack Type", Description = "The type of attack (light, medium, heavy, etc.)"))
-    EPGAS_WeaponAttackType AttackType = EPGAS_WeaponAttackType::Light;
-};
+class UPGAS_WeaponDataAsset;
 
 
 /*
@@ -192,16 +165,7 @@ private:
     /*
      * Functions
     */
-
-    /** Resolve a GameplayTag from the given combat tag enum */
-    // FGameplayTag ResolveTagFromEnum(EPGAS_CombatTagType CombatTag) const;
-
-    // /** Resolve a CombatTag enum type from a GameplayTag property */
-    // EPGAS_CombatTagType ResolveEnumFromTag(const FGameplayTag& Tag) const;
-
-    // /** Set the last known attack hand from the given combat tag enum */
-    // void SetLastKnownAttackHandFromEnum(EPGAS_CombatTagType CombatTag);
-
+    
     /** Handle changes to the attack window tag */
     void HandleAttackWindowTagChanged(const FGameplayTag Tag, int32 NewCount);
 };

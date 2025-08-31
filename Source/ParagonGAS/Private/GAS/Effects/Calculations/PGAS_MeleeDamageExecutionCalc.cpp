@@ -153,7 +153,7 @@ void UPGAS_MeleeDamageExecutionCalc::Execute_Implementation(
         FGameplayModifierEvaluatedData(
             UEnemyAttributeSet::GetHealthAttribute(),  // Apply to health
             EGameplayModOp::Additive,                 // Additive (subtract from health)
-            -BaseDamage                               // Negative = damage
+            -FinalDamage                               // Negative = damage
         )
     );
 }

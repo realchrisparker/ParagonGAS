@@ -180,42 +180,6 @@ void UPGAS_CombatCoreComponent::HandleAttackWindowTagChanged(const FGameplayTag 
 			static_cast<int32>(FoundAttack->Hand),
 			FoundAttack->WeaponData ? *FoundAttack->WeaponData->GetName() : TEXT("None"));
 	}
-
-	// EPGAS_CombatTagType EnumType = ResolveEnumFromTag(Tag);
-
-	// // Pick the correct weapon profile based on hand
-	// UPGAS_WeaponDataAsset* WeaponData = nullptr;
-	// if (LastKnownAttackHand == EPGAS_WeaponHand::Left)
-	// {
-	// 	WeaponData = LeftHandWeaponData;
-	// }
-	// else if (LastKnownAttackHand == EPGAS_WeaponHand::Right)
-	// {
-	// 	WeaponData = RightHandWeaponData;
-	// }
-	// else
-	// {
-	// 	WeaponData = RightHandWeaponData;
-	// }
-
-	// if (NewCount > 0)
-	// {
-	// 	OnCombatWindowOpen.Broadcast(Tag, LastKnownAttackHand, EnumType, WeaponData);
-	// 	// UE_LOG(LogTemp, Log, TEXT("Combat Window Opened: %s | Hand: %d | Type: %d | Weapon: %s"),
-	// 	// 	*Tag.ToString(),
-	// 	// 	static_cast<int32>(LastKnownAttackHand),
-	// 	// 	static_cast<int32>(EnumType),
-	// 	// 	WeaponData ? *WeaponData->GetName() : TEXT("None"));
-	// }
-	// else
-	// {
-	// 	OnCombatWindowClose.Broadcast(Tag, LastKnownAttackHand, EnumType, WeaponData);
-	// 	// UE_LOG(LogTemp, Log, TEXT("Combat Window Closed: %s | Hand: %d | Type: %d | Weapon: %s"),
-	// 	// 	*Tag.ToString(),
-	// 	// 	static_cast<int32>(LastKnownAttackHand),
-	// 	// 	static_cast<int32>(EnumType),
-	// 	// 	WeaponData ? *WeaponData->GetName() : TEXT("None"));
-	// }
 }
 
 // ---------------------------
