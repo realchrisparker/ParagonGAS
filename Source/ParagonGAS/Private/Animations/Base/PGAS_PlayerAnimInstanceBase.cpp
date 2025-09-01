@@ -81,9 +81,9 @@ void UPGAS_PlayerAnimInstanceBase::NativeThreadSafeUpdateAnimation(float DeltaSe
         */
         Speed = GetOwningPawn()->GetVelocity().Length();
 
-        // /**
-        //  * Update Roll, Pitch, and Yaw based on the owning pawn's rotation.
-        // */
+        /**
+         * Update Roll, Pitch, and Yaw based on the owning pawn's rotation.
+         */
 
         // Get owning pawn's rotation & base aim rotation
         FRotator AimRotation = GetOwningPawn()->GetBaseAimRotation(); // This is the rotation the pawn is aiming at
@@ -99,6 +99,7 @@ void UPGAS_PlayerAnimInstanceBase::NativeThreadSafeUpdateAnimation(float DeltaSe
          * Update Direction based on velocity and actor rotation.
          */
         Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, ActorRotation);
+        SetEDirection();
 
         /**
          * Update Yaw Delta for leans

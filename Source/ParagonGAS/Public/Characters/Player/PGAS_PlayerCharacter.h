@@ -36,8 +36,9 @@
 #include <Components/PGAS_CombatCoreComponent.h>
 #include <Components/PGAS_HitboxComponent.h>
 #include <Components/PGAS_BlockComponent.h>
-#include <UserWidgets/PGAS_InGame_HUD.h>
 #include <Components/PGAS_LockOnComponent.h>
+#include <Components/PGAS_DodgeComponent.h>
+#include <UserWidgets/PGAS_InGame_HUD.h>
 #include "PGAS_PlayerCharacter.generated.h"
 
 class UNiagaraSystem;
@@ -56,18 +57,18 @@ public:
     // Constructor
     APGAS_PlayerCharacter();
 
-    /**
-     * Traces the weapon to detect hits.
-     * This function performs a trace from the weapon's start socket to the end socket to detect hits.
-     * @param extended Whether to use the extended socket for the trace (default: false).
-     * @note This function is typically called when the player performs an attack action.
-     */
-    UFUNCTION(BlueprintCallable, Category = "Player|Combat",
-        meta = (AllowPrivateAccess = "true",
-            DisplayName = "Weapon Trace",
-            Keywords = "combat trace weapon hit detection",
-            Tooltip = "Performs a weapon trace to detect hits."))
-    void WeaponTrace();
+    // /**
+    //  * Traces the weapon to detect hits.
+    //  * This function performs a trace from the weapon's start socket to the end socket to detect hits.
+    //  * @param extended Whether to use the extended socket for the trace (default: false).
+    //  * @note This function is typically called when the player performs an attack action.
+    //  */
+    // UFUNCTION(BlueprintCallable, Category = "Player|Combat",
+    //     meta = (AllowPrivateAccess = "true",
+    //         DisplayName = "Weapon Trace",
+    //         Keywords = "combat trace weapon hit detection",
+    //         Tooltip = "Performs a weapon trace to detect hits."))
+    // void WeaponTrace();
 
     /**
      * Returns the Player Attribute Set for this character.
@@ -309,6 +310,13 @@ public:
         return BlockComponent;
     }
 
+    // Returns the Dodge Component for this character
+    // This component handles dodging (including rolling) mechanics for the character.
+    UPGAS_DodgeComponent* GetDodgeComponent() const
+    {
+        return DodgeComponent;
+    }
+
     /*
      * Properties
      */
@@ -363,11 +371,6 @@ protected:
     */
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-    // Handles the montage state notify events.
-    // This function is called when a montage state notify event occurs.
-    UFUNCTION()
-    void HandleMontageStateNotify(FGameplayTag NotifyTag, FGameplayEventData EventData);
-
     /** Called by the IA_Move input action to handle movement. */
     UFUNCTION()
     void MoveAction(const FInputActionInstance& Value);
@@ -416,6 +419,14 @@ protected:
     /** Called by the IA_LockOn input action to handle locking on to a target. */
     UFUNCTION()
     void LockOnAction(const FInputActionValue& Value);
+
+    /** Called by the IA_Dodge input action to handle dodging. */
+    UFUNCTION()
+    void DodgeAction(const FInputActionInstance& Value);
+
+    /** Called by the IA_Dodge input action to handle dodging. */
+    UFUNCTION()
+    void RollAction(const FInputActionInstance& Value);
 
     /*
      * Properties
@@ -482,9 +493,25 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Block Action"))
     TObjectPtr<UInputAction> IA_Block;
 
-    /** Lock-On input action (set in editor or constructor) */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input")
+    /** Lock-On input action */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Block Action"))
     TObjectPtr<class UInputAction> IA_LockOn;
+
+    /** Dodge input action */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Dodge Action"))
+    TObjectPtr<class UInputAction> IA_Dodge;
+
+    /** Roll input action */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Roll Action Gamepad"))
+    TObjectPtr<class UInputAction> IA_Roll;
+
+    /** Roll input action */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Roll Action Left/Right"))
+    TObjectPtr<class UInputAction> IA_RollX;
+
+    /** Roll input action */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Roll Action Up/Down"))
+    TObjectPtr<class UInputAction> IA_RollY;
 
 private:
     
@@ -516,6 +543,10 @@ private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UPGAS_BlockComponent> BlockComponent;
 
+    // Combat dodge component for handling dodging mechanics
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UPGAS_DodgeComponent> DodgeComponent;
+
     // Attribute Set for managing character attributes (health, mana, etc.)
     // This is where you define your character's attributes like health, mana, etc.
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
@@ -529,10 +560,6 @@ private:
     UPROPERTY(Transient)
     TSet<TWeakObjectPtr<AActor>> AlreadyHitActors;
 
-    FName WeaponStaffStartSocketName = "staff_start"; // The name of the weapon staff start socket.
-    FName WeaponStaffStartExtendedSocketName = "staff_start_extended"; // The name of the weapon staff start extended socket.
-    FName WeaponStaffEndSocketName = "staff_end"; // The name of the weapon staff end socket.
-
     // Timer handle for the weapon trace timer.
     FTimerHandle WeaponTraceTimerHandle;
 
@@ -542,65 +569,6 @@ private:
     /*
      * Functions
      */
-
-    FVector GetStaffStartSocketLocation() const
-    {
-        // Make sure we have a valid mesh and the socket exists before trying to get the location.
-        if (!GetMesh())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("GetMesh() returned nullptr in GetStaffStartSocketLocation()"));
-            return FVector::ZeroVector; // Return zero vector if mesh is not valid.
-        }
-
-        // Check if the socket exists before trying to get its location.
-        if (!GetMesh()->DoesSocketExist(WeaponStaffStartSocketName))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Socket '%s' does not exist on the mesh in GetStaffStartSocketLocation()"), *WeaponStaffStartSocketName.ToString());
-            return FVector::ZeroVector; // Return zero vector if socket does not exist.
-        }
-
-        // Get the location of the staff start socket on the character's mesh. In world location.		
-        return GetMesh()->GetSocketLocation(WeaponStaffStartSocketName);
-    }
-
-    FVector GetStaffStartExtendedSocketLocation() const
-    {
-        // Make sure we have a valid mesh and the socket exists before trying to get the location.
-        if (!GetMesh())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("GetMesh() returned nullptr in GetStaffStartSocketLocation()"));
-            return FVector::ZeroVector; // Return zero vector if mesh is not valid.
-        }
-
-        // Check if the socket exists before trying to get its location.
-        if (!GetMesh()->DoesSocketExist(WeaponStaffStartExtendedSocketName))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Socket '%s' does not exist on the mesh in GetStaffStartSocketLocation()"), *WeaponStaffStartExtendedSocketName.ToString());
-            return FVector::ZeroVector; // Return zero vector if socket does not exist.
-        }
-
-        // Get the location of the staff start socket on the character's mesh. In world location.		
-        return GetMesh()->GetSocketLocation(WeaponStaffStartExtendedSocketName);
-    }
-
-    FVector GetStaffEndSocketLocation() const
-    {
-        // Make sure we have a valid mesh and the socket exists before trying to get the location.
-        if (!GetMesh())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("GetMesh() returned nullptr in GetStaffEndSocketLocation()"));
-            return FVector::ZeroVector; // Return zero vector if mesh is not valid.
-        }
-
-        // Check if the socket exists before trying to get its location.
-        if (!GetMesh()->DoesSocketExist(WeaponStaffEndSocketName))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Socket '%s' does not exist on the mesh in GetStaffEndSocketLocation()"), *WeaponStaffEndSocketName.ToString());
-            return FVector::ZeroVector; // Return zero vector if socket does not exist.
-        }
-
-        return GetMesh()->GetSocketLocation(WeaponStaffEndSocketName);
-    }
 
     UFUNCTION(BlueprintCallable, Category = "Player|Animations|Idle")
     void PlayIdleBreakMontage()

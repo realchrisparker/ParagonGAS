@@ -144,3 +144,6 @@ node_modules/
 # Ignore Python cache (if scripting or tools)
 __pycache__/
 *.pyc
+
+# Ignore specific folders or files (customize as needed)
+*Content/_Game/Characters/Players/Countess/Anims/Not4Git/

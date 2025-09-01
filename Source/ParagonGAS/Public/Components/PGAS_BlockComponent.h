@@ -83,7 +83,7 @@ public:
     FOnBlockStateChangedSignature OnBlockStateChanged;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block")
-    bool StopMovementOnBlock = true;
+    bool StopMovementOnBlock = false;
 
     /** Which hand is considered the blocking hand (Left, Right, or Both) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block")

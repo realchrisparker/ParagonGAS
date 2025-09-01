@@ -22,10 +22,15 @@
 #include "GameplayEffectTypes.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "KismetAnimationLibrary.h"
 #include <GAS/Abilities/PGAS_GameplayAbility_Montage.h>
 #include <GAS/Effects/PGAS_GE_InstantStaminaReduction.h>
 #include <GAS/Effects/PGAS_GE_InfiniteStaminaReduction.h>
 #include <Data/PGAS_EventAdditionalData.h>
+#include <Enums/PGAS_Direction.h>
+#include <Animations/Base/PGAS_AnimInstanceBase.h>
+
 
 // Sets default values
 APGAS_PlayerCharacter::APGAS_PlayerCharacter()
@@ -33,25 +38,31 @@ APGAS_PlayerCharacter::APGAS_PlayerCharacter()
     // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
 
-    // Create Camera Boom (Pulls in towards player if colliding)
+    // --- Camera Boom (SpringArm) ---
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-    CameraBoom->SetupAttachment(GetMesh()); //Attach to the Mesh
-    CameraBoom->TargetArmLength = 300.0f;
-    CameraBoom->bUsePawnControlRotation = true; // Let camera follow controller
+    CameraBoom->SetupAttachment(RootComponent);
+    CameraBoom->TargetArmLength = 400.0f; // typical Souls-like distance
+    CameraBoom->SocketOffset = FVector(0.f, 50.f, 60.f); // slight offset to the right & above
+    CameraBoom->bUsePawnControlRotation = true; // boom rotates with controller
+    CameraBoom->bInheritPitch = true;
+    CameraBoom->bInheritYaw = true;
+    CameraBoom->bInheritRoll = true;
+    CameraBoom->bDoCollisionTest = true; // prevent camera from clipping walls
 
-    // Create Follow Camera
+    // --- Follow Camera ---
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-    FollowCamera->bUsePawnControlRotation = false; // Don't rotate camera with pawn
+    FollowCamera->bUsePawnControlRotation = false; // camera does NOT rotate with pawn
+    FollowCamera->FieldOfView = 95.f; // slightly wide FOV for combat readability
 
-    // Don't rotate camera when controller rotates
+    // --- Character Movement ---
     bUseControllerRotationPitch = false;
-    bUseControllerRotationYaw = false; // Character doesn’t rotate to match the controller’s yaw
+    bUseControllerRotationYaw = true;  // pawn faces camera yaw
     bUseControllerRotationRoll = false;
-    GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input
-    GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f); // controls how fast the character turns
-    GetCharacterMovement()->bUseControllerDesiredRotation = false;   // only rotate to movement, not camera
+
+    GetCharacterMovement()->bOrientRotationToMovement = false; // disables auto-facing input direction
+    GetCharacterMovement()->RotationRate = FRotator(0.f, 360.f, 0.f); // slower, camera-driven rotation
+    GetCharacterMovement()->bUseControllerDesiredRotation = true; // match facing with camera yaw
 
     // Create the combat core component
     CombatCoreComponent = CreateDefaultSubobject<UPGAS_CombatCoreComponent>(TEXT("Combat Core Component"));
@@ -64,6 +75,9 @@ APGAS_PlayerCharacter::APGAS_PlayerCharacter()
 
     // Create the block component.
     BlockComponent = CreateDefaultSubobject<UPGAS_BlockComponent>(TEXT("Block Component"));
+
+    // Create the dodge component.
+    DodgeComponent = CreateDefaultSubobject<UPGAS_DodgeComponent>(TEXT("Dodge Component"));
 
     /**
      * Set up the character's attribute set.
@@ -212,6 +226,10 @@ void APGAS_PlayerCharacter::OnRep_PlayerState()
     Super::OnRep_PlayerState();
 }
 
+// --------------------
+// Input Functions
+// --------------------
+
 // Called to bind functionality to input
 void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -259,6 +277,23 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
         {
             EnhancedInputComp->BindAction(IA_LockOn, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::LockOnAction);
         }
+        if (IA_Dodge)
+        {
+            EnhancedInputComp->BindAction(IA_Dodge, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::DodgeAction);
+        }
+        if (IA_Roll)
+        {
+            // Set up as a double tap so we don't want to use Started here, double tap detection fires on Triggered. Started will fire on one tap.
+            EnhancedInputComp->BindAction(IA_Roll, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::RollAction);
+        }
+        if (IA_RollX)
+        {
+            EnhancedInputComp->BindAction(IA_RollX, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::RollAction);
+        }
+        if (IA_RollY)
+        {
+            EnhancedInputComp->BindAction(IA_RollY, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::RollAction);
+        }
     }
 }
 
@@ -282,37 +317,34 @@ void APGAS_PlayerCharacter::MoveStartedAction(const FInputActionInstance& Value)
 */
 void APGAS_PlayerCharacter::MoveAction(const FInputActionInstance& Value)
 {
-    if (HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))) == false)
+    if (!HasGameplayTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Status.CanMove"))))
     {
         return;
     }
 
-    // The input value is expected to be a Vector2D: X (strafe), Y (forward).
-    FInputActionValue ActionValue = Value.GetValue();
-    const FVector2D MovementVector = ActionValue.Get<FVector2D>();
+    const FVector2D MovementVector = Value.GetValue().Get<FVector2D>();
 
     if (!Controller || MovementVector.IsNearlyZero())
     {
         return;
     }
 
-    // Forward/backward movement
+    // Apply movement input relative to camera yaw
+    const FRotator YawRotation(0, Controller->GetControlRotation().Yaw, 0);
+
     if (FMath::Abs(MovementVector.Y) > 0.0f)
     {
-        const FRotator YawRotation(0, Controller->GetControlRotation().Yaw, 0);
-        const FVector DirectionForward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-        AddMovementInput(DirectionForward, MovementVector.Y);
+        const FVector ForwardDir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+        AddMovementInput(ForwardDir, MovementVector.Y);
     }
 
-    // Right/left movement
     if (FMath::Abs(MovementVector.X) > 0.0f)
     {
-        const FRotator YawRotation(0, Controller->GetControlRotation().Yaw, 0);
-        const FVector DirectionRight = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-        AddMovementInput(DirectionRight, MovementVector.X);
+        const FVector RightDir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+        AddMovementInput(RightDir, MovementVector.X);
     }
 
-    // Reset idle time and animation flag when movement starts
+    // Reset idle state when moving
     IdleTime = 0.f;
     bIdleAnimationPlayed = false;
 }
@@ -548,6 +580,204 @@ void APGAS_PlayerCharacter::LockOnAction(const FInputActionValue& Value)
     }
 }
 
+/**
+ * Called by the IA_Dodge input action to handle dodging.
+ */
+void APGAS_PlayerCharacter::DodgeAction(const FInputActionInstance& Value)
+{
+    UE_LOG(LogTemp, Warning, TEXT("DodgeAction: Dodge input received"));
+    if (UPGAS_DodgeComponent* DodgeComp = GetDodgeComponent())
+    {
+        EPGAS_DodgeDirection ChosenDirection = EPGAS_DodgeDirection::Backward; // Default to backward dodge
+        UPGAS_AnimInstanceBase* AnimInstance = Cast<UPGAS_AnimInstanceBase>(GetMesh()->GetAnimInstance());
+        if (AnimInstance) // Check if the animation instance is valid
+        {
+            // Convert animation direction to dodge direction
+            EPGAS_Direction eDirection = AnimInstance->eDirection;
+            switch (eDirection)
+            {
+            case EPGAS_Direction::Forward:
+                ChosenDirection = EPGAS_DodgeDirection::Forward;
+                break;
+            case EPGAS_Direction::Backward:
+                ChosenDirection = EPGAS_DodgeDirection::Backward;
+                break;
+            case EPGAS_Direction::Left:
+                ChosenDirection = EPGAS_DodgeDirection::Left;
+                break;
+            case EPGAS_Direction::Right:
+                ChosenDirection = EPGAS_DodgeDirection::Right;
+                break;
+            default:
+                ChosenDirection = EPGAS_DodgeDirection::Backward;
+                break;
+            }
+        }
+
+        // Log chosen direction
+        UE_LOG(LogTemp, Warning, TEXT("DodgeAction: Performing %s dodge"), *UEnum::GetValueAsString(ChosenDirection));
+
+        // Lookup dodge data
+        FPGAS_DodgeType Dodge = DodgeComp->GetDodgeByCategoryAndDirection(EPGAS_DodgeCategory::Dodge, ChosenDirection);
+
+        // Trigger dodge if valid
+        if (Dodge.Montage)
+        {
+            DodgeComp->PerformDodge(Dodge);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("DodgeAction: No montage found for %s dodge"), *UEnum::GetValueAsString(ChosenDirection));
+        }
+    }
+}
+
+/**
+ * Called by the IA_Roll input action to handle rolling.
+ */
+void APGAS_PlayerCharacter::RollAction(const FInputActionInstance& Value)
+{
+    UE_LOG(LogTemp, Warning, TEXT("RollAction: Roll input received"));
+
+    FVector2D StickInput = FVector2D::ZeroVector;
+
+    FInputActionValue ActionValue = Value.GetValue();
+    switch (ActionValue.GetValueType())
+    {
+        case EInputActionValueType::Axis2D: // Gamepad stick
+            {
+                StickInput = ActionValue.Get<FVector2D>();
+                break;
+            }
+        case EInputActionValueType::Axis1D: // Keyboard WASD (split into RollX and RollY)
+            {
+                float AxisValue = ActionValue.Get<float>();
+
+                if (Value.GetSourceAction() == IA_RollX)
+                {
+                    StickInput = FVector2D(AxisValue, 0.f);
+                }
+                else if (Value.GetSourceAction() == IA_RollY)
+                {
+                    StickInput = FVector2D(0.f, AxisValue);
+                }
+                break;
+            }
+        default:
+            break;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("RollAction: StickInput X=%f, Y=%f"), StickInput.X, StickInput.Y);
+
+    if (StickInput.IsNearlyZero())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("RollAction: No stick input detected"));
+        return;
+    }
+
+    // Normalize and resolve closest cardinal direction
+    StickInput.Normalize();
+
+    FVector2D Forward(0.f, 1.f);
+    FVector2D Back(0.f, -1.f);
+    FVector2D Right(1.f, 0.f);
+    FVector2D Left(-1.f, 0.f);
+
+    float DotForward = FVector2D::DotProduct(StickInput, Forward);
+    float DotBack = FVector2D::DotProduct(StickInput, Back);
+    float DotRight = FVector2D::DotProduct(StickInput, Right);
+    float DotLeft = FVector2D::DotProduct(StickInput, Left);
+
+    float MaxDot = DotForward;
+    EPGAS_DodgeDirection ChosenDirection = EPGAS_DodgeDirection::Forward;
+
+    if (DotBack > MaxDot) { MaxDot = DotBack;  ChosenDirection = EPGAS_DodgeDirection::Backward; }
+    if (DotRight > MaxDot) { MaxDot = DotRight; ChosenDirection = EPGAS_DodgeDirection::Right; }
+    if (DotLeft > MaxDot) { MaxDot = DotLeft;  ChosenDirection = EPGAS_DodgeDirection::Left; }
+
+    UE_LOG(LogTemp, Warning, TEXT("RollAction: Performing %s roll"), *UEnum::GetValueAsString(ChosenDirection));
+
+    if (UPGAS_DodgeComponent* DodgeComp = GetDodgeComponent())
+    {
+        FPGAS_DodgeType Roll = DodgeComp->GetDodgeByCategoryAndDirection(
+            EPGAS_DodgeCategory::Roll,
+            ChosenDirection
+        );
+
+        if (Roll.Montage)
+        {
+            DodgeComp->PerformDodge(Roll);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("RollAction: No montage found for %s roll"),
+                *UEnum::GetValueAsString(ChosenDirection));
+        }
+    }
+
+    // UE_LOG(LogTemp, Warning, TEXT("RollAction: Roll input received"));
+
+    // if (UPGAS_DodgeComponent* DodgeComp = GetDodgeComponent())
+    // {
+    //     const EInputActionValueType type = Value.GetSourceAction()->ValueType;
+    //     UE_LOG(LogTemp, Warning, TEXT("RollAction: StickInput Type=%s"), *UEnum::GetValueAsString(type));
+    //     FVector2D StickInput = Value.GetValue().Get<FVector2D>();
+    //     UE_LOG(LogTemp, Warning, TEXT("RollAction: StickInput X=%f, Y=%f"), StickInput.X, StickInput.Y);
+
+    //     if (StickInput.IsNearlyZero())
+    //     {
+    //         UE_LOG(LogTemp, Warning, TEXT("RollAction: No stick input detected"));
+    //         return;
+    //     }
+
+    //     // Normalize input
+    //     StickInput.Normalize();
+
+    //     // Reference directions in 2D
+    //     FVector2D Forward(0.f, 1.f);
+    //     FVector2D Back(0.f, -1.f);
+    //     FVector2D Right(1.f, 0.f);
+    //     FVector2D Left(-1.f, 0.f);
+
+    //     // Dot products
+    //     float DotForward = FVector2D::DotProduct(StickInput, Forward);
+    //     float DotBack = FVector2D::DotProduct(StickInput, Back);
+    //     float DotRight = FVector2D::DotProduct(StickInput, Right);
+    //     float DotLeft = FVector2D::DotProduct(StickInput, Left);
+
+    //     // Pick max
+    //     float MaxDot = DotForward;
+    //     EPGAS_DodgeDirection ChosenDirection = EPGAS_DodgeDirection::Forward;
+
+    //     if (DotBack > MaxDot) { MaxDot = DotBack; ChosenDirection = EPGAS_DodgeDirection::Backward; }
+    //     if (DotRight > MaxDot) { MaxDot = DotRight; ChosenDirection = EPGAS_DodgeDirection::Right; }
+    //     if (DotLeft > MaxDot) { MaxDot = DotLeft; ChosenDirection = EPGAS_DodgeDirection::Left; }
+
+    //     UE_LOG(LogTemp, Warning, TEXT("RollAction: Performing %s roll"),
+    //         *UEnum::GetValueAsString(ChosenDirection));
+
+    //     // Lookup roll
+    //     FPGAS_DodgeType Roll = DodgeComp->GetDodgeByCategoryAndDirection(
+    //         EPGAS_DodgeCategory::Roll,
+    //         ChosenDirection
+    //     );
+
+    //     if (Roll.Montage)
+    //     {
+    //         DodgeComp->PerformDodge(Roll);
+    //     }
+    //     else
+    //     {
+    //         UE_LOG(LogTemp, Warning, TEXT("RollAction: No montage found for %s roll"),
+    //             *UEnum::GetValueAsString(ChosenDirection));
+    //     }
+    // }
+}
+
+// --------------------
+// GAS Functions
+// --------------------
+
 /*
  * Gives the player character default abilities.
  * This function overrides the base class implementation to provide custom functionality. 
@@ -609,117 +839,6 @@ void APGAS_PlayerCharacter::HandleCharacterLevelUp()
     OnCharacterLevelUp(); // Trigger the level-up event
 }
 
-/*
- * Performs a weapon trace to detect hits.
- * This function should be implemented to perform a trace from Start to End.
- * @return void.
-*/
-void APGAS_PlayerCharacter::WeaponTrace()
-{
-    UWorld* World = GetWorld();
-    if (!World) return;
-
-    // Get the start and end locations of the staff sockets.
-    // FVector Start = bSecondaryAttacking ? GetStaffStartExtendedSocketLocation() : GetStaffStartSocketLocation();
-    FVector Start = GetStaffStartSocketLocation();
-    FVector End = GetStaffEndSocketLocation();
-    float SphereRadius = 25.0f;
-
-    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
-
-    TArray<AActor*> IgnoreActors;
-    IgnoreActors.Add(this); // Ignore self in the trace
-
-    TArray<FHitResult> OutHits;
-
-    // Perform a sphere trace to detect hits.
-    // This will check for any actors of the specified object types within the sphere radius between Start and End.
-    bool bHit = UKismetSystemLibrary::SphereTraceMultiForObjects(
-        World,
-        Start,
-        End,
-        SphereRadius,
-        ObjectTypes,
-        false,
-        IgnoreActors, // Actors to ignore
-        EDrawDebugTrace::None,
-        OutHits,
-        true
-        );
-
-    if (bHit)
-    {
-        for (const FHitResult& Hit : OutHits)
-        {
-            // Get the actor that was hit.
-            AActor* HitActor = Hit.GetActor();
-            if (!HitActor) continue;
-
-            // Check if the hit actor is valid and not already hit in this window.
-            if (AlreadyHitActors.Contains(HitActor)) continue;
-
-            // Actor not hit yet, so we add it to the set of already hit actors.
-            AlreadyHitActors.Add(HitActor);
-
-            // Prepare the event tag (must match what your abilities expect)
-            FGameplayTag DamageEventTag = FGameplayTag::RequestGameplayTag(FName("Combat.Damage.Event.Melee"));
-
-            // Create Instigator Tags
-            FGameplayTagContainer InstigatorTags = this->GetGameplayTags(); // Get the character's gameplay tags at this moment
-
-            // Create optional object to hold hit information
-            UPGAS_EventAdditionalData* EvnDataOptObj = NewObject<UPGAS_EventAdditionalData>();
-            EvnDataOptObj->HitResult = Hit;
-
-            // Prepare the event data
-            FGameplayEventData EventData;
-            EventData.EventTag = DamageEventTag; // The event tag for the damage event
-            EventData.OptionalObject = EvnDataOptObj; // Optional object to hold additional data
-            EventData.Instigator = this; // The actor that initiated the event (this character)
-            EventData.InstigatorTags = InstigatorTags; // Tags from the instigator
-            EventData.Target = HitActor; // The actor that was hit
-            // EventData.TargetTags = TargetTags; // Tags for the target
-            // EventData.ContextHandle = /* optional FGameplayEffectContextHandle, if you have one */;
-            // EventData.EventMagnitude = 25.0f;
-            // EventData.OptionalObject2 = nullptr; // Optional second object, if needed
-
-            // Send the event
-            UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(HitActor, DamageEventTag, EventData);
-        }
-    }
-}
-
-/**
- * Handles the montage state notify events.
- * This function is called when a montage state notify event occurs.
- * @param NotifyTag The tag associated with the notify event.
- * @param EventData The event data associated with the notify event.
-*/
-void APGAS_PlayerCharacter::HandleMontageStateNotify(FGameplayTag NotifyTag, FGameplayEventData EventData)
-{
-    // UE_LOG(LogTemp, Log, TEXT("HandleMontageStateNotify called with NotifyTag: %s"), *NotifyTag.ToString());
-    // Determine the type of notify and handle it accordingly
-    if (NotifyTag == FGameplayTag::RequestGameplayTag(FName("Attack.Damage.Notify.Begin")))
-    {
-        AlreadyHitActors.Empty(); // Clear at the start of the window!
-
-        // Start tracing repeatedly using a timer
-        GetWorldTimerManager().SetTimer(
-            WeaponTraceTimerHandle,
-            this,
-            &APGAS_PlayerCharacter::WeaponTrace,
-            0.01f,     // Every 0.01 seconds (adjust as needed)
-            true       // Loop
-        );
-    }
-    else if (NotifyTag == FGameplayTag::RequestGameplayTag(FName("Attack.Damage.Notify.End")))
-    {
-        // Stop tracing by clearing the timer
-        GetWorldTimerManager().ClearTimer(WeaponTraceTimerHandle);
-    }
-}
-
 /**
  * Called when the health attribute changes.
  * @param Data The data about the attribute change.
@@ -764,6 +883,10 @@ void APGAS_PlayerCharacter::OnAdrenalineAttributeChanged(const FOnAttributeChang
         MyPlayerHUD->UpdateAdrenalineBar(NewValue, GetMaxAdrenaline());
     }
 }
+
+// --------------------
+// Windowing (Combat)
+// --------------------
 
 /**
  * Called when a combat window is started

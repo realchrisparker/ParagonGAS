@@ -24,7 +24,9 @@
 #include "KismetAnimationLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include <Interfaces/IAnimation.h>
+#include <Enums/PGAS_Direction.h>
 #include "PGAS_AnimInstanceBase.generated.h"
+
 
 /**
  * Base class for all Animation Instances in ParagonGAS
@@ -113,7 +115,10 @@ public:
 	FVector Velocity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-    float Direction = 0.f;
+	float Direction = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	EPGAS_Direction eDirection;
 
 protected:
 	/*
@@ -131,6 +136,34 @@ protected:
 
 	// Native thread-safe update for any work not relying on game thread
 	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
+
+	// Function to set eDirection based on Direction float value.
+	void SetEDirection()
+	{
+		// Normalize the angle to [-180, 180]
+		float NormalizedDir = FRotator::ClampAxis(Direction); // Clamp to [0,360)
+		if (NormalizedDir > 180.f)
+		{
+			NormalizedDir -= 360.f; // Convert to [-180,180]
+		}
+
+		if (NormalizedDir >= -45.f && NormalizedDir <= 45.f)
+		{
+			eDirection = EPGAS_Direction::Forward;
+		}
+		else if (NormalizedDir > 45.f && NormalizedDir < 135.f)
+		{
+			eDirection = EPGAS_Direction::Right;
+		}
+		else if (NormalizedDir >= 135.f || NormalizedDir <= -135.f)
+		{
+			eDirection = EPGAS_Direction::Backward;
+		}
+		else // (-135, -45)
+		{
+			eDirection = EPGAS_Direction::Left;
+		}
+	}
 
 private:
 	/*

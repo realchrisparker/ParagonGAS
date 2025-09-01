@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "EPGAS_AbilityInputID.generated.h"
+#include "PGAS_AbilityInputID.generated.h"
 
 UENUM(BlueprintType)
 enum class EPGAS_AbilityInputID : uint8

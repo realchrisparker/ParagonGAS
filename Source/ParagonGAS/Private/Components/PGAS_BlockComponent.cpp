@@ -23,7 +23,7 @@
 
 UPGAS_BlockComponent::UPGAS_BlockComponent()
 {
-    PrimaryComponentTick.bCanEverTick = false; // allow ticking if we want stamina drain while blocking
+    PrimaryComponentTick.bCanEverTick = false; // disable ticking
 }
 
 void UPGAS_BlockComponent::BeginPlay()

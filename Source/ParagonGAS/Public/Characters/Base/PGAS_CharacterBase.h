@@ -22,7 +22,7 @@
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include <Components/PGAS_HitReactionComponent.h>
-#include <Enums/EPGAS_AbilityInputID.h>
+#include <Enums/PGAS_AbilityInputID.h>
 #include "PGAS_CharacterBase.generated.h"
 
 // Delegates
