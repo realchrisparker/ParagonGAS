@@ -17,6 +17,7 @@
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Interfaces/IAnimation.h>
 #include "AbilitySystemGlobals.h"
+#include "Components/PoseableMeshComponent.h"
 
 // Sets default values
 APGAS_CharacterBase::APGAS_CharacterBase()
@@ -244,5 +245,58 @@ void APGAS_CharacterBase::StopBlocking()
 		{
 			AnimInterface->StopBlocking(); // Stops blocking
 		}
+	}
+}
+
+/*
+ * Display a poseable mesh of this character at their current location/orientation.
+ * This is used for dodge shadowing effects, etc.
+ */
+void APGAS_CharacterBase::ShowCharacterSnapshot(float Duration)
+{
+	if (!GetMesh()) return;
+
+	// Destroy previous snapshot if one exists
+	if (ActiveShadowPoseableMesh && IsValid(ActiveShadowPoseableMesh))
+	{
+		ActiveShadowPoseableMesh->DestroyComponent();
+		ActiveShadowPoseableMesh = nullptr;
+	}
+
+	UPoseableMeshComponent* NewShadow = NewObject<UPoseableMeshComponent>(this, UPoseableMeshComponent::StaticClass(), NAME_None);
+
+	if (NewShadow)
+	{
+		// Register the component so it becomes active in the world
+		NewShadow->RegisterComponent();
+
+		// Place it at the current transform of the player mesh
+		NewShadow->SetWorldTransform(GetMesh()->GetComponentTransform());
+
+		// Copy skeletal mesh and frozen pose
+		NewShadow->SetSkinnedAssetAndUpdate(GetMesh()->GetSkeletalMeshAsset());
+		NewShadow->CopyPoseFromSkeletalComponent(GetMesh());
+
+		// Save reference
+		ActiveShadowPoseableMesh = NewShadow;
+
+		// Destroy after given duration
+		FTimerHandle DestroyHandle;
+		GetWorldTimerManager().SetTimer(
+			DestroyHandle,
+			FTimerDelegate::CreateLambda([ this, NewShadow ] ()
+				{
+					if (IsValid(NewShadow))
+					{
+						NewShadow->DestroyComponent();
+						if (ActiveShadowPoseableMesh == NewShadow)
+						{
+							ActiveShadowPoseableMesh = nullptr;
+						}
+					}
+				}),
+			Duration,
+			false
+		);
 	}
 }

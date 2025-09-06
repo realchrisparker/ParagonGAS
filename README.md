@@ -10,9 +10,9 @@ Version 5.6
 - Gameplay Ability System Combat System
 - StateTree (with EQS)
 - Asset Registry
-- Custom Tools (New Item Menu Category & Items)
+- Custom Tools (New Item Menu Category, New Items, and Editor)
 - Custom Subsystems
-- Safe Thread Animation
+- Thread Safe Animation
 - Custom Anim Notifiers (Windowing, etc.)
 
 # FAB Content Used

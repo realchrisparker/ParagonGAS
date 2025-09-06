@@ -29,7 +29,12 @@ UPGAS_DodgeComponent::UPGAS_DodgeComponent()
 // Called when the game starts
 void UPGAS_DodgeComponent::BeginPlay()
 {
-    Super::BeginPlay();
+	Super::BeginPlay();
+
+	if (bDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PGAS_DodgeComponent initialized on Actor: %s"), *GetOwner()->GetName());
+	}
 }
 
 /** Get the first dodge that matches a given category and direction. */
@@ -65,10 +70,17 @@ TArray<FPGAS_DodgeType> UPGAS_DodgeComponent::GetAllDodgesByCategory(EPGAS_Dodge
  */
 void UPGAS_DodgeComponent::PerformDodge(const FPGAS_DodgeType& Dodge)
 {
-    UE_LOG(LogTemp, Warning, TEXT("Performing Dodge: %s"), *Dodge.AbilityTag.GetTagName().ToString());
-    if (!GetOwner()) return;
+	if (bDebug)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Performing Dodge: %s"), *Dodge.AbilityTag.GetTagName().ToString());
+	}
+	
+	if (!GetOwner()) return;
     if (!Dodge.AbilityTag.IsValid()) return; // Must have a valid ability tag to perform dodge
-    if (!Dodge.Montage) return; // Must have a valid montage to perform dodge
+	if (!Dodge.Montage) return; // Must have a valid montage to perform dodge
+
+	// Broadcast to listeners
+	OnDodgeStarted.Broadcast();
 
     // Wrap struct into UObject so GAS can carry it
     UPGAS_DodgeTypeObject* Wrapper = NewObject<UPGAS_DodgeTypeObject>(GetOwner());
@@ -79,7 +91,10 @@ void UPGAS_DodgeComponent::PerformDodge(const FPGAS_DodgeType& Dodge)
     EventData.Instigator = GetOwner();
     EventData.OptionalObject = Wrapper;
 
-    UE_LOG(LogTemp, Warning, TEXT("Sending Gameplay Event to Actor: %s with Tag: %s"), *GetOwner()->GetName(), *Dodge.AbilityTag.GetTagName().ToString());
+	if (bDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Sending Gameplay Event to Actor: %s with Tag: %s"), *GetOwner()->GetName(), *Dodge.AbilityTag.GetTagName().ToString());
+	}
 
     UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetOwner(), Dodge.AbilityTag, EventData);
 }

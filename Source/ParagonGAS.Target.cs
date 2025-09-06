@@ -10,6 +10,8 @@ public class ParagonGASTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6;
-		ExtraModuleNames.Add("ParagonGAS");
+		// CppStandard = CppStandardVersion.Cpp20;
+		// ExtraModuleNames.Add("ParagonGAS");
+		ExtraModuleNames.AddRange(new string[] { "ParagonGAS" });
 	}
 }

@@ -161,6 +161,13 @@ public:
 	void StopBlocking();
 
 	/*
+	 * Display a poseable mesh of this character at their current location/orientation.
+	 * This is used for dodge shadowing effects, etc.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Player|Visual")
+	void ShowCharacterSnapshot(float Duration = 1.0f);
+
+	/*
 	* Properties
 	*/
 
@@ -219,4 +226,8 @@ private:
 
 	// Flag to check if the character is currently attacking
 	bool bIsAttacking = false;
+
+	// Store the current shadow if we only allow one at a time
+	UPROPERTY(Transient)
+	TObjectPtr<class UPoseableMeshComponent> ActiveShadowPoseableMesh;
 };

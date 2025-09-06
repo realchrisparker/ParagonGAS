@@ -1,13 +1,13 @@
 #include "ParagonGASEditor.h"
 #include "Modules/ModuleManager.h"
 #include "AssetToolsModule.h"
-#include "AssetTypeActions_WeaponData.h"
 #include "ClassIconFinder.h"
-#include "AssetToolsModule.h"
 #include "Styling/SlateIconFinder.h"
 #include "Styling/SlateStyleRegistry.h"
 #include "Styling/SlateTypes.h"
 #include "ParagonGASEditorStyle.h"
+#include "WeaponDataAsset/AssetTypeActions/AssetTypeActions_WeaponData.h"
+#include "ComboGraphEditor/AssetTypeActions/AssetTypeActions_ComboGraph.h"
 
 
 IMPLEMENT_MODULE(FParagonGASEditorModule, ParagonGASEditor)
@@ -34,9 +34,17 @@ void FParagonGASEditorModule::StartupModule()
     );
 
     // Register asset actions
-    TSharedRef<IAssetTypeActions> Action = MakeShareable(new FAssetTypeActions_WeaponData());
-    AssetTools.RegisterAssetTypeActions(Action);
-    RegisteredAssetActions.Add(Action);
+    {
+		TSharedRef<IAssetTypeActions> Action = MakeShareable(new FAssetTypeActions_WeaponData());
+		AssetTools.RegisterAssetTypeActions(Action);
+		RegisteredAssetActions.Add(Action);
+    }
+
+	{
+		TSharedRef<IAssetTypeActions> Action = MakeShareable(new FAssetTypeActions_ComboGraph());
+		AssetTools.RegisterAssetTypeActions(Action);
+		RegisteredAssetActions.Add(Action);
+	}
 }
 
 void FParagonGASEditorModule::ShutdownModule()
@@ -54,6 +62,6 @@ void FParagonGASEditorModule::ShutdownModule()
     RegisteredAssetActions.Empty();
 
     FParagonGASEditorStyle::Shutdown();
-
-    UE_LOG(LogTemp, Warning, TEXT("ParagonGASEditor module shut down"));
 }
+
+#undef LOCTEXT_NAMESPACE

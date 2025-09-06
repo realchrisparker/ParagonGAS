@@ -9,7 +9,9 @@ public class ParagonGASEditor : ModuleRules
         PublicDependencyModuleNames.AddRange(new[] {
             "Core",
             "CoreUObject",
-            "Engine"
+            "Engine",
+            "GraphEditor",
+            "PropertyEditor"
         });
 
         PrivateDependencyModuleNames.AddRange(new[] {

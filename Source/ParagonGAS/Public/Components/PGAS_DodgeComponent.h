@@ -22,13 +22,20 @@
 #include <Structs/PGAS_DodgeType.h>
 #include "PGAS_DodgeComponent.generated.h"
 
- /**
-  * Dodge Component
-  *
-  * Handles dodge & rolling input, state, and related combat functionality.
-  * Initially a blank component, will be expanded with stamina cost,
-  * animations, gameplay effects, etc.
-  */
+/*
+ * Delegates
+*/
+
+/** Delegate called when a dodge is started */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDodgeStarted);
+
+/**
+ * Dodge Component
+ *
+ * Handles dodge & rolling input, state, and related combat functionality.
+ * Initially a blank component, will be expanded with stamina cost,
+ * animations, gameplay effects, etc.
+ */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS),
     meta = (BlueprintSpawnableComponent,
         DisplayName = "PGAS Dodge Component", 
@@ -51,14 +58,31 @@ public:
      * Array of possible dodge types this character can perform.
      * Each entry represents a specific dodge action.
      */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge", meta = (DisplayName = "Dodge", Tooltip = "Array of possible dodge types this character can perform."))
     TArray<FPGAS_DodgeType> Dodges;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge", meta = (DisplayName = "Shadowing", Tooltip = "Whether performing a dodge creates a semi-transparent copy of the character during the dodge."))
+    bool bShadowing = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge", meta = (DisplayName = "Slow Motion", Tooltip = "Whether performing a dodge triggers slow motion effects."))
+    bool bSlowMotion = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge", meta = (DisplayName = "Debug", Tooltip = "Whether to enable debug logging for dodges."))
+    bool bDebug = false;
+
+    /*
+     * Events
+     */
+
+     /** Event fired when a dodge is performed (no parameters). */
+    UPROPERTY(BlueprintAssignable, Category = "Dodge")
+    FOnDodgeStarted OnDodgeStarted;
 
     /*
      * Functions
      */
 
-     /** Get the first dodge that matches a given category and direction. */
+    /** Get the first dodge that matches a given category and direction. */
     UFUNCTION(BlueprintCallable, Category = "Dodge")
     FPGAS_DodgeType GetDodgeByCategoryAndDirection(EPGAS_DodgeCategory Category, EPGAS_DodgeDirection Direction) const;
 

@@ -33,7 +33,7 @@ public class ParagonGAS : ModuleRules
 			"Slate",
 			"SlateCore",
 			"EditorStyle",
-			"StateTreeEditorModule"
+			"StateTreeEditorModule",
 		});
 		
 		// Uncomment if you are using online features

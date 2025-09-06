@@ -596,7 +596,13 @@ private:
     UFUNCTION()
     void HandleCombatWindowEndHanded(FPGAS_AttackType AttackData);
 
-
+    /**
+     * Called when the hitbox component detects a hit
+     * This function processes the hit and applies damage or effects as necessary.
+     * @param HitActor The actor that was hit.
+     * @param Hit The hit result containing details about the hit.
+     * @param AttackType The type of attack that caused the hit.
+     */
     UFUNCTION()
     void HandleHitboxHit(AActor* HitActor, const FHitResult& Hit, FPGAS_AttackType AttackType);
 
