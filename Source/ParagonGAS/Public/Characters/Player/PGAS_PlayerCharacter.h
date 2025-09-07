@@ -401,13 +401,29 @@ protected:
     /** Called by the IA_Sprint input action to handle sprinting when released. */
     void SprintReleaseAction(const FInputActionValue& Value);
 
+    /** Called by the IA_LightAttack input action to handle light attacking. */
+    UFUNCTION()
+    void LightAttackAction(const FInputActionValue& Value);
+
+    /** Called by the IA_HeavyAttack input action to handle heavy attacking. */
+    UFUNCTION()
+    void HeavyAttackAction(const FInputActionValue& Value);
+
     /** Called by the IA_LeftHandLightAttack input action to handle left hand light attacking. */
     UFUNCTION()
     void LeftHandLightAttackAction(const FInputActionValue& Value);
 
+    /** Called by the IA_LeftHandHeavyAttack input action to handle left hand heavy attacking. */
+    UFUNCTION()
+    void LeftHandHeavyAttackAction(const FInputActionValue& Value);
+
     /** Called by the IA_RightHandLightAttack input action to handle right hand light attacking. */
     UFUNCTION()
     void RightHandLightAttackAction(const FInputActionValue& Value);
+
+    /** Called by the IA_RightHandHeavyAttack input action to handle right hand heavy attacking. */
+    UFUNCTION()
+    void RightHandHeavyAttackAction(const FInputActionValue& Value);
 
     /** Called by the IA_Block input action to handle blocking when started. */
     UFUNCTION()
@@ -473,6 +489,20 @@ protected:
     TObjectPtr<UInputAction> IA_Sprint;
 
     /**
+     * The Input Action asset for light attacking (e.g. "IA_LightAttack").
+     * This is typically set in the editor or loaded in code.
+     */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Light Attack Action"))
+    TObjectPtr<UInputAction> IA_LightAttack;
+
+    /**
+     * The Input Action asset for heavy attacking (e.g. "IA_HeavyAttack").
+     * This is typically set in the editor or loaded in code.
+     */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Heavy Attack Action"))
+    TObjectPtr<UInputAction> IA_HeavyAttack;
+
+    /**
      * The Input Action asset for left hand light attacking (e.g. "IA_LeftHandLightAttack").
      * This is typically set in the editor or loaded in code.
      */
@@ -480,11 +510,25 @@ protected:
     TObjectPtr<UInputAction> IA_LeftHandLightAttack;
 
     /**
+     * The Input Action asset for left hand light attacking (e.g. "IA_LeftHandHeavyAttack").
+     * This is typically set in the editor or loaded in code.
+     */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Left Hand Heavy Attack Action"))
+    TObjectPtr<UInputAction> IA_LeftHandHeavyAttack;
+
+    /**
      * The Input Action asset for right hand light attacking (e.g. "IA_RightHandLightAttack").
      * This is typically set in the editor or loaded in code.
      */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Right Hand Light Attack Action"))
     TObjectPtr<UInputAction> IA_RightHandLightAttack;
+
+    /**
+     * The Input Action asset for left hand heavy attacking (e.g. "IA_RightHandHeavyAttack").
+     * This is typically set in the editor or loaded in code.
+     */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Right Hand Heavy Attack Action"))
+    TObjectPtr<UInputAction> IA_RightHandHeavyAttack;
 
     /**
      * The Input Action asset for blocking (e.g. "IA_Block").

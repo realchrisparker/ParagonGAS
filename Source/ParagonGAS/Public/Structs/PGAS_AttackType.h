@@ -64,4 +64,12 @@ public:
     /** Gameplay effect used for damage application (Default to PGAS_GE_MeleeDamageEffect but can be changed)*/
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Damage")
     TSubclassOf<UGameplayEffect> DamageEffect = UPGAS_GE_MeleeDamageEffect::StaticClass();
+
+    // The combo step index for this attack. 
+    // Example: 0 = first attack in chain, 1 = second, etc.
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Combo",
+        meta = (DisplayName = "Combo Index",
+            Description = "The combo step index for this attack. Example: 0 = first attack in chain, 1 = second, etc.",
+            ToolTip = "Defines the order of this attack in a combo chain."))
+    int32 ComboIndex = 0;
 };

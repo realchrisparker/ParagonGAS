@@ -260,13 +260,29 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
             EnhancedInputComp->BindAction(IA_Sprint, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::SprintStartAction);
             EnhancedInputComp->BindAction(IA_Sprint, ETriggerEvent::Completed, this, &APGAS_PlayerCharacter::SprintReleaseAction);
         }
+        if (IA_LightAttack)
+        {
+            EnhancedInputComp->BindAction(IA_LightAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::LightAttackAction);
+        }
+        if (IA_HeavyAttack)
+        {
+            EnhancedInputComp->BindAction(IA_HeavyAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::HeavyAttackAction);
+        }
         if (IA_LeftHandLightAttack)
         {
             EnhancedInputComp->BindAction(IA_LeftHandLightAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::LeftHandLightAttackAction);
         }
+        if (IA_LeftHandHeavyAttack)
+        {
+            EnhancedInputComp->BindAction(IA_LeftHandHeavyAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::LeftHandHeavyAttackAction);
+        }
         if (IA_RightHandLightAttack)
         {
             EnhancedInputComp->BindAction(IA_RightHandLightAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::RightHandLightAttackAction);
+        }
+        if (IA_RightHandHeavyAttack)
+        {
+            EnhancedInputComp->BindAction(IA_RightHandHeavyAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::RightHandHeavyAttackAction);
         }
         if (IA_Block)
         {
@@ -520,6 +536,52 @@ void APGAS_PlayerCharacter::BlockReleaseAction(const FInputActionValue& Value)
 }
 
 /*
+ * LightAttackAction function to handle left hand attack input.
+ * This function is called when the IA_LightAttack input action is triggered.
+*/
+void APGAS_PlayerCharacter::LightAttackAction(const FInputActionValue& Value)
+{
+    // Get the combat core component
+    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
+    {
+        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Light, CoreComponent->CurrentComboIndex);
+
+        // Get the first attack of the specified type
+        if (Attack.AbilityTag.IsValid()) {
+            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+            SetIsAttacking(bActivated); // Set the attacking flag to true
+        }
+    }
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+/*
+ * HeavyAttackAction function to handle left hand attack input.
+ * This function is called when the IA_HeavyAttack input action is triggered.
+*/
+void APGAS_PlayerCharacter::HeavyAttackAction(const FInputActionValue& Value)
+{
+    // Get the combat core component
+    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
+    {
+        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Heavy, CoreComponent->CurrentComboIndex);
+
+        // Get the first attack of the specified type
+        if (Attack.AbilityTag.IsValid()) {
+            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+            SetIsAttacking(bActivated); // Set the attacking flag to true
+        }
+    }
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+/*
  * LeftHandLightAttackAction function to handle left hand attack input.
  * This function is called when the IA_LeftHandLightAttack input action is triggered.
 */
@@ -529,6 +591,28 @@ void APGAS_PlayerCharacter::LeftHandLightAttackAction(const FInputActionValue& V
     {
         // Get the first attack of the specified type
         const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndHand(EPGAS_WeaponAttackType::Light, EPGAS_WeaponHand::Left);
+        if (Attack.AbilityTag.IsValid())
+        {
+            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+            SetIsAttacking(bActivated); // Set the attacking flag to true
+        }
+    }
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+/*
+ * LeftHandHeavyAttackAction function to handle left hand attack input.
+ * This function is called when the IA_LeftHandHeavyAttack input action is triggered.
+*/
+void APGAS_PlayerCharacter::LeftHandHeavyAttackAction(const FInputActionValue& Value)
+{
+    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
+    {
+        // Get the first attack of the specified type
+        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndHand(EPGAS_WeaponAttackType::Heavy, EPGAS_WeaponHand::Left);
         if (Attack.AbilityTag.IsValid())
         {
             const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
@@ -563,6 +647,32 @@ void APGAS_PlayerCharacter::RightHandLightAttackAction(const FInputActionValue& 
     bIdleAnimationPlayed = false;
 }
 
+/**
+ * RightHandHeavyAttackAction function to handle right hand attack input.
+ * This function is called when the IA_RightHandHeavyAttack input action is triggered.
+ */
+void APGAS_PlayerCharacter::RightHandHeavyAttackAction(const FInputActionValue& Value)
+{
+    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
+    {
+        // Get the first attack of the specified type
+        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndHand(EPGAS_WeaponAttackType::Heavy, EPGAS_WeaponHand::Right);
+        if (Attack.AbilityTag.IsValid())
+        {
+            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+            SetIsAttacking(bActivated); // Set the attacking flag to true
+        }
+    }
+
+    // Reset idle time and animation flag when movement starts
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+/**
+ * LockOnAction function to handle lock-on input.
+ * This function is called when the IA_LockOn input action is triggered.
+ */
 void APGAS_PlayerCharacter::LockOnAction(const FInputActionValue& Value)
 {
     if (UPGAS_LockOnComponent* LockComp = FindComponentByClass<UPGAS_LockOnComponent>())

@@ -14,10 +14,16 @@
  * Implementation of the base Montage Gameplay Ability class.
  */
 
-#include "GAS/Abilities/PGAS_GameplayAbility_MontageBase.h"
-#include "Characters/Base/PGAS_CharacterBase.h"
-#include "GAS/PGAS_AbilitySystemComponent.h"
+#include <GAS/Abilities/PGAS_GameplayAbility_MontageBase.h>
+#include <Characters/Base/PGAS_CharacterBase.h>
+#include <Characters/Player/PGAS_PlayerCharacter.h>
+#include <GAS/PGAS_AbilitySystemComponent.h>
+#include <Components/PGAS_CombatCoreComponent.h>
+#include <Animations/PGAS_GameplayTagNotify.h>
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "Animation/AnimNotifies/AnimNotifyState.h"
+
 
  /** Constructor */
 UPGAS_GameplayAbility_MontageBase::UPGAS_GameplayAbility_MontageBase(const FObjectInitializer& ObjectInitializer)
@@ -70,13 +76,65 @@ void UPGAS_GameplayAbility_MontageBase::ActivateAbility(
         return;
     }
 
+    // We should have a valid character and anim instance here, but if we don't, just end the ability.
+    if (!CachedCharacter || !CachedAnimInstance)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Convert to APGAS_PlayerCharacter if the CachedCharacter is of that type
+    APGAS_PlayerCharacter* Character = Cast<APGAS_PlayerCharacter>(CachedCharacter);
+    if (Character)
+    {
+        // Get Character Combat Core Component
+        UPGAS_CombatCoreComponent* CombatCoreComponent = Character->GetCombatCoreComponent();
+        FPGAS_AttackType AttackType = CombatCoreComponent->GetLastKnownAttack(); // Get the last known attack type.
+        StaminaCost = AttackType.BaseStaminaCost; // Update StaminaCost based on the last known attack.
+    }
+
     // Call into BP
     OnAbilityActivatedBlueprint();
 
-    // NOTE: CreatePlayMontageAndWaitProxy uses ASC → AvatarActor → Mesh → AnimInstance under the hood with GAS, so CachedAnimInstance is a safety check only.
-    // We don't actually do anything else with it. Since it's just a pointer to memory we aren't losing any performance doing this check.
-    if (MontageToPlay && CachedAnimInstance)
+    // Play the montage and wait for it to complete or be interrupted/cancelled
+    if (MontageToPlay)
     {
+        // NOTE: CreatePlayMontageAndWaitProxy uses ASC → AvatarActor → Mesh → AnimInstance under the hood with GAS
+        if (CachedAnimInstance)
+        {
+            // Loop through MontageToPlay's NotifyEvents to register for notifies if needed
+            for (const FAnimNotifyEvent& NotifyEvent : MontageToPlay->Notifies)
+            {
+                if (UAnimNotifyState* NotifyState = NotifyEvent.NotifyStateClass)
+                {
+                    if (UPGAS_GameplayTagNotify* TagNotify = Cast<UPGAS_GameplayTagNotify>(NotifyState))
+                    {
+                        // Listen for Begin notify tag
+                        if (TagNotify->BeginNotifyTag.IsValid())
+                        {
+                            if (UAbilityTask_WaitGameplayEvent* BeginTask =
+                                UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, TagNotify->BeginNotifyTag))
+                            {
+                                BeginTask->EventReceived.AddDynamic(this, &UPGAS_GameplayAbility_MontageBase::HandleTagNotifyBegin);
+                                BeginTask->ReadyForActivation();
+                            }
+                        }
+
+                        // Listen for End notify tag
+                        if (TagNotify->EndNotifyTag.IsValid())
+                        {
+                            if (UAbilityTask_WaitGameplayEvent* EndTask =
+                                UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, TagNotify->EndNotifyTag))
+                            {
+                                EndTask->EventReceived.AddDynamic(this, &UPGAS_GameplayAbility_MontageBase::HandleTagNotifyEnd);
+                                EndTask->ReadyForActivation();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Setup montage task to play the montage and wait for it to complete or be interrupted/cancelled
         UAbilityTask_PlayMontageAndWait* MontageTask =
             UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, MontageToPlay, 1.f, NAME_None, false, 1.f);
 
@@ -113,6 +171,10 @@ void UPGAS_GameplayAbility_MontageBase::EndAbility(
 {
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 
+    // Optional cleanup (not strictly required because the object will be GC’ed)
+    OnTagNotifyBegin.Clear();
+    OnTagNotifyEnd.Clear();
+
     // Call into BP
     OnAbilityEndedBlueprint();
 }
@@ -125,4 +187,21 @@ void UPGAS_GameplayAbility_MontageBase::OnMontageCompleted()
 void UPGAS_GameplayAbility_MontageBase::OnMontageCancelled()
 {
     EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+}
+
+// Handle the beginning of a tag notify
+void UPGAS_GameplayAbility_MontageBase::HandleTagNotifyBegin(FGameplayEventData Payload)
+{
+    // Forward to Blueprint or do C++ logic
+    // UE_LOG(LogTemp, Log, TEXT("Notify Begin: %s"), *Payload.EventTag.ToString());
+    OnTagNotifyBegin.Broadcast(Payload);
+    OnTagNotifyBeginBlueprint(Payload); // Also call the BP event for begin notify here for convenience
+}
+
+// Handle the end of a tag notify
+void UPGAS_GameplayAbility_MontageBase::HandleTagNotifyEnd(FGameplayEventData Payload)
+{
+    // UE_LOG(LogTemp, Log, TEXT("Notify End: %s"), *Payload.EventTag.ToString());
+    OnTagNotifyEnd.Broadcast(Payload);
+    OnTagNotifyEndBlueprint(Payload); // Also call the BP event for end notify here for convenience
 }

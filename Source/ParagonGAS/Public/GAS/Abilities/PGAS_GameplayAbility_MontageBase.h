@@ -22,6 +22,16 @@
 #include <Characters/Player/PGAS_PlayerCharacter.h>
 #include "PGAS_GameplayAbility_MontageBase.generated.h"
 
+/**
+ * Delegates
+ */
+
+// Delegate for when a tag notify begins
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTagNotifyBeginSignature, FGameplayEventData, Data);
+
+// Delegate for when a tag notify ends
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTagNotifyEndSignature, FGameplayEventData, Data);
+
 
 /**
  * Base Gameplay Ability (Montage-based) for the Paragon GAS project.
@@ -38,6 +48,10 @@ class PARAGONGAS_API UPGAS_GameplayAbility_MontageBase : public UGameplayAbility
 public:
     /** Constructor */
     UPGAS_GameplayAbility_MontageBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+    /*
+     * Functions
+     */
 
     /** Activate ability (default behavior is broadcast and rely on montage logic in child classes) */
     virtual void ActivateAbility(
@@ -70,6 +84,17 @@ public:
     UFUNCTION(BlueprintImplementableEvent, Category = "PGAS|Ability", meta = (DisplayName = "On Ability Ended (Blueprint)"))
     void OnAbilityEndedBlueprint();
 
+    /**
+     * Called when the ability montage sends notify begin.
+     */
+    UFUNCTION(BlueprintImplementableEvent, Category = "PGAS|Ability", meta = (DisplayName = "On Tag Notify Begin (Blueprint)"))
+    void OnTagNotifyBeginBlueprint(FGameplayEventData Data);
+
+    /**
+     * Called when the ability montage sends notify ended.
+     */
+    UFUNCTION(BlueprintImplementableEvent, Category = "PGAS|Ability", meta = (DisplayName = "On Tag Notify End (Blueprint)"))
+    void OnTagNotifyEndBlueprint(FGameplayEventData Data);
 
     /**
      * Adds gameplay tags to the character ASC.
@@ -110,10 +135,37 @@ public:
     /*
      * Properties
      */
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability", meta = (AllowPrivateAccess = "true", DisplayName = "Stamina Reduction Effect", Tooltip = "Cached reference to the stamina reduction effect", Description = "Cached reference to the stamina reduction effect"))
+    TSubclassOf<UGameplayEffect> StaminaReductionEffect;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability", meta = (AllowPrivateAccess = "true", DisplayName = "Stamina Reduction Effect Tag", Tooltip = "Cached reference to the stamina reduction effect tag", Description = "Cached reference to the stamina reduction effect tag"))
+    FGameplayTag StaminaReductionEffectTag = FGameplayTag::RequestGameplayTag(FName("Combat.Stamina.Reduction"));
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability", meta = (AllowPrivateAccess = "true", DisplayName = "Stamina Cost", Tooltip = "Cached reference to the stamina cost", Description = "Cached reference to the stamina cost"))
+    float StaminaCost = 2.0f;
+
+    /** Event triggered when a tag notify begins */
+    UPROPERTY(BlueprintAssignable, Category = "PGAS|Ability|Notify")
+    FOnTagNotifyBeginSignature OnTagNotifyBegin;
+
+    /** Event triggered when a tag notify ends */
+    UPROPERTY(BlueprintAssignable, Category = "PGAS|Ability|Notify")
+    FOnTagNotifyEndSignature OnTagNotifyEnd;
+
+protected:
+    /*
+     * Functions
+     */
     
-     /**
-      * Cached reference to the owning character (valid after OnAvatarSet)
-      */
+    /** Called when avatar is assigned (safe place to cache references) */
+    virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
+    
+    /*
+     * Properties
+     */
+
+    /** Cached reference to the owning character (valid after OnAvatarSet) */
     UPROPERTY(BlueprintReadOnly, Category = "Ability|Owner", meta = (AllowPrivateAccess = "true", DisplayName = "Cached Character", Tooltip = "Cached reference to the owning character (valid after OnAvatarSet)", Description = "Cached reference to the owning character (valid after OnAvatarSet)"))
     TObjectPtr<APGAS_CharacterBase> CachedCharacter;
 
@@ -128,14 +180,21 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Ability|Owner", meta = (AllowPrivateAccess = "true", DisplayName = "Cached Character Level", Tooltip = "Cached reference to the character level (valid after OnAvatarSet)", Description = "Cached reference to the character level (valid after OnAvatarSet)"))
     float CachedCharacterLevel;
 
-protected:
-    /** Called when avatar is assigned (safe place to cache references) */
-    virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
 private:
+    /*
+     * Functions
+     */
+
     /** Callbacks from montage task */
     UFUNCTION()
     void OnMontageCompleted();
 
     UFUNCTION()
     void OnMontageCancelled();
+
+    UFUNCTION()
+    void HandleTagNotifyBegin(FGameplayEventData Payload);
+
+    UFUNCTION()
+    void HandleTagNotifyEnd(FGameplayEventData Payload);
 };

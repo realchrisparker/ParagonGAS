@@ -43,6 +43,9 @@ class UPGAS_WeaponDataAsset;
 // Delegate for combat windows
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPGAS_CombatWindowEventSignature, FPGAS_AttackType, AttackData);
 
+// Delegate for combo windows
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPGAS_ComboWindowEventSignature, FPGAS_AttackType, AttackData);
+
 
 /**
  * The central coordinator for combat timing & state.
@@ -77,6 +80,28 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Attacks")
     TArray<FPGAS_AttackType> AttackTypes;
 
+    // Current combo index in progress
+    UPROPERTY(EditAnywhere, Category = "PGAS|Combat|Combo",
+        meta = (DisplayName = "Current Combo Index",
+            AllowPrivateAccess = "true",
+            BlueprintReadOnly = false,
+            Description = "Current combo index in progress",
+            ToolTip = "Tracks the current step in a combo sequence.")
+    )
+    int32 CurrentComboIndex;
+
+    // Reset time (designer tunable)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Combo")
+    float ComboResetTime = 1.0f;
+
+    // The gameplay tag that identifies the combo.
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Combo",
+        meta = (DisplayName = "Combo Tag", 
+            Description = "The gameplay tag that identifies the combo. This has to match with the combo tag in the ability's montage combo notify. If they are the same it turns on the windowing.", 
+            ToolTip = "Tag used to identify and chain combo attacks. Must match the combo tag in the ability's montage notify to enable combo windowing.")
+    )
+    FGameplayTag ComboTag;
+
     // ---------------------------
     // Windowing
     // ---------------------------
@@ -88,6 +113,14 @@ public:
     /** Delegate broadcast when a combat window is closed */
     UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
     FPGAS_CombatWindowEventSignature OnCombatWindowClose;
+
+    /** Delegate broadcast when a combo window is opened */
+    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
+    FPGAS_ComboWindowEventSignature OnComboWindowOpen;
+
+    /** Delegate broadcast when a combo window is closed */
+    UPROPERTY(BlueprintAssignable, Category = "PGAS|Combat|Events")
+    FPGAS_ComboWindowEventSignature OnComboWindowClose;
 
     /*
      * Functions
@@ -110,6 +143,9 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Abilities")
     void CancelAbilityByTag(const FGameplayTag& AbilityTag);
+
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat")
+    FPGAS_AttackType GetLastKnownAttack() const { return LastKnownAttack; }
 
     // ---------------------------
     // Attack Lookup Helpers
@@ -139,6 +175,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
     FPGAS_AttackType GetAttackByTypeAndHand(EPGAS_WeaponAttackType InType, EPGAS_WeaponHand InHand) const;
 
+    /** Return the attack matching both AttackType and Index in that type */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
+    FPGAS_AttackType GetAttackByTypeAndIndex(EPGAS_WeaponAttackType InType, int32 InIndex) const;
+
     /** Returns the equipped weapon data asset.
      *  If dual wielding, returns the last known attack's weapon data.
      *  If none, returns nullptr.
@@ -146,8 +186,16 @@ public:
     UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
     UPGAS_WeaponDataAsset* GetEquippedWeaponData() const;
 
+    /** Reset the combo state */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
+    void ResetCombo();
+
 protected:
-    virtual void BeginPlay() override;
+    /*
+     * Functions
+    */
+    
+    virtual void BeginPlay() override;    
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
@@ -155,6 +203,15 @@ private:
     /*
      * Properties
     */
+
+    // True if a combo window is open (set via notifies)
+    bool bComboWindowOpen;
+
+    // Buffered input flag & tag
+    bool bInputBuffered;
+
+    // Reset timer handle
+    FTimerHandle ComboResetTimer;
 
     // ---------------------------
     // Cached owner pointers
@@ -172,4 +229,10 @@ private:
     
     /** Handle changes to the attack window tag */
     void HandleAttackWindowTagChanged(const FGameplayTag Tag, int32 NewCount);
+
+    /** Handle changes to the combo window tag */
+    void HandleComboWindowTagChanged(const FGameplayTag Tag, int32 NewCount);
+
+    // Finds next combo step based on current step index
+    FPGAS_AttackType GetNextComboAttack(EPGAS_WeaponAttackType InType, int32 CurrentIndex) const;
 };

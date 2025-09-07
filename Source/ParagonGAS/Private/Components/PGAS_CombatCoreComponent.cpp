@@ -14,10 +14,10 @@
  * Combat Core Component (Dual-Weapon Ready) - Implementation
  */
 
-#include "Components/PGAS_CombatCoreComponent.h"
+#include <Components/PGAS_CombatCoreComponent.h>
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
-#include "Characters/Player/PGAS_PlayerCharacter.h"
+#include <Characters/Player/PGAS_PlayerCharacter.h>
 
 // Constructor
 UPGAS_CombatCoreComponent::UPGAS_CombatCoreComponent()
@@ -50,13 +50,27 @@ void UPGAS_CombatCoreComponent::BeginPlay()
 
 					RegisteredTagHandles.Add(Handle);
 
-					UE_LOG(LogTemp, Log, TEXT("Registered CombatCoreComponent for attack tag: %s (Hand: %d)"),
+					UE_LOG(LogTemp, Warning, TEXT("Registered CombatCoreComponent for attack tag: %s (Hand: %d)"),
 						*Attack.AbilityTag.ToString(),
 						static_cast<int32>(Attack.Hand));
 				}
 			}
+
+			// Register combo tag if valid. Only need to register once.
+			if (ComboTag.IsValid()) {
+				FDelegateHandle Handle = CachedASC->RegisterGameplayTagEvent(
+					ComboTag,
+					EGameplayTagEventType::NewOrRemoved
+				).AddUObject(this, &UPGAS_CombatCoreComponent::HandleComboWindowTagChanged);
+
+				RegisteredTagHandles.Add(Handle);
+
+				UE_LOG(LogTemp, Warning, TEXT("Registered CombatCoreComponent for combo tag: %s"), *ComboTag.ToString());
+			}
 		}
 	}
+
+	CurrentComboIndex = 0; // Initialize combo index
 }
 
 // Called when the component is destroyed or game ends
@@ -103,14 +117,75 @@ bool UPGAS_CombatCoreComponent::ActivateAbilityByTag(const FGameplayTag& Ability
 		return false;
 	}
 
-	// Cache last known info
-	LastKnownAttack = *FoundAttack;
+	// --- Handle Combo Progression ---
+	if (bComboWindowOpen)
+	{
+		// If we are in a combo window and player pressed attack again, advance combo
+		CurrentComboIndex++;
 
-	// Build tag container for activation
-	FGameplayTagContainer Tags;
-	Tags.AddTag(AbilityTag);
+		// Try to get the next attack in sequence
+		FPGAS_AttackType NextAttack = GetNextComboAttack(
+			FoundAttack->AttackType,
+			CurrentComboIndex
+		);
 
-	return CachedCharacter->ActivateAbilitiesWithTags(Tags, true);
+		if (NextAttack.AbilityTag.IsValid())
+		{
+			LastKnownAttack = NextAttack;
+
+			FGameplayTagContainer Tags;
+			Tags.AddTag(NextAttack.AbilityTag);
+
+			bool bSuccess = CachedCharacter->ActivateAbilitiesWithTags(Tags, true);
+
+			// Restart reset timer
+			if (bSuccess)
+			{
+				GetWorld()->GetTimerManager().ClearTimer(ComboResetTimer);
+				GetWorld()->GetTimerManager().SetTimer(
+					ComboResetTimer,
+					this,
+					&UPGAS_CombatCoreComponent::ResetCombo,
+					ComboResetTime,
+					false
+				);
+			}
+
+			return bSuccess;
+		}
+		else
+		{
+			// No next step found → reset combo
+			ResetCombo();
+			return false;
+		}
+	}
+	else
+	{
+		// Cache last known info
+		LastKnownAttack = *FoundAttack;
+
+		// Build tag container for activation
+		FGameplayTagContainer Tags;
+		Tags.AddTag(AbilityTag);
+
+		bool bSuccess = CachedCharacter->ActivateAbilitiesWithTags(Tags, true);
+
+		// 🔥 Start reset timer for first step
+		if (bSuccess)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(ComboResetTimer);
+			GetWorld()->GetTimerManager().SetTimer(
+				ComboResetTimer,
+				this,
+				&UPGAS_CombatCoreComponent::ResetCombo,
+				ComboResetTime,
+				false
+			);
+		}
+
+		return bSuccess;
+	}
 }
 
 /**
@@ -160,25 +235,41 @@ void UPGAS_CombatCoreComponent::HandleAttackWindowTagChanged(const FGameplayTag 
 
 	if (!FoundAttack)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CombatCoreComponent: Received event for unregistered tag %s"), *Tag.ToString());
+		// UE_LOG(LogTemp, Warning, TEXT("CombatCoreComponent: Received event for unregistered tag %s"), *Tag.ToString());
 		return;
 	}
 
 	if (NewCount > 0)
 	{
 		OnCombatWindowOpen.Broadcast(*FoundAttack);
-		UE_LOG(LogTemp, Log, TEXT("Combat Window Opened: %s | Hand: %d | Weapon: %s"),
-			*FoundAttack->AbilityTag.ToString(),
-			static_cast<int32>(FoundAttack->Hand),
-			FoundAttack->WeaponData ? *FoundAttack->WeaponData->GetName() : TEXT("None"));
+		// UE_LOG(LogTemp, Log, TEXT("Combat Window Opened: %s | Hand: %d | Weapon: %s"),
+			// *FoundAttack->AbilityTag.ToString(),
+			// static_cast<int32>(FoundAttack->Hand),
+			// FoundAttack->WeaponData ? *FoundAttack->WeaponData->GetName() : TEXT("None"));
 	}
 	else
 	{
 		OnCombatWindowClose.Broadcast(*FoundAttack);
-		UE_LOG(LogTemp, Log, TEXT("Combat Window Closed: %s | Hand: %d | Weapon: %s"),
-			*FoundAttack->AbilityTag.ToString(),
-			static_cast<int32>(FoundAttack->Hand),
-			FoundAttack->WeaponData ? *FoundAttack->WeaponData->GetName() : TEXT("None"));
+		// UE_LOG(LogTemp, Log, TEXT("Combat Window Closed: %s | Hand: %d | Weapon: %s"),
+			// *FoundAttack->AbilityTag.ToString(),
+			// static_cast<int32>(FoundAttack->Hand),
+			// FoundAttack->WeaponData ? *FoundAttack->WeaponData->GetName() : TEXT("None"));
+	}
+}
+
+void UPGAS_CombatCoreComponent::HandleComboWindowTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	if (NewCount > 0)
+	{
+		OnComboWindowOpen.Broadcast(LastKnownAttack);
+		bComboWindowOpen = true;
+		// UE_LOG(LogTemp, Log, TEXT("Combo Window Opened: %s"), *Tag.ToString());
+	}
+	else
+	{
+		OnComboWindowClose.Broadcast(LastKnownAttack);
+		bComboWindowOpen = false;
+		// UE_LOG(LogTemp, Log, TEXT("Combo Window Closed: %s"), *Tag.ToString());
 	}
 }
 
@@ -238,6 +329,18 @@ TArray<FPGAS_AttackType> UPGAS_CombatCoreComponent::GetAllAttacksByHand(EPGAS_We
 	return Results;
 }
 
+/** Return the first attack matching both an AttackType and Hand */
+FPGAS_AttackType UPGAS_CombatCoreComponent::GetAttackByTypeAndHand(EPGAS_WeaponAttackType InType, EPGAS_WeaponHand InHand) const
+{
+	const FPGAS_AttackType* Found = AttackTypes.FindByPredicate(
+		[ & ] (const FPGAS_AttackType& Attack)
+		{
+			return Attack.AttackType == InType && Attack.Hand == InHand;
+		});
+
+	return Found ? *Found : FPGAS_AttackType();
+}
+
 /** Return the attack that matches a specific GameplayTag */
 FPGAS_AttackType UPGAS_CombatCoreComponent::GetAttackByTag(const FGameplayTag& InTag) const
 {
@@ -250,16 +353,21 @@ FPGAS_AttackType UPGAS_CombatCoreComponent::GetAttackByTag(const FGameplayTag& I
 	return Found ? *Found : FPGAS_AttackType();
 }
 
-/** Return the first attack matching both an AttackType and Hand */
-FPGAS_AttackType UPGAS_CombatCoreComponent::GetAttackByTypeAndHand(EPGAS_WeaponAttackType InType, EPGAS_WeaponHand InHand) const
+/**
+ * Return the attack matching both AttackType and Index in that type
+ * (e.g., Light attack type with Index 0 returns the first light attack, Index 1 the second, etc.)
+ * @param InType The type of attack (Light, Medium, Heavy, etc.)
+ * @param InIndex The index of the attack within that type (0-based)
+ * @return The matching FPGAS_AttackType, or a default instance if not found
+ */
+FPGAS_AttackType UPGAS_CombatCoreComponent::GetAttackByTypeAndIndex(EPGAS_WeaponAttackType InType, int32 InIndex) const
 {
-	const FPGAS_AttackType* Found = AttackTypes.FindByPredicate(
-		[ & ] (const FPGAS_AttackType& Attack)
-		{
-			return Attack.AttackType == InType && Attack.Hand == InHand;
-		});
-
-	return Found ? *Found : FPGAS_AttackType();
+	const TArray<FPGAS_AttackType> AttacksOfType = GetAllAttacksByType(InType);
+	if (AttacksOfType.IsValidIndex(InIndex))
+	{
+		return AttacksOfType[InIndex];
+	}
+	return FPGAS_AttackType();
 }
 
 UPGAS_WeaponDataAsset* UPGAS_CombatCoreComponent::GetEquippedWeaponData() const
@@ -281,4 +389,29 @@ UPGAS_WeaponDataAsset* UPGAS_CombatCoreComponent::GetEquippedWeaponData() const
 
 	// Case 3: Nothing equipped
 	return nullptr;
+}
+
+// ---------------------------
+// Combo Functions
+// ---------------------------
+
+FPGAS_AttackType UPGAS_CombatCoreComponent::GetNextComboAttack(EPGAS_WeaponAttackType InType, int32 CurrentIndex) const
+{
+    const FPGAS_AttackType* Found = AttackTypes.FindByPredicate(
+        [&](const FPGAS_AttackType& Attack)
+        {
+            return Attack.AttackType == InType &&
+                   Attack.ComboIndex == CurrentIndex;
+        });
+
+    return Found ? *Found : FPGAS_AttackType();
+}
+
+void UPGAS_CombatCoreComponent::ResetCombo()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Combo Reset"));
+	CurrentComboIndex = 0;
+	bComboWindowOpen = false;
+	bInputBuffered = false;
+	GetWorld()->GetTimerManager().ClearTimer(ComboResetTimer);
 }
