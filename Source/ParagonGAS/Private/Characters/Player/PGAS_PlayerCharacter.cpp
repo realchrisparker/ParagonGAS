@@ -68,17 +68,20 @@ APGAS_PlayerCharacter::APGAS_PlayerCharacter()
     CombatCoreComponent = CreateDefaultSubobject<UPGAS_CombatCoreComponent>(TEXT("Combat Core Component"));
 
     // Create the hitbox component.
-    HitboxComponent = CreateDefaultSubobject<UPGAS_HitboxComponent>(TEXT("Hitbox Component"));
+    HitboxComponent = CreateDefaultSubobject<UPGAS_CombatHitboxComponent>(TEXT("Combat Hitbox Component"));
 
     // Create the lock-on component.
-    LockOnComponent = CreateDefaultSubobject<UPGAS_LockOnComponent>(TEXT("Lock On Component"));
+    LockOnComponent = CreateDefaultSubobject<UPGAS_CombatLockOnComponent>(TEXT("Combat Lock On Component"));
 
     // Create the block component.
-    BlockComponent = CreateDefaultSubobject<UPGAS_BlockComponent>(TEXT("Block Component"));
+    BlockComponent = CreateDefaultSubobject<UPGAS_CombatBlockComponent>(TEXT("Combat Block Component"));
 
     // Create the dodge component.
-    DodgeComponent = CreateDefaultSubobject<UPGAS_DodgeComponent>(TEXT("Dodge Component"));
+    DodgeComponent = CreateDefaultSubobject<UPGAS_CombatDodgeComponent>(TEXT("Combat Dodge Component"));
 
+    // Create the parry component.
+    ParryComponent = CreateDefaultSubobject<UPGAS_CombatParryComponent>(TEXT("Combat Parry Component"));
+    
     /**
      * Set up the character's attribute set.
      * This is where you define your character's attributes like health, mana, etc.
@@ -160,13 +163,13 @@ void APGAS_PlayerCharacter::BeginPlay()
     }
 
     // Bind hitbox events.
-    if (UPGAS_HitboxComponent* HB = GetHitboxComponent())
+    if (UPGAS_CombatHitboxComponent* HB = GetHitboxComponent())
     {
         HB->OnHitboxHit.AddDynamic(this, &APGAS_PlayerCharacter::HandleHitboxHit);
     }
 
     // Bind lockon events.
-    if (UPGAS_LockOnComponent* LockOn = GetLockOnComponent())
+    if (UPGAS_CombatLockOnComponent* LockOn = GetLockOnComponent())
     {
         // LockOn->OnLocked.AddDynamic(this, &APGAS_PlayerCharacter::HandleLockOnTargetChanged);
         // LockOn->OnUnlocked.AddDynamic(this, &APGAS_PlayerCharacter::HandleLockOnTargetChanged);
@@ -299,16 +302,12 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
         }
         if (IA_Roll)
         {
-            // Set up as a double tap so we don't want to use Started here, double tap detection fires on Triggered. Started will fire on one tap.
-            EnhancedInputComp->BindAction(IA_Roll, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::RollAction);
+            // Set up as a double tap so we don't want to use Started here, double tap detection fires on Started. Started will fire on one tap.
+            EnhancedInputComp->BindAction(IA_Roll, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::RollAction);
         }
-        if (IA_RollX)
+        if(IA_Parry)
         {
-            EnhancedInputComp->BindAction(IA_RollX, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::RollAction);
-        }
-        if (IA_RollY)
-        {
-            EnhancedInputComp->BindAction(IA_RollY, ETriggerEvent::Triggered, this, &APGAS_PlayerCharacter::RollAction);
+            EnhancedInputComp->BindAction(IA_Parry, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::ParryAction);
         }
     }
 }
@@ -393,7 +392,7 @@ void APGAS_PlayerCharacter::LookAction(const FInputActionValue& Value)
     // --- Stick Flick Detection ---
     const float CurrentTime = GetWorld()->GetTimeSeconds();
 
-    if (UPGAS_LockOnComponent* LockComp = GetLockOnComponent())
+    if (UPGAS_CombatLockOnComponent* LockComp = GetLockOnComponent())
     {
         if (LockComp->IsLockedOn())
         {
@@ -509,7 +508,7 @@ void APGAS_PlayerCharacter::SprintReleaseAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::BlockStartedAction(const FInputActionInstance& Value)
 {
-    if (UPGAS_BlockComponent* BlockComp = GetBlockComponent())
+    if (UPGAS_CombatBlockComponent* BlockComp = GetBlockComponent())
     {
         BlockComp->StartBlock();
     }
@@ -525,7 +524,7 @@ void APGAS_PlayerCharacter::BlockStartedAction(const FInputActionInstance& Value
 */
 void APGAS_PlayerCharacter::BlockReleaseAction(const FInputActionValue& Value)
 {
-    if (UPGAS_BlockComponent* BlockComp = GetBlockComponent())
+    if (UPGAS_CombatBlockComponent* BlockComp = GetBlockComponent())
     {
         BlockComp->StopBlock();
     }
@@ -675,7 +674,7 @@ void APGAS_PlayerCharacter::RightHandHeavyAttackAction(const FInputActionValue& 
  */
 void APGAS_PlayerCharacter::LockOnAction(const FInputActionValue& Value)
 {
-    if (UPGAS_LockOnComponent* LockComp = FindComponentByClass<UPGAS_LockOnComponent>())
+    if (UPGAS_CombatLockOnComponent* LockComp = FindComponentByClass<UPGAS_CombatLockOnComponent>())
     {
         if (LockComp->IsLockedOn())
         {
@@ -695,8 +694,7 @@ void APGAS_PlayerCharacter::LockOnAction(const FInputActionValue& Value)
  */
 void APGAS_PlayerCharacter::DodgeAction(const FInputActionInstance& Value)
 {
-    UE_LOG(LogTemp, Warning, TEXT("DodgeAction: Dodge input received"));
-    if (UPGAS_DodgeComponent* DodgeComp = GetDodgeComponent())
+    if (UPGAS_CombatDodgeComponent* DodgeComp = GetDodgeComponent())
     {
         EPGAS_DodgeDirection ChosenDirection = EPGAS_DodgeDirection::Backward; // Default to backward dodge
         UPGAS_AnimInstanceBase* AnimInstance = Cast<UPGAS_AnimInstanceBase>(GetMesh()->GetAnimInstance());
@@ -747,141 +745,62 @@ void APGAS_PlayerCharacter::DodgeAction(const FInputActionInstance& Value)
  */
 void APGAS_PlayerCharacter::RollAction(const FInputActionInstance& Value)
 {
-    UE_LOG(LogTemp, Warning, TEXT("RollAction: Roll input received"));
-
-    FVector2D StickInput = FVector2D::ZeroVector;
-
-    FInputActionValue ActionValue = Value.GetValue();
-    switch (ActionValue.GetValueType())
+    if (UPGAS_CombatDodgeComponent* DodgeComp = GetDodgeComponent())
     {
-        case EInputActionValueType::Axis2D: // Gamepad stick
+        EPGAS_DodgeDirection ChosenDirection = EPGAS_DodgeDirection::Backward; // Default to backward roll
+        UPGAS_AnimInstanceBase* AnimInstance = Cast<UPGAS_AnimInstanceBase>(GetMesh()->GetAnimInstance());
+        if (AnimInstance) // Check if the animation instance is valid
+        {
+            // Convert animation direction to dodge direction
+            EPGAS_Direction eDirection = AnimInstance->eDirection;
+            switch (eDirection)
             {
-                StickInput = ActionValue.Get<FVector2D>();
-                break;
+                case EPGAS_Direction::Forward:
+                    ChosenDirection = EPGAS_DodgeDirection::Forward;
+                    break;
+                case EPGAS_Direction::Backward:
+                    ChosenDirection = EPGAS_DodgeDirection::Backward;
+                    break;
+                case EPGAS_Direction::Left:
+                    ChosenDirection = EPGAS_DodgeDirection::Left;
+                    break;
+                case EPGAS_Direction::Right:
+                    ChosenDirection = EPGAS_DodgeDirection::Right;
+                    break;
+                default:
+                    ChosenDirection = EPGAS_DodgeDirection::Backward;
+                    break;
             }
-        case EInputActionValueType::Axis1D: // Keyboard WASD (split into RollX and RollY)
-            {
-                float AxisValue = ActionValue.Get<float>();
+        }
 
-                if (Value.GetSourceAction() == IA_RollX)
-                {
-                    StickInput = FVector2D(AxisValue, 0.f);
-                }
-                else if (Value.GetSourceAction() == IA_RollY)
-                {
-                    StickInput = FVector2D(0.f, AxisValue);
-                }
-                break;
-            }
-        default:
-            break;
-    }
+        // Log chosen direction
+        // UE_LOG(LogTemp, Warning, TEXT("DodgeAction: Performing %s dodge"), *UEnum::GetValueAsString(ChosenDirection));
 
-    UE_LOG(LogTemp, Warning, TEXT("RollAction: StickInput X=%f, Y=%f"), StickInput.X, StickInput.Y);
+        // Lookup dodge data
+        FPGAS_DodgeType Roll = DodgeComp->GetDodgeByCategoryAndDirection(EPGAS_DodgeCategory::Roll, ChosenDirection);
 
-    if (StickInput.IsNearlyZero())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("RollAction: No stick input detected"));
-        return;
-    }
-
-    // Normalize and resolve closest cardinal direction
-    StickInput.Normalize();
-
-    FVector2D Forward(0.f, 1.f);
-    FVector2D Back(0.f, -1.f);
-    FVector2D Right(1.f, 0.f);
-    FVector2D Left(-1.f, 0.f);
-
-    float DotForward = FVector2D::DotProduct(StickInput, Forward);
-    float DotBack = FVector2D::DotProduct(StickInput, Back);
-    float DotRight = FVector2D::DotProduct(StickInput, Right);
-    float DotLeft = FVector2D::DotProduct(StickInput, Left);
-
-    float MaxDot = DotForward;
-    EPGAS_DodgeDirection ChosenDirection = EPGAS_DodgeDirection::Forward;
-
-    if (DotBack > MaxDot) { MaxDot = DotBack;  ChosenDirection = EPGAS_DodgeDirection::Backward; }
-    if (DotRight > MaxDot) { MaxDot = DotRight; ChosenDirection = EPGAS_DodgeDirection::Right; }
-    if (DotLeft > MaxDot) { MaxDot = DotLeft;  ChosenDirection = EPGAS_DodgeDirection::Left; }
-
-    UE_LOG(LogTemp, Warning, TEXT("RollAction: Performing %s roll"), *UEnum::GetValueAsString(ChosenDirection));
-
-    if (UPGAS_DodgeComponent* DodgeComp = GetDodgeComponent())
-    {
-        FPGAS_DodgeType Roll = DodgeComp->GetDodgeByCategoryAndDirection(
-            EPGAS_DodgeCategory::Roll,
-            ChosenDirection
-        );
-
+        // Trigger dodge if valid
         if (Roll.Montage)
         {
             DodgeComp->PerformDodge(Roll);
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("RollAction: No montage found for %s roll"),
-                *UEnum::GetValueAsString(ChosenDirection));
+            // UE_LOG(LogTemp, Warning, TEXT("DodgeAction: No montage found for %s roll"), *UEnum::GetValueAsString(ChosenDirection));
         }
     }
+}
 
-    // UE_LOG(LogTemp, Warning, TEXT("RollAction: Roll input received"));
-
-    // if (UPGAS_DodgeComponent* DodgeComp = GetDodgeComponent())
-    // {
-    //     const EInputActionValueType type = Value.GetSourceAction()->ValueType;
-    //     UE_LOG(LogTemp, Warning, TEXT("RollAction: StickInput Type=%s"), *UEnum::GetValueAsString(type));
-    //     FVector2D StickInput = Value.GetValue().Get<FVector2D>();
-    //     UE_LOG(LogTemp, Warning, TEXT("RollAction: StickInput X=%f, Y=%f"), StickInput.X, StickInput.Y);
-
-    //     if (StickInput.IsNearlyZero())
-    //     {
-    //         UE_LOG(LogTemp, Warning, TEXT("RollAction: No stick input detected"));
-    //         return;
-    //     }
-
-    //     // Normalize input
-    //     StickInput.Normalize();
-
-    //     // Reference directions in 2D
-    //     FVector2D Forward(0.f, 1.f);
-    //     FVector2D Back(0.f, -1.f);
-    //     FVector2D Right(1.f, 0.f);
-    //     FVector2D Left(-1.f, 0.f);
-
-    //     // Dot products
-    //     float DotForward = FVector2D::DotProduct(StickInput, Forward);
-    //     float DotBack = FVector2D::DotProduct(StickInput, Back);
-    //     float DotRight = FVector2D::DotProduct(StickInput, Right);
-    //     float DotLeft = FVector2D::DotProduct(StickInput, Left);
-
-    //     // Pick max
-    //     float MaxDot = DotForward;
-    //     EPGAS_DodgeDirection ChosenDirection = EPGAS_DodgeDirection::Forward;
-
-    //     if (DotBack > MaxDot) { MaxDot = DotBack; ChosenDirection = EPGAS_DodgeDirection::Backward; }
-    //     if (DotRight > MaxDot) { MaxDot = DotRight; ChosenDirection = EPGAS_DodgeDirection::Right; }
-    //     if (DotLeft > MaxDot) { MaxDot = DotLeft; ChosenDirection = EPGAS_DodgeDirection::Left; }
-
-    //     UE_LOG(LogTemp, Warning, TEXT("RollAction: Performing %s roll"),
-    //         *UEnum::GetValueAsString(ChosenDirection));
-
-    //     // Lookup roll
-    //     FPGAS_DodgeType Roll = DodgeComp->GetDodgeByCategoryAndDirection(
-    //         EPGAS_DodgeCategory::Roll,
-    //         ChosenDirection
-    //     );
-
-    //     if (Roll.Montage)
-    //     {
-    //         DodgeComp->PerformDodge(Roll);
-    //     }
-    //     else
-    //     {
-    //         UE_LOG(LogTemp, Warning, TEXT("RollAction: No montage found for %s roll"),
-    //             *UEnum::GetValueAsString(ChosenDirection));
-    //     }
-    // }
+/**
+ * Called by the IA_Parry input action to handle parrying.
+ */
+void APGAS_PlayerCharacter::ParryAction(const FInputActionInstance& Value)
+{
+    UE_LOG(LogTemp, Warning, TEXT("ParryAction: Parry input received"));
+    if (UPGAS_CombatParryComponent* ParryComp = GetParryComponent())
+    {
+        ParryComp->StartParry();
+    }
 }
 
 // --------------------
@@ -1008,7 +927,7 @@ void APGAS_PlayerCharacter::HandleCombatWindowStartHanded(FPGAS_AttackType Attac
 
     if (!HasAuthority()) return; // exit if no authority
 
-    if (UPGAS_HitboxComponent* Component = GetHitboxComponent())
+    if (UPGAS_CombatHitboxComponent* Component = GetHitboxComponent())
     {
         // Forward the gameplay tag + hand into Hitbox
         Component->StartHitDetection(AttackData);
@@ -1025,7 +944,7 @@ void APGAS_PlayerCharacter::HandleCombatWindowEndHanded(FPGAS_AttackType AttackD
 
     if (!HasAuthority()) return; // exit if no authority
 
-    if (UPGAS_HitboxComponent* Component = GetHitboxComponent())
+    if (UPGAS_CombatHitboxComponent* Component = GetHitboxComponent())
     {
         Component->StopHitDetection();
     }

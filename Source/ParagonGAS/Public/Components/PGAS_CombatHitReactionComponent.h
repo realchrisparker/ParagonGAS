@@ -21,13 +21,16 @@
 #include "Components/ActorComponent.h"
 #include "Animation/AnimMontage.h"
 #include "GameplayTagContainer.h"
-#include "PGAS_HitReactionComponent.generated.h"
+#include <Structs/PGAS_HitReaction.h>
+#include <Data/PGAS_HitReactionDataObject.h>
+#include "PGAS_CombatHitReactionComponent.generated.h"
 
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup = (PGAS),
-	meta = (BlueprintSpawnableComponent, DisplayName = "Hit Reaction Component")
+	meta = (BlueprintSpawnableComponent,
+		DisplayName = "Hit Reaction Component")
 )
-class PARAGONGAS_API UPGAS_HitReactionComponent : public UActorComponent
+class PARAGONGAS_API UPGAS_CombatHitReactionComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -37,10 +40,7 @@ public:
 	*/
 	
 	// Sets default values for this component's properties
-	UPGAS_HitReactionComponent();
-
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	UPGAS_CombatHitReactionComponent();
 
 	/**
 	 * Performs a hit reaction based on the specified hit direction.
@@ -48,43 +48,41 @@ public:
 	 * @param PlayRate The play rate for the hit reaction montage.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Hit Reaction")
-	void PerformHitReaction(const FGameplayTag& HitDirection, float PlayRate = 1.0f);
+	void PerformHitReaction(EPGAS_HitDirection Direction, EPGAS_HitSeverity Severity);
 
 	/*
 	* Properties
 	*/
 
-	// Default hit reaction montage
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction|Animation")
-	TObjectPtr<UAnimMontage> DefaultHitMontage;
-
-	// Hit reaction montages for being hit from back.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction|Animation")
-	TObjectPtr<UAnimMontage> BackHitMontage;
-
-	// Hit reaction montages for being hit from front.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction|Animation")
-	TObjectPtr<UAnimMontage> ForwardHitMontage;
-
-	// Hit reaction montages for being hit from left.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction|Animation")
-	TObjectPtr<UAnimMontage> LeftHitMontage;
-
-	// Hit reaction montages for being hit from right.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction|Animation")
-	TObjectPtr<UAnimMontage> RightHitMontage;
+	/** All available hit reactions (configured in editor) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction", meta = (DisplayName = "Hit Reactions"))
+	TArray<FPGAS_HitReaction> HitReactions;
 
 protected:
+
+	/*
+	* Functions
+	*/
+
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 private:
+
 	/*
 	* Functions
 	*/
 	
 	/** Helper: Plays a montage on the owning actor's mesh if valid */
-	virtual void PlayMontageInternal(UAnimMontage* Montage, float InPlayRate = 1.0f);
+	void PlayMontageInternal(UAnimMontage* Montage, float InPlayRate = 1.0f);
+
+	/**
+	 * Finds the best matching reaction based on direction and severity.
+	 * @param Direction The hit direction.
+	 * @param Severity The hit severity.
+	 * @return The best matching hit reaction, or nullptr if none found.
+	 */
+	const FPGAS_HitReaction* FindReaction(EPGAS_HitDirection Direction, EPGAS_HitSeverity Severity) const;
 
 	/*
 	* Properties

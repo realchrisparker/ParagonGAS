@@ -23,7 +23,7 @@
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
 #include <Enums/PGAS_WeaponHand.h>
-#include "PGAS_BlockComponent.generated.h"
+#include "PGAS_CombatBlockComponent.generated.h"
 
 /*
 * Forward Declarations
@@ -46,17 +46,17 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBlockStateChangedSignature, bool,
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS),
     meta = (BlueprintSpawnableComponent,
-        DisplayName = "PGAS Block Component",
+        DisplayName = "PGAS Combat Block Component",
         Description = "Handles blocking mechanics for characters.",
         Tooltip = "Manages blocking state and interactions.")
 )
-class PARAGONGAS_API UPGAS_BlockComponent : public UActorComponent
+class PARAGONGAS_API UPGAS_CombatBlockComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
     // Constructor
-    UPGAS_BlockComponent();
+    UPGAS_CombatBlockComponent();
 
     /*
      * Functions

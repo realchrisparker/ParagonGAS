@@ -24,7 +24,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Engine/EngineTypes.h"
-#include "PGAS_LockOnComponent.generated.h"
+#include "PGAS_CombatLockOnComponent.generated.h"
 
  // Forward declarations (avoid heavy includes in header)
 class USpringArmComponent;
@@ -54,13 +54,13 @@ UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS),
     Description = "A component that enables soft-locking onto targets.",
     ToolTip = "A component that enables soft-locking onto targets.")
 )
-class PARAGONGAS_API UPGAS_LockOnComponent : public UActorComponent
+class PARAGONGAS_API UPGAS_CombatLockOnComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
     // Constructor
-    UPGAS_LockOnComponent();
+    UPGAS_CombatLockOnComponent();
 
     /*
      * Functions

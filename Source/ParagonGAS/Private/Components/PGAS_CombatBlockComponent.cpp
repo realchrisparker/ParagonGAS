@@ -15,18 +15,18 @@
  * Implementation of the block/guard component.
  */
 
-#include <Components/PGAS_BlockComponent.h>
+#include <Components/PGAS_CombatBlockComponent.h>
 #include <Characters/Player/PGAS_PlayerCharacter.h>
 #include <GAS/Effects/PGAS_GE_BlockDefenseBuff.h>
 #include "GameFramework/Actor.h"
 #include "Engine/World.h"
 
-UPGAS_BlockComponent::UPGAS_BlockComponent()
+UPGAS_CombatBlockComponent::UPGAS_CombatBlockComponent()
 {
     PrimaryComponentTick.bCanEverTick = false; // disable ticking
 }
 
-void UPGAS_BlockComponent::BeginPlay()
+void UPGAS_CombatBlockComponent::BeginPlay()
 {
     Super::BeginPlay();
 
@@ -38,7 +38,7 @@ void UPGAS_BlockComponent::BeginPlay()
 }
 
 /** Start blocking (called when block input pressed) */
-void UPGAS_BlockComponent::StartBlock()
+void UPGAS_CombatBlockComponent::StartBlock()
 {
 	if (!bIsBlocking)
 	{
@@ -103,7 +103,7 @@ void UPGAS_BlockComponent::StartBlock()
 }
 
 /** Stop blocking (called when block input released) */
-void UPGAS_BlockComponent::StopBlock()
+void UPGAS_CombatBlockComponent::StopBlock()
 {
 	if (bIsBlocking)
 	{

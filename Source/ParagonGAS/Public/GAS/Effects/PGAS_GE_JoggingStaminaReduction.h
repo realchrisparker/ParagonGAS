@@ -46,9 +46,6 @@ public:
         ModifierInfo.TargetTags.RequireTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Character.Movement.Jogging")));
         ModifierInfo.TargetTags.RequireTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Character.State.Alive")));
 
-        // Ignore tags that should not trigger this effect
-        // ModifierInfo.TargetTags.IgnoreTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Combat")));
-
         Modifiers.Add(ModifierInfo);
     }
 };

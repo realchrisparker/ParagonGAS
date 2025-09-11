@@ -27,6 +27,7 @@
 #include <Characters/Base/PGAS_CharacterBase.h>
 #include <Characters/Enemy/PGAS_EnemyCharacter.h>
 #include <Controllers/AI/PGAS_EnemyAIController.h>
+#include <Enums/PGAS_HitDirection.h>
 
 
 UPGAS_ReceiveMeleeDamageAbility::UPGAS_ReceiveMeleeDamageAbility()
@@ -97,37 +98,38 @@ void UPGAS_ReceiveMeleeDamageAbility::ActivateAbility(
             FHitResult HitResult;
             if (TriggerEventData->OptionalObject)
             {
-                const UPGAS_EventAdditionalData* HitReactionData = Cast<UPGAS_EventAdditionalData>(TriggerEventData->OptionalObject);
-                if (HitReactionData)
+                const UPGAS_EventAdditionalData* EventAdditionalData = Cast<UPGAS_EventAdditionalData>(TriggerEventData->OptionalObject);
+                if (EventAdditionalData)
                 {
-                    HitResult = HitReactionData->HitResult;
-                    FGameplayTag HitDirectionTag = FGameplayTag::RequestGameplayTag(FName("Hit.Reactions.Left"));
+                    HitResult = EventAdditionalData->HitResult;
+                    EPGAS_HitDirection HitDirection = EPGAS_HitDirection::Left;
 
                     // Determine hit direction based on the hit result
                     if (HitResult.ImpactNormal.Z > 0.5f)
                     {
-                        HitDirectionTag = FGameplayTag::RequestGameplayTag(FName("Hit.Reactions.Back"));
+                        HitDirection = EPGAS_HitDirection::Back;
                     }
                     else if (HitResult.ImpactNormal.Z < -0.5f)
                     {
-                        HitDirectionTag = FGameplayTag::RequestGameplayTag(FName("Hit.Reactions.Forward"));
+                        HitDirection = EPGAS_HitDirection::Forward;
                     }
                     else if (HitResult.ImpactNormal.X > 0.5f)
                     {
-                        HitDirectionTag = FGameplayTag::RequestGameplayTag(FName("Hit.Reactions.Right"));
+                        HitDirection = EPGAS_HitDirection::Right;
                     }
                     else if (HitResult.ImpactNormal.X < -0.5f)
                     {
-                        HitDirectionTag = FGameplayTag::RequestGameplayTag(FName("Hit.Reactions.Left"));
+                        HitDirection = EPGAS_HitDirection::Left;
                     }
 
                     // Send hit reaction request to the target character's hit reaction component
                     if (TargetCharacter->GetHitReactionComponent())
                     {
-                        TargetCharacter->GetHitReactionComponent()->PerformHitReaction(HitDirectionTag, 1.0f);
+                        // Use the severity from the event additional data (Light is default if none provided)
+                        TargetCharacter->GetHitReactionComponent()->PerformHitReaction(HitDirection, EventAdditionalData->HitReactionData.Severity);
                     }
 
-                    // Get the AI controller for the target character
+                    // Get the AI controller for the target character, this will be null for player characters
                     APGAS_EnemyAIController* AIController = Cast<APGAS_EnemyAIController>(TargetCharacter->GetController());
                     if (AIController)
                     {

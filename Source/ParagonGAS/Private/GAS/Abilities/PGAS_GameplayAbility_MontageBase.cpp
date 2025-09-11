@@ -134,9 +134,10 @@ void UPGAS_GameplayAbility_MontageBase::ActivateAbility(
                 }
             }
         }
+
         // Setup montage task to play the montage and wait for it to complete or be interrupted/cancelled
         UAbilityTask_PlayMontageAndWait* MontageTask =
-            UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, MontageToPlay, 1.f, NAME_None, false, 1.f);
+            UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, MontageToPlay, PlayRate, NAME_None, false, 1.f);
 
         if (MontageTask)
         {

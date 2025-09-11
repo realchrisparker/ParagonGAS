@@ -147,3 +147,4 @@ __pycache__/
 
 # Ignore specific folders or files (customize as needed)
 *Content/_Game/Characters/Players/Countess/Anims/Not4Git/
+*Content/Dual_Sword/

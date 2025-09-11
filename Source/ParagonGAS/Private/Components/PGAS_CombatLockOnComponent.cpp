@@ -15,7 +15,7 @@
  * Implementation for lock-on targeting. Designed to be gameplay-agnostic and UI friendly.
  */
 
-#include <Components/PGAS_LockOnComponent.h>
+#include <Components/PGAS_CombatLockOnComponent.h>
 #include <Characters/Base/PGAS_CharacterBase.h>
 #include <UserWidgets/PGAS_Reticle.h>
 #include <Interfaces/IAnimation.h>
@@ -33,7 +33,7 @@
 
 
 // Constructor
-UPGAS_LockOnComponent::UPGAS_LockOnComponent()
+UPGAS_CombatLockOnComponent::UPGAS_CombatLockOnComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
     PrimaryComponentTick.TickGroup = TG_PrePhysics;
@@ -42,7 +42,7 @@ UPGAS_LockOnComponent::UPGAS_LockOnComponent()
     TargetClassFilter = APGAS_CharacterBase::StaticClass();
 }
 
-void UPGAS_LockOnComponent::BeginPlay()
+void UPGAS_CombatLockOnComponent::BeginPlay()
 {
     Super::BeginPlay();
 
@@ -58,13 +58,13 @@ void UPGAS_LockOnComponent::BeginPlay()
     }
 }
 
-void UPGAS_LockOnComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UPGAS_CombatLockOnComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     InternalUnlock(/*bBroadcast=*/false);
     Super::EndPlay(EndPlayReason);
 }
 
-void UPGAS_LockOnComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UPGAS_CombatLockOnComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -93,7 +93,7 @@ void UPGAS_LockOnComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
     }
 }
 
-bool UPGAS_LockOnComponent::TryLockOnNearest()
+bool UPGAS_CombatLockOnComponent::TryLockOnNearest()
 {
     RebuildCandidateList();
     AActor* Best = SelectBestCandidate();
@@ -105,7 +105,7 @@ bool UPGAS_LockOnComponent::TryLockOnNearest()
     // Bind death event of our locked on target
     if (APGAS_CharacterBase* CharTarget = Cast<APGAS_CharacterBase>(Best))
     {
-        CharTarget->OnDeath.AddDynamic(this, &UPGAS_LockOnComponent::HandleTargetDeath);
+        CharTarget->OnDeath.AddDynamic(this, &UPGAS_CombatLockOnComponent::HandleTargetDeath);
     }
 
     // Tell the animation blueprint we're locked on
@@ -144,12 +144,12 @@ bool UPGAS_LockOnComponent::TryLockOnNearest()
     return true;
 }
 
-void UPGAS_LockOnComponent::Unlock()
+void UPGAS_CombatLockOnComponent::Unlock()
 {
     InternalUnlock(/*bBroadcast=*/true);
 }
 
-bool UPGAS_LockOnComponent::SwitchTargetRight()
+bool UPGAS_CombatLockOnComponent::SwitchTargetRight()
 {
     if (!IsLockedOn()) return false;
     RebuildCandidateList();
@@ -184,7 +184,7 @@ bool UPGAS_LockOnComponent::SwitchTargetRight()
     return true;
 }
 
-bool UPGAS_LockOnComponent::SwitchTargetLeft()
+bool UPGAS_CombatLockOnComponent::SwitchTargetLeft()
 {
     if (!IsLockedOn()) return false;
     RebuildCandidateList();
@@ -219,13 +219,13 @@ bool UPGAS_LockOnComponent::SwitchTargetLeft()
     return true;
 }
 
-FVector UPGAS_LockOnComponent::GetAimLocation(const AActor* TargetOverride) const
+FVector UPGAS_CombatLockOnComponent::GetAimLocation(const AActor* TargetOverride) const
 {
     const AActor* T = TargetOverride ? TargetOverride : CurrentTarget.Get();
     return T ? ResolveAimLocation(T) : FVector::ZeroVector;
 }
 
-bool UPGAS_LockOnComponent::GetTargetScreenPosition(UObject* WorldContextObject, FVector2D& OutScreenPos) const
+bool UPGAS_CombatLockOnComponent::GetTargetScreenPosition(UObject* WorldContextObject, FVector2D& OutScreenPos) const
 {
     OutScreenPos = FVector2D::ZeroVector;
     if (!IsLockedOn()) return false;
@@ -243,7 +243,7 @@ bool UPGAS_LockOnComponent::GetTargetScreenPosition(UObject* WorldContextObject,
     return bOnScreen;
 }
 
-void UPGAS_LockOnComponent::RebuildCandidateList()
+void UPGAS_CombatLockOnComponent::RebuildCandidateList()
 {
     CandidateCache.Reset();
 
@@ -329,12 +329,12 @@ void UPGAS_LockOnComponent::RebuildCandidateList()
     }
 }
 
-AActor* UPGAS_LockOnComponent::SelectBestCandidate() const
+AActor* UPGAS_CombatLockOnComponent::SelectBestCandidate() const
 {
     return CandidateCache.Num() > 0 ? CandidateCache[0].Get() : nullptr;
 }
 
-bool UPGAS_LockOnComponent::GetViewInfo(FVector& OutOrigin, FVector& OutForward) const
+bool UPGAS_CombatLockOnComponent::GetViewInfo(FVector& OutOrigin, FVector& OutForward) const
 {
     OutOrigin = FVector::ZeroVector;
     OutForward = FVector::ForwardVector;
@@ -360,7 +360,7 @@ bool UPGAS_LockOnComponent::GetViewInfo(FVector& OutOrigin, FVector& OutForward)
     return true;
 }
 
-bool UPGAS_LockOnComponent::GetScreenDirectionToTarget(const AActor* Target, float& OutSignedX) const
+bool UPGAS_CombatLockOnComponent::GetScreenDirectionToTarget(const AActor* Target, float& OutSignedX) const
 {
     OutSignedX = 0.f;
     if (!Target) return false;
@@ -380,7 +380,7 @@ bool UPGAS_LockOnComponent::GetScreenDirectionToTarget(const AActor* Target, flo
     return true;
 }
 
-bool UPGAS_LockOnComponent::HasLineOfSightTo(const AActor* Target) const
+bool UPGAS_CombatLockOnComponent::HasLineOfSightTo(const AActor* Target) const
 {
     if (!Target) return false;
 
@@ -406,7 +406,7 @@ bool UPGAS_LockOnComponent::HasLineOfSightTo(const AActor* Target) const
     return !bBlocking || Hit.GetActor() == Target;
 }
 
-void UPGAS_LockOnComponent::UpdateOrientation(float DeltaTime)
+void UPGAS_CombatLockOnComponent::UpdateOrientation(float DeltaTime)
 {
     if (!IsLockedOn()) return;
 
@@ -450,7 +450,7 @@ void UPGAS_LockOnComponent::UpdateOrientation(float DeltaTime)
     }
 }
 
-FVector UPGAS_LockOnComponent::ResolveAimLocation(const AActor* Target) const
+FVector UPGAS_CombatLockOnComponent::ResolveAimLocation(const AActor* Target) const
 {
     if (!Target) return FVector::ZeroVector;
 
@@ -474,7 +474,7 @@ FVector UPGAS_LockOnComponent::ResolveAimLocation(const AActor* Target) const
     return Target->GetActorLocation() + FVector(0, 0, 80.f);
 }
 
-void UPGAS_LockOnComponent::InternalUnlock(bool bBroadcast)
+void UPGAS_CombatLockOnComponent::InternalUnlock(bool bBroadcast)
 {
     if (!CurrentTarget.IsValid())
     {
@@ -484,7 +484,7 @@ void UPGAS_LockOnComponent::InternalUnlock(bool bBroadcast)
     // Unbind death event of our previously locked on target
     if (APGAS_CharacterBase* CharTarget = Cast<APGAS_CharacterBase>(CurrentTarget.Get()))
     {
-        CharTarget->OnDeath.RemoveDynamic(this, &UPGAS_LockOnComponent::HandleTargetDeath);
+        CharTarget->OnDeath.RemoveDynamic(this, &UPGAS_CombatLockOnComponent::HandleTargetDeath);
     }
 
     AActor* Old = CurrentTarget.Get();
@@ -522,7 +522,7 @@ void UPGAS_LockOnComponent::InternalUnlock(bool bBroadcast)
     HideReticle();
 }
 
-void UPGAS_LockOnComponent::ShowReticle()
+void UPGAS_CombatLockOnComponent::ShowReticle()
 {
     if (!LockOnReticleWidgetClass) return;
 
@@ -540,7 +540,7 @@ void UPGAS_LockOnComponent::ShowReticle()
     }
 }
 
-void UPGAS_LockOnComponent::HideReticle()
+void UPGAS_CombatLockOnComponent::HideReticle()
 {
     if (ActiveReticleWidget)
     {
@@ -549,7 +549,7 @@ void UPGAS_LockOnComponent::HideReticle()
     }
 }
 
-void UPGAS_LockOnComponent::UpdateReticle(UObject* WorldContextObject)
+void UPGAS_CombatLockOnComponent::UpdateReticle(UObject* WorldContextObject)
 {
     if (!ActiveReticleWidget || !IsLockedOn()) return;
 
@@ -562,7 +562,7 @@ void UPGAS_LockOnComponent::UpdateReticle(UObject* WorldContextObject)
     }
 }
 
-void UPGAS_LockOnComponent::HandleTargetDeath()
+void UPGAS_CombatLockOnComponent::HandleTargetDeath()
 {
     AActor* OldTarget = CurrentTarget.Get();
     if (!OldTarget) return;
@@ -570,7 +570,7 @@ void UPGAS_LockOnComponent::HandleTargetDeath()
     // Unbind (defensive)
     if (APGAS_CharacterBase* CharTarget = Cast<APGAS_CharacterBase>(OldTarget))
     {
-        CharTarget->OnDeath.RemoveDynamic(this, &UPGAS_LockOnComponent::HandleTargetDeath);
+        CharTarget->OnDeath.RemoveDynamic(this, &UPGAS_CombatLockOnComponent::HandleTargetDeath);
     }
 
     // Rebuild candidate list to find a new target

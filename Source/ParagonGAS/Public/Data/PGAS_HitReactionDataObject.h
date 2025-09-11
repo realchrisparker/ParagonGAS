@@ -20,35 +20,21 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include <Structs/PGAS_HitReaction.h>
-#include "PGAS_EventAdditionalData.generated.h"
+#include "PGAS_HitReactionDataObject.generated.h"
 
 
-UCLASS(Blueprintable, BlueprintType, ClassGroup = (Custom), meta = (DisplayName = "Additional Event Data"))
-class PARAGONGAS_API UPGAS_EventAdditionalData : public UObject
+/**
+ * Data object to hold a hit reaction struct
+ */
+UCLASS(BlueprintType, Blueprintable,
+    meta = (DisplayName = "Hit Reaction Data Object",
+        Description = "Represents a wrapper for hit reaction struct")
+)
+class PARAGONGAS_API UPGAS_HitReactionDataObject : public UObject
 {
     GENERATED_BODY()
 
 public:
-    /*
-    * Functions
-    */
-
-    // Sets default values for this component's properties
-    UPGAS_EventAdditionalData();
-
-    /*
-    * Properties
-    */
-
-    // The hit result from the trace
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-    FHitResult HitResult;
-
-    // The damage event tag for the hit reaction
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-    FGameplayTag DamageEventTag;
-
-    // The hit reaction data for the hit reaction
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-    FPGAS_HitReaction HitReactionData;
+    UPROPERTY(BlueprintReadWrite, Category = "Hit Reaction")
+    FPGAS_HitReaction Data;
 };

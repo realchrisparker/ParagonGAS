@@ -19,7 +19,7 @@
 #include "Components/ActorComponent.h"
 #include "Enums/PGAS_WeaponHand.h"
 #include <Structs/PGAS_AttackType.h>
-#include "PGAS_HitboxComponent.generated.h"
+#include "PGAS_CombatHitboxComponent.generated.h"
 
 /*
  * Declarations
@@ -46,12 +46,12 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS),
     meta = (BlueprintSpawnableComponent, DisplayName = "Simple Hitbox Component"))
-    class PARAGONGAS_API UPGAS_HitboxComponent : public UActorComponent
+    class PARAGONGAS_API UPGAS_CombatHitboxComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
-    UPGAS_HitboxComponent();
+    UPGAS_CombatHitboxComponent();
 
     /*
      * Functions

@@ -34,10 +34,11 @@
 #include <GAS/AttributeSets/PlayerCharacterAttributeSet.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Components/PGAS_CombatCoreComponent.h>
-#include <Components/PGAS_HitboxComponent.h>
-#include <Components/PGAS_BlockComponent.h>
-#include <Components/PGAS_LockOnComponent.h>
-#include <Components/PGAS_DodgeComponent.h>
+#include <Components/PGAS_CombatHitboxComponent.h>
+#include <Components/PGAS_CombatBlockComponent.h>
+#include <Components/PGAS_CombatLockOnComponent.h>
+#include <Components/PGAS_CombatDodgeComponent.h>
+#include <Components/PGAS_CombatParryComponent.h>
 #include <UserWidgets/PGAS_InGame_HUD.h>
 #include "PGAS_PlayerCharacter.generated.h"
 
@@ -291,30 +292,37 @@ public:
 
     // Returns the Hitbox Component for this character
     // This component handles hit detection for the character.
-    UPGAS_HitboxComponent* GetHitboxComponent() const
+    UPGAS_CombatHitboxComponent* GetHitboxComponent() const
     {
         return HitboxComponent;
     }
 
     // Returns the LockOn Component for this character
     // This component handles lock-on targeting for the character.
-    UPGAS_LockOnComponent* GetLockOnComponent() const
+    UPGAS_CombatLockOnComponent* GetLockOnComponent() const
     {
         return LockOnComponent;
     }
 
     // Returns the Block Component for this character
     // This component handles blocking mechanics for the character.
-    UPGAS_BlockComponent* GetBlockComponent() const
+    UPGAS_CombatBlockComponent* GetBlockComponent() const
     {
         return BlockComponent;
     }
 
     // Returns the Dodge Component for this character
     // This component handles dodging (including rolling) mechanics for the character.
-    UPGAS_DodgeComponent* GetDodgeComponent() const
+    UPGAS_CombatDodgeComponent* GetDodgeComponent() const
     {
         return DodgeComponent;
+    }
+
+    // Returns the Parry Component for this character
+    // This component handles parrying mechanics for the character.
+    UPGAS_CombatParryComponent* GetParryComponent() const
+    {
+        return ParryComponent;
     }
 
     /*
@@ -444,6 +452,10 @@ protected:
     UFUNCTION()
     void RollAction(const FInputActionInstance& Value);
 
+    /** Called by the IA_Parry input action to handle parrying. */
+    UFUNCTION()
+    void ParryAction(const FInputActionInstance& Value);
+
     /*
      * Properties
      */
@@ -530,16 +542,16 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Right Hand Heavy Attack Action"))
     TObjectPtr<UInputAction> IA_RightHandHeavyAttack;
 
+    /** Lock-On input action */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Lock On Action"))
+    TObjectPtr<class UInputAction> IA_LockOn;
+
     /**
      * The Input Action asset for blocking (e.g. "IA_Block").
      * This is typically set in the editor or loaded in code.
      */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Block Action"))
     TObjectPtr<UInputAction> IA_Block;
-
-    /** Lock-On input action */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Block Action"))
-    TObjectPtr<class UInputAction> IA_LockOn;
 
     /** Dodge input action */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Dodge Action"))
@@ -549,13 +561,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Roll Action Gamepad"))
     TObjectPtr<class UInputAction> IA_Roll;
 
-    /** Roll input action */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Roll Action Left/Right"))
-    TObjectPtr<class UInputAction> IA_RollX;
-
-    /** Roll input action */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Roll Action Up/Down"))
-    TObjectPtr<class UInputAction> IA_RollY;
+    /** Parry input action */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Parry Action"))
+    TObjectPtr<class UInputAction> IA_Parry;
 
 private:
     
@@ -573,23 +581,27 @@ private:
 
     // Combat core component for handling combat-related functionality
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UPGAS_CombatCoreComponent> CombatCoreComponent;
+    TObjectPtr<UPGAS_CombatCoreComponent> CombatCoreComponent = nullptr;
 
     // Combat hitbox component for handling hit detection
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UPGAS_HitboxComponent> HitboxComponent;
+    TObjectPtr<UPGAS_CombatHitboxComponent> HitboxComponent = nullptr;
 
     // Combat lock-on component for handling lock-on targeting
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UPGAS_LockOnComponent> LockOnComponent;
+    TObjectPtr<UPGAS_CombatLockOnComponent> LockOnComponent = nullptr;
 
     // Combat block component for handling blocking mechanics
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UPGAS_BlockComponent> BlockComponent;
+    TObjectPtr<UPGAS_CombatBlockComponent> BlockComponent = nullptr;
 
     // Combat dodge component for handling dodging mechanics
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UPGAS_DodgeComponent> DodgeComponent;
+    TObjectPtr<UPGAS_CombatDodgeComponent> DodgeComponent = nullptr;
+
+    // Combat parry component for handling parrying mechanics
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UPGAS_CombatParryComponent> ParryComponent = nullptr;
 
     // Attribute Set for managing character attributes (health, mana, etc.)
     // This is where you define your character's attributes like health, mana, etc.

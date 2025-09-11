@@ -132,6 +132,18 @@ public:
         return FMath::Abs(Value);
     }
 
+    /**
+     * Sets the montage to play.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Ability",
+        meta = (DisplayName = "Set Montage To Play",
+            Tooltip = "Sets the montage to play",
+            Description = "Sets the montage to play"))
+    void SetMontageToPlay(UAnimMontage* NewMontage)
+    {
+        MontageToPlay = NewMontage;
+    }
+
     /*
      * Properties
      */

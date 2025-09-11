@@ -20,7 +20,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include <Structs/PGAS_DodgeType.h>
-#include "PGAS_DodgeComponent.generated.h"
+#include "PGAS_CombatDodgeComponent.generated.h"
 
 /*
  * Delegates
@@ -42,13 +42,13 @@ UCLASS(BlueprintType, Blueprintable, ClassGroup = (PGAS),
         Description = "Handles dodging & rolling mechanics for the character.", 
         Tooltip = "Manages dodge & rolling input and state.")
 )
-class PARAGONGAS_API UPGAS_DodgeComponent : public UActorComponent
+class PARAGONGAS_API UPGAS_CombatDodgeComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
     /** Constructor */
-    UPGAS_DodgeComponent();
+    UPGAS_CombatDodgeComponent();
 
     /*
      * Properties

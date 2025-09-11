@@ -27,7 +27,7 @@ APGAS_CharacterBase::APGAS_CharacterBase()
 
 	// Set up the hit reaction component.
 	// This component handles hit reactions for the enemy character.
-	HitReactionComponent = CreateDefaultSubobject<UPGAS_HitReactionComponent>(TEXT("Hit Reaction Component"));
+	HitReactionComponent = CreateDefaultSubobject<UPGAS_CombatHitReactionComponent>(TEXT("Hit Reaction Component"));
 
 	// Set up the character's ability system component.
 	// This component is responsible for managing abilities and effects.
@@ -56,6 +56,7 @@ void APGAS_CharacterBase::AddGameplayTag(FGameplayTag Tag)
 {
 	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
+		if (!Tag.IsValid()) return;
 		ASC->AddLooseGameplayTag(Tag);
 	}
 }
@@ -65,6 +66,7 @@ void APGAS_CharacterBase::RemoveGameplayTag(FGameplayTag Tag)
 {
 	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
+		if (!Tag.IsValid()) return;
 		ASC->RemoveLooseGameplayTag(Tag);
 	}
 }
@@ -88,6 +90,7 @@ bool APGAS_CharacterBase::HasGameplayTag(FGameplayTag Tag) const
 	// Check if the Ability System Component is valid and has the tag
 	if (const UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
+		if (!Tag.IsValid()) return false;
 		return ASC->HasMatchingGameplayTag(Tag);
 	}
 

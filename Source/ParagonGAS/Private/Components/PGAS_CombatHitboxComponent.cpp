@@ -13,24 +13,24 @@
  * Simplified Hitbox Component (v1) – performs a basic socket-driven sphere trace.
  */
 
-#include "Components/PGAS_HitboxComponent.h"
+#include "Components/PGAS_CombatHitboxComponent.h"
 #include "GameFramework/Actor.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 
-UPGAS_HitboxComponent::UPGAS_HitboxComponent()
+UPGAS_CombatHitboxComponent::UPGAS_CombatHitboxComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
     PrimaryComponentTick.bStartWithTickEnabled = false; // tick only when detecting
 }
 
-void UPGAS_HitboxComponent::BeginPlay()
+void UPGAS_CombatHitboxComponent::BeginPlay()
 {
     Super::BeginPlay();
 }
 
-void UPGAS_HitboxComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UPGAS_CombatHitboxComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -40,7 +40,7 @@ void UPGAS_HitboxComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
     }
 }
 
-void UPGAS_HitboxComponent::StartHitDetection(const FPGAS_AttackType& Attack)
+void UPGAS_CombatHitboxComponent::StartHitDetection(const FPGAS_AttackType& Attack)
 {
     // ActiveAttack.Hitbox = Attack.Hitbox; // cache hitbox from AttackType
     ActiveAttack = Attack;          // cache full attack type
@@ -58,14 +58,14 @@ void UPGAS_HitboxComponent::StartHitDetection(const FPGAS_AttackType& Attack)
     SetComponentTickEnabled(true); // enable ticking
 }
 
-void UPGAS_HitboxComponent::StopHitDetection()
+void UPGAS_CombatHitboxComponent::StopHitDetection()
 {
     bIsDetecting = false;
     AlreadyHitActors.Reset(); // clear at end of swing
     SetComponentTickEnabled(false); // disable ticking
 }
 
-void UPGAS_HitboxComponent::PerformSweep()
+void UPGAS_CombatHitboxComponent::PerformSweep()
 {
     // Get mesh component
     USkeletalMeshComponent* Mesh = ResolveMesh();

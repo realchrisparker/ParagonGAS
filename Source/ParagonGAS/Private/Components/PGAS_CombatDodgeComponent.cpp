@@ -15,19 +15,19 @@
  * This file implements the Dodge Component for handling dodge functionality.
  */
 
-#include <Components/PGAS_DodgeComponent.h>
+#include <Components/PGAS_CombatDodgeComponent.h>
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 
 
  // Constructor
-UPGAS_DodgeComponent::UPGAS_DodgeComponent()
+UPGAS_CombatDodgeComponent::UPGAS_CombatDodgeComponent()
 {
     PrimaryComponentTick.bCanEverTick = false; // Disable ticking
 }
 
 // Called when the game starts
-void UPGAS_DodgeComponent::BeginPlay()
+void UPGAS_CombatDodgeComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -38,7 +38,7 @@ void UPGAS_DodgeComponent::BeginPlay()
 }
 
 /** Get the first dodge that matches a given category and direction. */
-FPGAS_DodgeType UPGAS_DodgeComponent::GetDodgeByCategoryAndDirection(EPGAS_DodgeCategory Category, EPGAS_DodgeDirection Direction) const
+FPGAS_DodgeType UPGAS_CombatDodgeComponent::GetDodgeByCategoryAndDirection(EPGAS_DodgeCategory Category, EPGAS_DodgeDirection Direction) const
 {
 	for (const FPGAS_DodgeType& Dodge : Dodges)
 	{
@@ -51,7 +51,7 @@ FPGAS_DodgeType UPGAS_DodgeComponent::GetDodgeByCategoryAndDirection(EPGAS_Dodge
 }
 
 /** Get all dodges that match a given category (Dodge vs Roll). */
-TArray<FPGAS_DodgeType> UPGAS_DodgeComponent::GetAllDodgesByCategory(EPGAS_DodgeCategory Category) const
+TArray<FPGAS_DodgeType> UPGAS_CombatDodgeComponent::GetAllDodgesByCategory(EPGAS_DodgeCategory Category) const
 {
 	TArray<FPGAS_DodgeType> Results;
 	for (const FPGAS_DodgeType& Dodge : Dodges)
@@ -68,7 +68,7 @@ TArray<FPGAS_DodgeType> UPGAS_DodgeComponent::GetAllDodgesByCategory(EPGAS_Dodge
  * Perform a dodge using the specified DodgeType.
  * Wraps the DodgeType into an object and sends it to the Ability System.
  */
-void UPGAS_DodgeComponent::PerformDodge(const FPGAS_DodgeType& Dodge)
+void UPGAS_CombatDodgeComponent::PerformDodge(const FPGAS_DodgeType& Dodge)
 {
 	if (bDebug)
     {

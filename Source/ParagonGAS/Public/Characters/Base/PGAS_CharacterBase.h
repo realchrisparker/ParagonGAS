@@ -21,7 +21,7 @@
 #include "GameplayTagContainer.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemBlueprintLibrary.h"
-#include <Components/PGAS_HitReactionComponent.h>
+#include <Components/PGAS_CombatHitReactionComponent.h>
 #include <Enums/PGAS_AbilityInputID.h>
 #include "PGAS_CharacterBase.generated.h"
 
@@ -137,7 +137,7 @@ public:
 
 	// Returns the Hit Reaction Component for this character
 	// This component handles hit reactions for the enemy character.
-	UPGAS_HitReactionComponent* GetHitReactionComponent() const
+	UPGAS_CombatHitReactionComponent* GetHitReactionComponent() const
 	{
 		return HitReactionComponent;
 	}
@@ -216,7 +216,7 @@ private:
 	// Hit reaction component for handling hit reactions
 	// This component handles hit reactions for the enemy character.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Combat", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UPGAS_HitReactionComponent> HitReactionComponent;
+	TObjectPtr<UPGAS_CombatHitReactionComponent> HitReactionComponent;
 
 	// Character's level, used for scaling abilities and attributes
 	// This can be used to determine the character's power level, abilities, etc.
