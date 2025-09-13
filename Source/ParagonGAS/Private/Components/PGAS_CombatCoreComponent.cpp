@@ -50,9 +50,9 @@ void UPGAS_CombatCoreComponent::BeginPlay()
 
 					RegisteredTagHandles.Add(Handle);
 
-					UE_LOG(LogTemp, Warning, TEXT("Registered CombatCoreComponent for attack tag: %s (Hand: %d)"),
-						*Attack.AbilityTag.ToString(),
-						static_cast<int32>(Attack.Hand));
+					// UE_LOG(LogTemp, Warning, TEXT("Registered CombatCoreComponent for attack tag: %s (Hand: %d)"),
+					// 	*Attack.AbilityTag.ToString(),
+					// 	static_cast<int32>(Attack.Hand));
 				}
 			}
 
@@ -65,7 +65,7 @@ void UPGAS_CombatCoreComponent::BeginPlay()
 
 				RegisteredTagHandles.Add(Handle);
 
-				UE_LOG(LogTemp, Warning, TEXT("Registered CombatCoreComponent for combo tag: %s"), *ComboTag.ToString());
+				// UE_LOG(LogTemp, Warning, TEXT("Registered CombatCoreComponent for combo tag: %s"), *ComboTag.ToString());
 			}
 		}
 	}

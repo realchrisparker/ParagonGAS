@@ -24,6 +24,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "KismetAnimationLibrary.h"
+#include "Shakes/PerlinNoiseCameraShakePattern.h"
 #include <GAS/Abilities/PGAS_GameplayAbility_Montage.h>
 #include <GAS/Effects/PGAS_GE_InstantStaminaReduction.h>
 #include <GAS/Effects/PGAS_GE_InfiniteStaminaReduction.h>
@@ -540,21 +541,33 @@ void APGAS_PlayerCharacter::BlockReleaseAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::LightAttackAction(const FInputActionValue& Value)
 {
-    // Get the combat core component
-    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
-    {
-        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Light, CoreComponent->CurrentComboIndex);
+    const bool bFalling = (GetCharacterMovement() && GetCharacterMovement()->IsFalling());
+    PerformAttack(bFalling ? EPGAS_WeaponAttackType::JumpLight : EPGAS_WeaponAttackType::Light, GetCombatCoreComponent()->CurrentComboIndex);
+    // // Get the combat core component
+    // if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
+    // {        
+    //     if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
+    //     {
+    //         // If we're in the air, use the jump attack instead
+    //         const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Jump, CoreComponent->CurrentComboIndex);
+    //         if (Attack.AbilityTag.IsValid()) {
+    //             const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+    //             SetIsAttacking(bActivated); // Set the attacking flag to true
+    //         }
+    //     }
+    //     else {
+    //         // Get the first attack of the specified type
+    //         const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Light, CoreComponent->CurrentComboIndex);
+    //         if (Attack.AbilityTag.IsValid()) {
+    //             const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+    //             SetIsAttacking(bActivated); // Set the attacking flag to true
+    //         }
+    //     }
+    // }
 
-        // Get the first attack of the specified type
-        if (Attack.AbilityTag.IsValid()) {
-            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-            SetIsAttacking(bActivated); // Set the attacking flag to true
-        }
-    }
-
-    // Reset idle time and animation flag when movement starts
-    IdleTime = 0.f;
-    bIdleAnimationPlayed = false;
+    // // Reset idle time and animation flag when movement starts
+    // IdleTime = 0.f;
+    // bIdleAnimationPlayed = false;
 }
 
 /*
@@ -563,21 +576,47 @@ void APGAS_PlayerCharacter::LightAttackAction(const FInputActionValue& Value)
 */
 void APGAS_PlayerCharacter::HeavyAttackAction(const FInputActionValue& Value)
 {
-    // Get the combat core component
-    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
-    {
-        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Heavy, CoreComponent->CurrentComboIndex);
+    const bool bFalling = (GetCharacterMovement() && GetCharacterMovement()->IsFalling());
+    PerformAttack(bFalling ? EPGAS_WeaponAttackType::JumpHeavy : EPGAS_WeaponAttackType::Heavy, GetCombatCoreComponent()->CurrentComboIndex);
+    
+    // // Get the combat core component
+    // if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
+    // {
+    //     if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
+    //     {
+    //         // If we're in the air, use the jump attack instead
+    //         const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Jump, CoreComponent->CurrentComboIndex);
+    //         if (Attack.AbilityTag.IsValid()) {
+    //             const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+    //             SetIsAttacking(bActivated); // Set the attacking flag to true
+    //         }
+    //     }
+    //     else {
+    //         // Get the first attack of the specified type
+    //         const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Heavy, CoreComponent->CurrentComboIndex);
+    //         if (Attack.AbilityTag.IsValid()) {
+    //             const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+    //             SetIsAttacking(bActivated); // Set the attacking flag to true
+    //         }
+    //     }
 
-        // Get the first attack of the specified type
-        if (Attack.AbilityTag.IsValid()) {
-            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-            SetIsAttacking(bActivated); // Set the attacking flag to true
-        }
-    }
+    //     // const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Heavy, CoreComponent->CurrentComboIndex);
+    //     // if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
+    //     // {
+    //     //     // If we're in the air, use the jump attack instead
+    //     //     Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Jump, CoreComponent->CurrentComboIndex);
+    //     // }
 
-    // Reset idle time and animation flag when movement starts
-    IdleTime = 0.f;
-    bIdleAnimationPlayed = false;
+    //     // // Get the first attack of the specified type
+    //     // if (Attack.AbilityTag.IsValid()) {
+    //     //     const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
+    //     //     SetIsAttacking(bActivated); // Set the attacking flag to true
+    //     // }
+    // }
+
+    // // Reset idle time and animation flag when movement starts
+    // IdleTime = 0.f;
+    // bIdleAnimationPlayed = false;
 }
 
 /*
@@ -913,6 +952,22 @@ void APGAS_PlayerCharacter::OnAdrenalineAttributeChanged(const FOnAttributeChang
     }
 }
 
+void APGAS_PlayerCharacter::PerformAttack(EPGAS_WeaponAttackType AttackType, int32 ComboIndex)
+{
+    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
+    {
+        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(AttackType, ComboIndex);
+        if (Attack.AbilityTag.IsValid())
+        {
+            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag);
+            SetIsAttacking(bActivated);
+        }
+    }
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+
 // --------------------
 // Windowing (Combat)
 // --------------------
@@ -1002,6 +1057,41 @@ void APGAS_PlayerCharacter::HandleHitboxHit(AActor* HitActor, const FHitResult& 
             SpecHandle.Data->SetSetByCallerMagnitude(DamageTag, AttackType.WeaponData->BaseDamage > 0 ? AttackType.WeaponData->BaseDamage : 1.f);
 
             GetAbilitySystemComponent()->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+        }
+    }
+
+    // Camera shake on hit if enabled for this attack type
+    if (AttackType.CausesCameraShake)
+    {
+        PlaySimpleShake(50.0f);
+    }
+}
+
+// Plays a simple camera shake effect
+void APGAS_PlayerCharacter::PlaySimpleShake(float scale)
+{
+    if (APlayerController* PC = Cast<APlayerController>(GetController()))
+    {
+        if (PC->PlayerCameraManager)
+        {
+            // Create a dynamic shake instance
+            UCameraShakeBase* Shake = NewObject<UCameraShakeBase>();
+
+            // Add a Perlin noise pattern to it
+            if (UPerlinNoiseCameraShakePattern* Pattern = NewObject<UPerlinNoiseCameraShakePattern>(Shake))
+            {
+                Pattern->X.Amplitude = 5.f;
+                Pattern->X.Frequency = 25.f;
+                Pattern->Y.Amplitude = 5.f;
+                Pattern->Y.Frequency = 25.f;
+                Pattern->Pitch.Amplitude = 2.f;
+                Pattern->Pitch.Frequency = 20.f;
+
+                Shake->SetRootShakePattern(Pattern);
+
+                // Play shake via PlayerCameraManager
+                UCameraShakeBase* base = PC->PlayerCameraManager->StartCameraShake(Shake->GetClass(), scale);
+            }
         }
     }
 }

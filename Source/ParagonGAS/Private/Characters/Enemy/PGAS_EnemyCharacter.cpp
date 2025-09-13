@@ -18,6 +18,8 @@
 
 #include <Characters/Enemy/PGAS_EnemyCharacter.h>
 #include <GAS/Abilities/PGAS_ReceiveMeleeDamageAbility.h>
+#include <Controllers/AI/PGAS_EnemyAIController.h>
+#include "TimerManager.h"
 
 
 APGAS_EnemyCharacter::APGAS_EnemyCharacter()
@@ -52,6 +54,35 @@ void APGAS_EnemyCharacter::BeginPlay()
 void APGAS_EnemyCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+}
+
+void APGAS_EnemyCharacter::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+
+    // Set a 0.2-second delay
+    FTimerHandle DummyHandle;
+    GetWorld()->GetTimerManager().SetTimer(
+        DummyHandle,
+        [ this, NewController ] ()
+        {
+            // Cast controller to our custom AI controller
+            if (APGAS_EnemyAIController* EnemyAIController = Cast<APGAS_EnemyAIController>(NewController))
+            {
+                if (EnemyAIController->GetStateTreeAIComponent() && StateTree)
+                {
+                    EnemyAIController->GetStateTreeAIComponent()->StartStateTree(StateTree);
+                }
+            }
+        },
+        0.2f, // Delay time
+        false // No repeat
+    );
+}
+
+void APGAS_EnemyCharacter::UnPossessed()
+{
+    Super::UnPossessed();
 }
 
 // Handles changes to the character's health attribute

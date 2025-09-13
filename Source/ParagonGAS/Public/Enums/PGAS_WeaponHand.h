@@ -33,9 +33,11 @@ enum class EPGAS_WeaponHand : uint8
 UENUM(BlueprintType, meta = (DisplayName = "Weapon Attack Type"))
 enum class EPGAS_WeaponAttackType : uint8
 {
-    Light  UMETA(DisplayName = "Light"),
-    Medium UMETA(DisplayName = "Medium"),
-    Heavy  UMETA(DisplayName = "Heavy"),
-    Jump   UMETA(DisplayName = "Jump"),
-    Land   UMETA(DisplayName = "Land")
+    Light       UMETA(DisplayName = "Light"),
+    Medium      UMETA(DisplayName = "Medium"),
+    Heavy       UMETA(DisplayName = "Heavy"),
+    JumpLight   UMETA(DisplayName = "Jump Light"),
+    JumpMedium  UMETA(DisplayName = "Jump Medium"),
+    JumpHeavy   UMETA(DisplayName = "Jump Heavy"),
+    Land        UMETA(DisplayName = "Land")
 };

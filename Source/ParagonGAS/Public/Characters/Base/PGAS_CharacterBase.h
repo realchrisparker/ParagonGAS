@@ -109,8 +109,7 @@ public:
 	 * This function is used to determine if the character is in an attacking state.
 	 * @return bool True if the character is attacking, false otherwise.
 	*/
-	UFUNCTION(BlueprintPure, Category = "Player|Combat", meta = (DisplayName = "Is Currently Attacking", HideSelfPin = "true", ReturnDisplayName = "Is Attacking",
-		ToolTip = "Checks if the character is currently attacking."))
+	UFUNCTION(BlueprintPure, Category = "Player|Combat", meta = (DisplayName = "Is Currently Attacking", HideSelfPin = "true", ReturnDisplayName = "Is Attacking", ToolTip = "Checks if the character is currently attacking."))
 	bool IsAttacking() const
 	{
 		return bIsAttacking;
@@ -125,7 +124,6 @@ public:
 	void SetIsAttacking(bool bAttacking)
 	{
 		bIsAttacking = bAttacking;
-		// UE_LOG(LogTemp, Warning, TEXT("Set Is Attacking: %s"), bIsAttacking ? TEXT("True") : TEXT("False"));
 	}
 
 	// Returns the Ability System Component for this character

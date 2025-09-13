@@ -622,6 +622,24 @@ private:
     float IdleTime = 0.0f; // The time the character has been idle.
     bool bIdleAnimationPlayed = false; // Whether the idle animation has been played or not.
 
+    //----------------
+    // Lock On
+    //----------------
+
+    /** Threshold for detecting a right stick flick on X axis */
+    UPROPERTY(EditDefaultsOnly, Category = "Input|LockOn")
+    float StickFlickThreshold = 0.7f;
+
+    /** Minimum delay between flick switches (prevents rapid toggling) */
+    UPROPERTY(EditDefaultsOnly, Category = "Input|LockOn")
+    float FlickCooldown = 0.35f;
+
+    /** Tracks last flick time */
+    float LastFlickTime = -1.f;
+
+    /** Tracks whether stick is currently considered at rest (prevents retriggering while held) */
+    bool bStickAtRest = true;
+
     /*
      * Functions
      */
@@ -636,7 +654,9 @@ private:
         }
     }
 
+    // --------------------
     // Combat Window Handlers
+    // --------------------
 
     /**
      * Called when a combat window is started
@@ -677,21 +697,13 @@ private:
 		}
     }
 
-    //----------------
-    // Lock On
-    //----------------
+    /**
+     * Helper function to perform an attack
+     * @param AttackType - The type of attack to perform (light, heavy, etc)
+     * @param ComboIndex - The index of the combo attack to perform
+     */
+    void PerformAttack(EPGAS_WeaponAttackType AttackType, int32 ComboIndex);
 
-    /** Threshold for detecting a right stick flick on X axis */
-    UPROPERTY(EditDefaultsOnly, Category = "Input|LockOn")
-    float StickFlickThreshold = 0.7f;
-
-    /** Minimum delay between flick switches (prevents rapid toggling) */
-    UPROPERTY(EditDefaultsOnly, Category = "Input|LockOn")
-    float FlickCooldown = 0.35f;
-
-    /** Tracks last flick time */
-    float LastFlickTime = -1.f;
-
-    /** Tracks whether stick is currently considered at rest (prevents retriggering while held) */
-    bool bStickAtRest = true;
+    // Plays a simple camera shake effect
+    void PlaySimpleShake(float scale = 1.0f);
 };

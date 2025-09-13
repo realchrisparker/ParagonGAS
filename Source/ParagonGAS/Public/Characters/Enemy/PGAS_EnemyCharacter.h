@@ -23,6 +23,7 @@
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Characters/Base/PGAS_CharacterBase.h>
 #include <Weapons/Base/PGAS_WeaponBase.h>
+#include <Components/PGAS_StateTreeAIComponent.h>
 #include "PGAS_EnemyCharacter.generated.h"
 
 UCLASS()
@@ -37,6 +38,17 @@ public:
 
     // Constructor
     APGAS_EnemyCharacter();
+
+    /**
+     * Called when the character is possessed by a controller.
+     * @param NewController The controller that possesses the character.
+     */
+    virtual void PossessedBy(AController* NewController) override;
+
+    /**
+     * Called when the character is unpossessed by a controller.
+     */
+    virtual void UnPossessed() override;
 
     /**
      * Returns the Player Attribute Set for this character.
@@ -77,7 +89,7 @@ public:
 
     // Returns the State Tree asset for this character.
     // This is used for AI behavior logic.
-    UFUNCTION(BlueprintCallable, Category = "Player|AI")
+    UFUNCTION(BlueprintPure, Category = "Player|AI", meta = (DisplayName = "Get State Tree", ReturnDisplayName = "State Tree"))
     UStateTree* GetStateTree() { return StateTree; }
 
     /**
@@ -185,6 +197,10 @@ protected:
 
 private:
 
+    /*
+    * Properties
+    */
+
     // Attribute Set for managing enemy attributes (health, mana, etc.)
     // This is where you define your enemy's attributes like health, mana, etc.
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|GAS", meta = (AllowPrivateAccess = "true"))
@@ -196,55 +212,9 @@ private:
 
     FName HealthbarSocketName = "healthbar_Socket"; // The name of the health bar socket.
 
-    FName WeaponStartSocketName = "weapon_start"; // The name of the weapon staff start socket.
-    FName WeaponEndSocketName = "weapon_end"; // The name of the weapon staff end socket.
-
     /*
     * Functions
     */
-
-    // // Sets up the default gameplay tags for this character.
-    // // This is typically called in the constructor or BeginPlay.
-    // void SetupDefaultGameplayTags();
-
-    FVector GetWeaponStartSocketLocation() const
-    {
-        // Make sure we have a valid mesh and the socket exists before trying to get the location.
-        if (!GetMesh())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("GetMesh() returned nullptr in GetWeaponStartSocketLocation()"));
-            return FVector::ZeroVector; // Return zero vector if mesh is not valid.
-        }
-
-        // Check if the socket exists before trying to get its location.
-        if (!GetMesh()->DoesSocketExist(WeaponStartSocketName))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Socket '%s' does not exist on the mesh in GetWeaponStartSocketLocation()"), *WeaponStartSocketName.ToString());
-            return FVector::ZeroVector; // Return zero vector if socket does not exist.
-        }
-
-        // Get the location of the weapon start socket on the character's mesh. In world location.
-        return GetMesh()->GetSocketLocation(WeaponStartSocketName);
-    }
-
-    FVector GetWeaponEndSocketLocation() const
-    {
-        // Make sure we have a valid mesh and the socket exists before trying to get the location.
-        if (!GetMesh())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("GetMesh() returned nullptr in GetWeaponEndSocketLocation()"));
-            return FVector::ZeroVector; // Return zero vector if mesh is not valid.
-        }
-
-        // Check if the socket exists before trying to get its location.
-        if (!GetMesh()->DoesSocketExist(WeaponEndSocketName))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Socket '%s' does not exist on the mesh in GetWeaponEndSocketLocation()"), *WeaponEndSocketName.ToString());
-            return FVector::ZeroVector; // Return zero vector if socket does not exist.
-        }
-
-        return GetMesh()->GetSocketLocation(WeaponEndSocketName);
-    }
 
     FVector GetHealthbarSocketLocation() const
     {

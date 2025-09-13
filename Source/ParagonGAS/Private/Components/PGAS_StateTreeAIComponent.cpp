@@ -18,19 +18,19 @@
 #include "StateTreeSchema.h"
 
 
+// Constructor
 UPGAS_StateTreeAIComponent::UPGAS_StateTreeAIComponent(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
     PrimaryComponentTick.bCanEverTick = true;
     PrimaryComponentTick.bStartWithTickEnabled = true;
 
-    SetStartLogicAutomatically(false);  // Do not start logic automatically on BeginPlay
+    SetStartLogicAutomatically(true);  // Do not start logic automatically on BeginPlay
 }
 
 void UPGAS_StateTreeAIComponent::BeginPlay()
 {
     Super::BeginPlay();
-    // UE_LOG(LogTemp, Warning, TEXT("PGAS_StateTreeComponent::BeginPlay"));
 }
 
 void UPGAS_StateTreeAIComponent::TickComponent(float DeltaTime, ELevelTick TickType,
@@ -39,42 +39,22 @@ void UPGAS_StateTreeAIComponent::TickComponent(float DeltaTime, ELevelTick TickT
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
+/** Called when the component is initialized */
 void UPGAS_StateTreeAIComponent::InitializeComponent()
 {
     Super::InitializeComponent();
-    // UE_LOG(LogTemp, Warning, TEXT("PGAS_StateTreeComponent::InitializeComponent"));
 }
 
-void UPGAS_StateTreeAIComponent::StartLogic()
-{
-    // UE_LOG(LogTemp, Warning, TEXT("PGAS_StateTreeComponent::StartLogic"));
-    Super::StartLogic();
-}
-
-void UPGAS_StateTreeAIComponent::StopLogic(const FString& Reason)
-{
-    // UE_LOG(LogTemp, Warning, TEXT("PGAS_StateTreeComponent::StopLogic called with reason: %s"), *Reason);
-    Super::StopLogic(Reason);
-}
-
+/** Validates the State Tree reference */
 void UPGAS_StateTreeAIComponent::ValidateStateTreeReference()
 {
-    // UE_LOG(LogTemp, Warning, TEXT("PGAS_StateTreeComponent::ValidateStateTreeReference"));
     Super::ValidateStateTreeReference();
 }
 
-void UPGAS_StateTreeAIComponent::SetStateTree(UStateTree* StateTree)
-{
-    UE_LOG(LogTemp, Warning, TEXT("PGAS_StateTreeComponent::SetStateTree called"));
-    if (!StateTree)
-    {
-        UE_LOG(LogTemp, Error, TEXT("PGAS_StateTreeComponent::SetStateTree - StateTree is NULL!"));
-        return;
-    }
-
-    Super::SetStateTree(StateTree);
-}
-
+/**
+ * Sets the State Tree reference for this component and starts the logic.
+ * @param StateTreeReference The State Tree reference to set.
+*/
 void UPGAS_StateTreeAIComponent::StartStateTree(UStateTree* StateTree)
 {
     if (StateTree)
@@ -85,48 +65,41 @@ void UPGAS_StateTreeAIComponent::StartStateTree(UStateTree* StateTree)
         }
 
         StateTreeRef.SetStateTree(StateTree);
+        Super::SetStateTree(StateTree);
         StartLogic();
     }
 }
 
-void UPGAS_StateTreeAIComponent::SendEvent(const FGameplayTag& EventTag)
+/**
+ * Stops the currently running State Tree logic.
+ */
+void UPGAS_StateTreeAIComponent::StopStateTree()
 {
     if (IsRunning())
     {
+        Cleanup();
+    }
+    
+    StopLogic(FString("Stopped by Code"));
+    Super::SetStateTree(nullptr);
+    StateTreeRef.SetStateTree(nullptr);
+}
+
+/**
+ * Sends an event to the State Tree.
+ * @param EventTag The gameplay tag representing the event to send.
+*/
+void UPGAS_StateTreeAIComponent::SendEvent(const FGameplayTag& EventTag)
+{
+    if (IsRunning() && LastEventTag != EventTag)
+    {
+        LastEventTag = EventTag; // Update the last event tag to prevent duplicates
         FStateTreeEvent Event = FStateTreeEvent(EventTag);
-        SendStateTreeEvent(Event);
-        UE_LOG(LogTemp, Warning, TEXT("UPGAS_StateTreeAIComponent::SendEvent - Event '%s' sent."), *EventTag.GetTagName().ToString());
+        SendStateTreeEvent(Event); // Send the event to the StateTree execution context
+        // UE_LOG(LogTemp, Warning, TEXT("UPGAS_StateTreeAIComponent::SendEvent - Event '%s' sent."), *EventTag.GetTagName().ToString());
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("UPGAS_StateTreeAIComponent::SendEvent - StateTree execution context is not valid. Event '%s' not sent."), *EventTag.GetTagName().ToString());
+        // UE_LOG(LogTemp, Warning, TEXT("UPGAS_StateTreeAIComponent::SendEvent - StateTree execution context is not valid. Event '%s' not sent."), *EventTag.GetTagName().ToString());
     }
 }
-
-// /**
-//  * Show a notification in the editor.
-//  * @param Message The message to display in the notification.
-//  * @param State The completion state of the notification (Success, Fail, etc.).
-//  */
-// void UPGAS_StateTreeAIComponent::ShowEditorNotification(const FText& Message, SNotificationItem::ECompletionState State)
-// {
-//     FNotificationInfo Info(Message);
-//     Info.FadeInDuration = 0.2f;
-//     Info.FadeOutDuration = 0.5f;
-//     Info.ExpireDuration = 3.0f;
-//     Info.bUseLargeFont = false;
-//     Info.bFireAndForget = true; // auto-dismiss
-//     Info.bUseThrobber = false;
-//     Info.bUseSuccessFailIcons = true;
-
-//     TSharedPtr<SNotificationItem> Notification = FSlateNotificationManager::Get().AddNotification(Info);
-//     if (Notification.IsValid())
-//     {
-//         Notification->SetCompletionState(State);
-//     }
-// }
-// #if WITH_EDITOR
-// // Show editor notification
-// ShowEditorNotification(FText::FromString(FString::Printf(TEXT("StateTree parameter 'Motivation' updated to %s."),
-//     *NewMotivation.ToString())), SNotificationItem::ECompletionState::CS_Success);
-//#endif

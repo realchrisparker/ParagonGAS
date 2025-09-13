@@ -26,7 +26,8 @@ public class ParagonGAS : ModuleRules
 			"GameplayStateTreeModule",
 			"ApplicationCore",
 			"PropertyBindingUtils",
-			"Niagara"
+			"Niagara",
+			"EngineCameras"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {

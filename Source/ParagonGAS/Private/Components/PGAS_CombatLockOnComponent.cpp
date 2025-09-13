@@ -17,6 +17,7 @@
 
 #include <Components/PGAS_CombatLockOnComponent.h>
 #include <Characters/Base/PGAS_CharacterBase.h>
+#include <Characters/Enemy/PGAS_EnemyCharacter.h>
 #include <UserWidgets/PGAS_Reticle.h>
 #include <Interfaces/IAnimation.h>
 #include "Camera/CameraComponent.h"
@@ -103,7 +104,7 @@ bool UPGAS_CombatLockOnComponent::TryLockOnNearest()
     CurrentTarget = Best;
 
     // Bind death event of our locked on target
-    if (APGAS_CharacterBase* CharTarget = Cast<APGAS_CharacterBase>(Best))
+    if (APGAS_EnemyCharacter* CharTarget = Cast<APGAS_EnemyCharacter>(Best))
     {
         CharTarget->OnDeath.AddDynamic(this, &UPGAS_CombatLockOnComponent::HandleTargetDeath);
     }

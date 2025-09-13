@@ -72,4 +72,26 @@ public:
             Description = "The combo step index for this attack. Example: 0 = first attack in chain, 1 = second, etc.",
             ToolTip = "Defines the order of this attack in a combo chain."))
     int32 ComboIndex = 0;
+
+    // Whether this attack causes hit stop (brief pause on hit)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|HitStop",
+        meta = (DisplayName = "Hit Stop",
+            Description = "Whether this attack causes hit stop (brief pause on hit)",
+            ToolTip = "If true, the game will briefly pause when this attack hits an opponent to enhance impact."))
+    bool HitStop = false;
+
+    // Duration of hit stop in seconds
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|HitStop",
+        meta = (EditCondition = "HitStop",
+            DisplayName = "Hit Stop Duration",
+            Description = "Duration of hit stop in seconds",
+            ToolTip = "Specifies how long the hit stop effect lasts when this attack hits an opponent."))
+    float HitStopDuration = 0.05f;
+
+    // Whether this attack causes camera shake on hit
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|CameraShake",
+        meta = (DisplayName = "Causes Camera Shake",
+            Description = "Whether this attack causes camera shake on hit",
+            ToolTip = "If true, the camera will shake when this attack hits an opponent to enhance impact."))
+    bool CausesCameraShake = false;
 };
