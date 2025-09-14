@@ -19,6 +19,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "StateTreeReference.h"
+#include "GenericTeamAgentInterface.h"
 #include <GAS/AttributeSets/EnemyAttributeSet.h>
 #include <GAS/PGAS_AbilitySystemComponent.h>
 #include <Characters/Base/PGAS_CharacterBase.h>
@@ -27,7 +28,7 @@
 #include "PGAS_EnemyCharacter.generated.h"
 
 UCLASS()
-class PARAGONGAS_API APGAS_EnemyCharacter : public APGAS_CharacterBase
+class PARAGONGAS_API APGAS_EnemyCharacter : public APGAS_CharacterBase, public IGenericTeamAgentInterface
 {
     GENERATED_BODY()
 
@@ -86,6 +87,12 @@ public:
      * @param Causer The actor that caused the health change (e.g., damage dealer).
     */
     virtual void HandleHealthChange(float DeltaValue, AActor* Causer);
+
+    /**
+     * Returns the team ID for this character.
+     * This is used for AI team-based logic.
+     */
+    virtual FGenericTeamId GetGenericTeamId() const override { return TeamId; }
 
     // Returns the State Tree asset for this character.
     // This is used for AI behavior logic.
@@ -194,6 +201,16 @@ protected:
 
     // Called every frame
     virtual void Tick(float DeltaTime) override;
+
+    /*
+    * Properties
+    */
+
+    /** The team ID for this character. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI", 
+        meta = (DisplayName = "Team ID", Tooltip = "The team ID for this character. Used for AI team-based logic.")
+    )
+    FGenericTeamId TeamId = FGenericTeamId(2); // 1 = Player, 2 = Enemy
 
 private:
 

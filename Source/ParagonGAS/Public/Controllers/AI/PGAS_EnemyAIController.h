@@ -26,6 +26,7 @@
 #include "Perception/AISenseConfig_Damage.h"
 #include "Perception/AISenseConfig_Touch.h"
 #include "Perception/AISenseConfig_Prediction.h"
+#include "GenericTeamAgentInterface.h"
 #include <Characters/Enemy/PGAS_EnemyCharacter.h>
 #include <Characters/Player/PGAS_PlayerCharacter.h>
 #include <Components/PGAS_StateTreeAIComponent.h">
@@ -207,4 +208,11 @@ private:
 
 	UPROPERTY()
 	EPGAS_StimulusSenseType CurrentStimulusSenseType = EPGAS_StimulusSenseType::Unknown;
+
+	/*
+	 * Functions
+	*/
+
+	// Override team attitude to filter perception targets
+	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 };

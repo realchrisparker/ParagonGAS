@@ -27,6 +27,7 @@
 #include "InputActionValue.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffectTypes.h"
+#include "GenericTeamAgentInterface.h"
 #include <Characters/Base/PGAS_CharacterBase.h>
 #include <Controllers/Player/PGAS_PlayerController.h>
 #include <Game/PGAS_PlayerState.h>
@@ -46,7 +47,7 @@ class UNiagaraSystem;
 class USoundBase;
 
 UCLASS()
-class PARAGONGAS_API APGAS_PlayerCharacter : public APGAS_CharacterBase
+class PARAGONGAS_API APGAS_PlayerCharacter : public APGAS_CharacterBase, public IGenericTeamAgentInterface
 {
     GENERATED_BODY()
 
@@ -58,18 +59,11 @@ public:
     // Constructor
     APGAS_PlayerCharacter();
 
-    // /**
-    //  * Traces the weapon to detect hits.
-    //  * This function performs a trace from the weapon's start socket to the end socket to detect hits.
-    //  * @param extended Whether to use the extended socket for the trace (default: false).
-    //  * @note This function is typically called when the player performs an attack action.
-    //  */
-    // UFUNCTION(BlueprintCallable, Category = "Player|Combat",
-    //     meta = (AllowPrivateAccess = "true",
-    //         DisplayName = "Weapon Trace",
-    //         Keywords = "combat trace weapon hit detection",
-    //         Tooltip = "Performs a weapon trace to detect hits."))
-    // void WeaponTrace();
+    /**
+     * Returns the team ID for this character.
+     * This is used for AI team-based logic.
+     */
+    virtual FGenericTeamId GetGenericTeamId() const override { return TeamId; }
 
     /**
      * Returns the Player Attribute Set for this character.
@@ -564,6 +558,12 @@ protected:
     /** Parry input action */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Parry Action"))
     TObjectPtr<class UInputAction> IA_Parry;
+
+    /** The team ID for this character. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI",
+        meta = (DisplayName = "Team ID", Tooltip = "The team ID for this character. Used for AI team-based logic.")
+    )
+    FGenericTeamId TeamId = FGenericTeamId(1); // 1 = Player, 2 = Enemy
 
 private:
     

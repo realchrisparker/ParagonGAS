@@ -39,9 +39,9 @@ APGAS_EnemyAIController::APGAS_EnemyAIController()
     // SightConfig->PointOfViewBackwardOffset = 250.0f; // How far behind the character to check for sight (Peripheral vision)
     // SightConfig->NearClippingRadius = 175.0f; // How close the character can be to still be seen (Peripheral vision)
     SightConfig->AutoSuccessRangeFromLastSeenLocation = -1.0f; // How far to check for last seen location (Turned off)
-    SightConfig->DetectionByAffiliation.bDetectEnemies = true;
-    SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
-    SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+    SightConfig->DetectionByAffiliation.bDetectEnemies = true; // GetTeamAttitudeTowards will filter enemies
+    SightConfig->DetectionByAffiliation.bDetectFriendlies = false; // GetTeamAttitudeTowards will filter friendlies
+    SightConfig->DetectionByAffiliation.bDetectNeutrals = false; // GetTeamAttitudeTowards will filter neutrals
 
     PerceptionComponent->ConfigureSense(*SightConfig); // Assign Sight as the sense
     PerceptionComponent->SetDominantSense(UAISense_Sight::StaticClass()); // Set Sight as the dominant sense
@@ -118,8 +118,13 @@ void APGAS_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimul
     // Validate the Actor pointer
     if (!Actor)
     {
-        UE_LOG(LogTemp, Warning, TEXT("OnTargetPerceptionUpdated called with null Actor!"));
         return;
+    }
+
+    // Check team attitude before processing
+    if (GetTeamAttitudeTowards(*Actor) != ETeamAttitude::Hostile)
+    {
+        return; // Bail early, don't broadcast anything
     }
 
     // Static IDs for sense types (only initialized once)
@@ -143,7 +148,7 @@ void APGAS_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimul
     AActor* SensedActor = Actor;
     if (!SensedActor)
     {
-        UE_LOG(LogTemp, Verbose, TEXT("Actor %s is not a valid actor."), *GetNameSafe(Actor));
+        // UE_LOG(LogTemp, Verbose, TEXT("Actor %s is not a valid actor."), *GetNameSafe(Actor));
         return;
     }
 
@@ -355,4 +360,25 @@ void APGAS_EnemyAIController::ReportNoiseEvent(AActor* NoiseInstigator, FVector 
         NoiseInstigator,
         MaxRange
     );
+}
+
+ETeamAttitude::Type APGAS_EnemyAIController::GetTeamAttitudeTowards(const AActor& Other) const
+{
+    // Check if the other actor implements IGenericTeamAgentInterface
+    if (const IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(&Other))
+    {
+        FGenericTeamId OtherTeamId = TeamAgent->GetGenericTeamId();
+
+        // Player team = 1, Enemy team = 2
+        if (OtherTeamId == FGenericTeamId(1))
+        {
+            return ETeamAttitude::Hostile; // Only attack the player
+        }
+        else if (OtherTeamId == FGenericTeamId(2))
+        {
+            return ETeamAttitude::Friendly; // Ignore other enemies
+        }
+    }
+
+    return ETeamAttitude::Neutral; // Everything else is ignored
 }
