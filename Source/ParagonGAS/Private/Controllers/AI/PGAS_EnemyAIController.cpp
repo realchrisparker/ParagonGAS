@@ -269,6 +269,13 @@ TArray<AActor*> APGAS_EnemyAIController::GetAllDamageSensedActors() const
     {
         PerceptionComponent->GetCurrentlyPerceivedActors(UAISense_Damage::StaticClass(), SensedActors);
     }
+
+    // ✅ Filter out non-hostiles
+    SensedActors = SensedActors.FilterByPredicate([ this ] (AActor* Actor)
+    {
+        return Actor && GetTeamAttitudeTowards(*Actor) == ETeamAttitude::Hostile;
+    });
+    
     return SensedActors;
 }
 
@@ -284,6 +291,13 @@ TArray<AActor*> APGAS_EnemyAIController::GetAllHeardActors() const
     {
         PerceptionComponent->GetCurrentlyPerceivedActors(UAISense_Hearing::StaticClass(), SensedActors);
     }
+
+    // Filter out non-hostiles
+    SensedActors = SensedActors.FilterByPredicate([this](AActor* Actor)
+    {
+        return Actor && GetTeamAttitudeTowards(*Actor) == ETeamAttitude::Hostile;
+    });
+
     return SensedActors;
 }
 
@@ -299,6 +313,13 @@ TArray<AActor*> APGAS_EnemyAIController::GetAllSeenActors() const
     {
         PerceptionComponent->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), SensedActors);
     }
+
+    // Filter out non-hostiles
+    SensedActors = SensedActors.FilterByPredicate([ this ] (AActor* Actor)
+    {
+        return Actor && GetTeamAttitudeTowards(*Actor) == ETeamAttitude::Hostile;
+    });
+
     return SensedActors;
 }
 
