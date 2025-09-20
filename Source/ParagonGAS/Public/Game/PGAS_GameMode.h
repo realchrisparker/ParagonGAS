@@ -20,6 +20,10 @@ public:
 	APGAS_GameMode();
 
 protected:
+	/*
+	* Functions
+	*/
+	
 	// Called when the game starts or when spawned
 	// This is where you can initialize game state, spawn actors, etc.
 	virtual void BeginPlay() override;
@@ -27,4 +31,19 @@ protected:
 	// Override to specify the game session class
 	// This is where you can set a custom game session class if needed
 	virtual TSubclassOf<AGameSession> GetGameSessionClass() const override;
+
+	// Called when the game starts or when spawned
+	// This is where you can initialize game state, spawn actors, etc.
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
+
+	// Override PostLogin to handle player login events
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	/*
+	 * Override SpawnDefaultPawnFor to customize pawn spawning logic
+	 * This is where you can modify how pawns are spawned for players
+	 * @param NewPlayer The player controller for whom the pawn is being spawned
+	 * @param StartSpot The actor representing the spawn location
+	*/
+	virtual APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot) override;
 };
