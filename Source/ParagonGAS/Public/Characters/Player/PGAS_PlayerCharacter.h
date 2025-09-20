@@ -411,22 +411,6 @@ protected:
     UFUNCTION()
     void HeavyAttackAction(const FInputActionValue& Value);
 
-    /** Called by the IA_LeftHandLightAttack input action to handle left hand light attacking. */
-    UFUNCTION()
-    void LeftHandLightAttackAction(const FInputActionValue& Value);
-
-    /** Called by the IA_LeftHandHeavyAttack input action to handle left hand heavy attacking. */
-    UFUNCTION()
-    void LeftHandHeavyAttackAction(const FInputActionValue& Value);
-
-    /** Called by the IA_RightHandLightAttack input action to handle right hand light attacking. */
-    UFUNCTION()
-    void RightHandLightAttackAction(const FInputActionValue& Value);
-
-    /** Called by the IA_RightHandHeavyAttack input action to handle right hand heavy attacking. */
-    UFUNCTION()
-    void RightHandHeavyAttackAction(const FInputActionValue& Value);
-
     /** Called by the IA_Block input action to handle blocking when started. */
     UFUNCTION()
     void BlockStartedAction(const FInputActionInstance& Value);
@@ -456,107 +440,89 @@ protected:
 
     // Reference to the owning PlayerState, exposed to Blueprints
     UPROPERTY(BlueprintReadOnly, Category = "Player|State")
-    TObjectPtr<APGAS_PlayerState> MyPlayerState;
+    TObjectPtr<APGAS_PlayerState> CachedPlayerState;
 
     // Reference to the current PlayerController, exposed to Blueprints
     UPROPERTY(BlueprintReadOnly, Category = "Player|Controller")
-    TObjectPtr<APGAS_PlayerController> MyPlayerController;
+    TObjectPtr<APGAS_PlayerController> CachedPlayerController;
 
     // Reference to the current PlayerController, exposed to Blueprints
     UPROPERTY(BlueprintReadOnly, Category = "Player|HUD")
-    TObjectPtr<APGAS_HUD> MyPlayerHUD;
+    TObjectPtr<APGAS_HUD> CachedPlayerHUD;
+
+    /** Input Mapping Context specific to this player */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta= (DisplayName = "Player Input Mapping Context",
+        ToolTip = "The Input Mapping Context (IMC) asset that defines the input mappings for this player character. This IMC is added to the Enhanced Input Subsystem when the character is possessed by a controller."))
+    TObjectPtr<class UInputMappingContext> PlayerInputMappingContext;
+
+    /** Priority of this IMC when added to the subsystem */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Input Mapping Context Priority",
+        ToolTip = "The priority of this Input Mapping Context (IMC) when added to the Enhanced Input Subsystem."))
+    int32 IMCPriority = 0;
 
     /**
      * The Input Action asset for moving the character (e.g. "IA_Move").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Move Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Move"))
     TObjectPtr<UInputAction> IA_Move;
 
     /**
      * The Input Action asset for looking around (e.g. "IA_Look").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Look Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Look"))
     TObjectPtr<UInputAction> IA_Look;
 
     /**
      * The Input Action asset for jumping (e.g. "IA_Jump").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Jump Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Jump"))
     TObjectPtr<UInputAction> IA_Jump;
 
     /**
      * The Input Action asset for moving the character in sprinting/running (e.g. "IA_Sprint").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Sprint Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Sprint"))
     TObjectPtr<UInputAction> IA_Sprint;
 
     /**
      * The Input Action asset for light attacking (e.g. "IA_LightAttack").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Light Attack Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Light Attack"))
     TObjectPtr<UInputAction> IA_LightAttack;
 
     /**
      * The Input Action asset for heavy attacking (e.g. "IA_HeavyAttack").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Heavy Attack Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Heavy Attack"))
     TObjectPtr<UInputAction> IA_HeavyAttack;
 
-    /**
-     * The Input Action asset for left hand light attacking (e.g. "IA_LeftHandLightAttack").
-     * This is typically set in the editor or loaded in code.
-     */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Left Hand Light Attack Action"))
-    TObjectPtr<UInputAction> IA_LeftHandLightAttack;
-
-    /**
-     * The Input Action asset for left hand light attacking (e.g. "IA_LeftHandHeavyAttack").
-     * This is typically set in the editor or loaded in code.
-     */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Left Hand Heavy Attack Action"))
-    TObjectPtr<UInputAction> IA_LeftHandHeavyAttack;
-
-    /**
-     * The Input Action asset for right hand light attacking (e.g. "IA_RightHandLightAttack").
-     * This is typically set in the editor or loaded in code.
-     */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Right Hand Light Attack Action"))
-    TObjectPtr<UInputAction> IA_RightHandLightAttack;
-
-    /**
-     * The Input Action asset for left hand heavy attacking (e.g. "IA_RightHandHeavyAttack").
-     * This is typically set in the editor or loaded in code.
-     */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Right Hand Heavy Attack Action"))
-    TObjectPtr<UInputAction> IA_RightHandHeavyAttack;
-
     /** Lock-On input action */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Lock On Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Lock On"))
     TObjectPtr<class UInputAction> IA_LockOn;
 
     /**
      * The Input Action asset for blocking (e.g. "IA_Block").
      * This is typically set in the editor or loaded in code.
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Block Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Block"))
     TObjectPtr<UInputAction> IA_Block;
 
     /** Dodge input action */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Dodge Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Dodge"))
     TObjectPtr<class UInputAction> IA_Dodge;
 
     /** Roll input action */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Roll Action Gamepad"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Roll"))
     TObjectPtr<class UInputAction> IA_Roll;
 
     /** Parry input action */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Parry Action"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Parry"))
     TObjectPtr<class UInputAction> IA_Parry;
 
     /** The team ID for this character. */

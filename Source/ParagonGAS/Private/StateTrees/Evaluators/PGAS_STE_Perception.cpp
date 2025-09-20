@@ -126,6 +126,7 @@ void UPGAS_STE_Perception::HandleSightStimulus(AActor* Actor, const FAIStimulus&
 
 void UPGAS_STE_Perception::HandleSightStimulusForgotten(AActor* Actor)
 {
+    UE_LOG(LogTemp, Log, TEXT("UPGAS_STE_Perception: Sight stimulus forgotten for actor: %s"), *GetNameSafe(Actor));
     AcquiredTarget = nullptr;
     if (AIController.IsValid())
         AIController->AcquiredTarget = nullptr; // Clear the AIController's target
@@ -148,6 +149,7 @@ void UPGAS_STE_Perception::HandleHearingStimulus(AActor* Actor, const FAIStimulu
 
 void UPGAS_STE_Perception::HandleHearingStimulusForgotten(AActor* Actor)
 {
+    UE_LOG(LogTemp, Log, TEXT("UPGAS_STE_Perception: Hearing stimulus forgotten for actor: %s"), *GetNameSafe(Actor));
     AcquiredTarget = nullptr;
     if (AIController.IsValid())
         AIController->AcquiredTarget = nullptr; // Clear the AIController's target

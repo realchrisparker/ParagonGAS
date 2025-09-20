@@ -33,6 +33,18 @@
 #include <Animations/Base/PGAS_AnimInstanceBase.h>
 
 
+//--------------------------------------------------------------------
+// --- Order of operations for a newly spawned character ---
+// Constructor(C++)
+// PreInitializeComponents
+// PostInitializeComponents
+// PossessedBy(server - side)
+// BeginPlay(all actors)
+// SetupPlayerInputComponent(client - side only, when input is ready)
+// OnRep_PlayerState(on clients when PlayerState arrives)
+//--------------------------------------------------------------------
+
+
 // Sets default values
 APGAS_PlayerCharacter::APGAS_PlayerCharacter()
 {
@@ -95,26 +107,30 @@ APGAS_PlayerCharacter::APGAS_PlayerCharacter()
     SetCharacterLevel(1);
 }
 
+// Called when the player has been possessed by a controller
+void APGAS_PlayerCharacter::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+
+    // Store reference to our PlayerController
+    CachedPlayerController = Cast<APGAS_PlayerController>(NewController);
+
+    ApplyDefaultAttributeEffects(); // Apply default attribute effects to the character
+    SetupDefaultAbilities(); // Set up default abilities for the player character
+}
+
 // Called when the game starts or when spawned
 void APGAS_PlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    TObjectPtr<APGAS_PlayerController> PC = Cast<APGAS_PlayerController>(GetController());
-    if (PC)
+    if (CachedPlayerController)
     {
-        // PlayerState and HUD may not always be valid in BeginPlay due to spawn order/networking; safe-guard accordingly.
-        TObjectPtr<APGAS_PlayerState> FoundPlayerState = Cast<APGAS_PlayerState>(PC->GetPlayerState<APlayerState>());
-        if (FoundPlayerState)
-        {
-            MyPlayerState = FoundPlayerState;
-        }
-
         // Set HUD reference.
-        TObjectPtr<APGAS_HUD> FoundHUD = Cast<APGAS_HUD>(PC->GetHUD());
+        TObjectPtr<APGAS_HUD> FoundHUD = Cast<APGAS_HUD>(CachedPlayerController->GetHUD());
         if (FoundHUD)
         {
-            MyPlayerHUD = FoundHUD;
+            CachedPlayerHUD = FoundHUD;
         }
     }
 
@@ -132,11 +148,11 @@ void APGAS_PlayerCharacter::BeginPlay()
     }
 
     // Set up the initial HUD values
-    if (MyPlayerHUD)
+    if (CachedPlayerHUD)
     {
-        MyPlayerHUD->GetInGameHUDWidget()->UpdateHealthValue(GetHealth(), GetMaxHealth());
-        MyPlayerHUD->GetInGameHUDWidget()->UpdateStaminaValue(GetStamina(), GetMaxStamina());
-        MyPlayerHUD->GetInGameHUDWidget()->UpdateAdrenalineValue(GetAdrenaline(), GetMaxAdrenaline());
+        CachedPlayerHUD->GetInGameHUDWidget()->UpdateHealthValue(GetHealth(), GetMaxHealth());
+        CachedPlayerHUD->GetInGameHUDWidget()->UpdateStaminaValue(GetStamina(), GetMaxStamina());
+        CachedPlayerHUD->GetInGameHUDWidget()->UpdateAdrenalineValue(GetAdrenaline(), GetMaxAdrenaline());
     }
 
     // Bind to attribute set stamina change callback
@@ -176,11 +192,28 @@ void APGAS_PlayerCharacter::BeginPlay()
         // LockOn->OnUnlocked.AddDynamic(this, &APGAS_PlayerCharacter::HandleLockOnTargetChanged);
         // LockOn->OnTargetChanged.AddDynamic(this, &APGAS_PlayerCharacter::HandleLockOnTargetChanged);
     }
+
+    // Add the player-specific Input Mapping Context
+    if (CachedPlayerController)
+    {
+        if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+            ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(CachedPlayerController->GetLocalPlayer()))
+        {
+            if (PlayerInputMappingContext)
+            {
+                Subsystem->AddMappingContext(PlayerInputMappingContext, IMCPriority);
+            }
+        }
+    }
 }
 
-void APGAS_PlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+// Called when player state has been replicated
+void APGAS_PlayerCharacter::OnRep_PlayerState()
 {
-    Super::EndPlay(EndPlayReason);
+    Super::OnRep_PlayerState();
+
+    // Store reference to our PlayerState
+    CachedPlayerState = Cast<APGAS_PlayerState>(GetPlayerState());
 }
 
 // Called every frame
@@ -189,7 +222,7 @@ void APGAS_PlayerCharacter::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 
     // Only track idle if we're not already playing idle anim
-    if (bIdleAnimationPlayed == false)
+    if (IdleBreakMontage && bIdleAnimationPlayed == false)
     {
         IdleTime += DeltaTime;
         if (IdleTime >= 30.f)
@@ -201,33 +234,9 @@ void APGAS_PlayerCharacter::Tick(float DeltaTime)
     }
 }
 
-// Called when the player has been possessed by a controller
-void APGAS_PlayerCharacter::PossessedBy(AController* NewController)
+void APGAS_PlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    Super::PossessedBy(NewController);
-
-
-    // Ensure the character has a valid PlayerState
-    try {
-        MyPlayerController = Cast<APGAS_PlayerController>(NewController);
-        if (!MyPlayerController)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("APGAS_PlayerCharacter::PossessedBy - MyPlayerController is null!"));
-        }
-    }
-    catch (const std::exception& e)
-    {
-        UE_LOG(LogTemp, Error, TEXT("APGAS_PlayerCharacter::PossessedBy - Exception: %s"), *FString(e.what()));
-    }
-
-    ApplyDefaultAttributeEffects(); // Apply default attribute effects to the character
-    SetupDefaultAbilities(); // Set up default abilities for the player character
-}
-
-// Called when player state has been replicated
-void APGAS_PlayerCharacter::OnRep_PlayerState()
-{
-    Super::OnRep_PlayerState();
+    Super::EndPlay(EndPlayReason);
 }
 
 // --------------------
@@ -271,22 +280,6 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
         if (IA_HeavyAttack)
         {
             EnhancedInputComp->BindAction(IA_HeavyAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::HeavyAttackAction);
-        }
-        if (IA_LeftHandLightAttack)
-        {
-            EnhancedInputComp->BindAction(IA_LeftHandLightAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::LeftHandLightAttackAction);
-        }
-        if (IA_LeftHandHeavyAttack)
-        {
-            EnhancedInputComp->BindAction(IA_LeftHandHeavyAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::LeftHandHeavyAttackAction);
-        }
-        if (IA_RightHandLightAttack)
-        {
-            EnhancedInputComp->BindAction(IA_RightHandLightAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::RightHandLightAttackAction);
-        }
-        if (IA_RightHandHeavyAttack)
-        {
-            EnhancedInputComp->BindAction(IA_RightHandHeavyAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::RightHandHeavyAttackAction);
         }
         if (IA_Block)
         {
@@ -543,31 +536,6 @@ void APGAS_PlayerCharacter::LightAttackAction(const FInputActionValue& Value)
 {
     const bool bFalling = (GetCharacterMovement() && GetCharacterMovement()->IsFalling());
     PerformAttack(bFalling ? EPGAS_WeaponAttackType::JumpLight : EPGAS_WeaponAttackType::Light, GetCombatCoreComponent()->CurrentComboIndex);
-    // // Get the combat core component
-    // if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
-    // {        
-    //     if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
-    //     {
-    //         // If we're in the air, use the jump attack instead
-    //         const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Jump, CoreComponent->CurrentComboIndex);
-    //         if (Attack.AbilityTag.IsValid()) {
-    //             const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-    //             SetIsAttacking(bActivated); // Set the attacking flag to true
-    //         }
-    //     }
-    //     else {
-    //         // Get the first attack of the specified type
-    //         const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Light, CoreComponent->CurrentComboIndex);
-    //         if (Attack.AbilityTag.IsValid()) {
-    //             const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-    //             SetIsAttacking(bActivated); // Set the attacking flag to true
-    //         }
-    //     }
-    // }
-
-    // // Reset idle time and animation flag when movement starts
-    // IdleTime = 0.f;
-    // bIdleAnimationPlayed = false;
 }
 
 /*
@@ -578,133 +546,6 @@ void APGAS_PlayerCharacter::HeavyAttackAction(const FInputActionValue& Value)
 {
     const bool bFalling = (GetCharacterMovement() && GetCharacterMovement()->IsFalling());
     PerformAttack(bFalling ? EPGAS_WeaponAttackType::JumpHeavy : EPGAS_WeaponAttackType::Heavy, GetCombatCoreComponent()->CurrentComboIndex);
-    
-    // // Get the combat core component
-    // if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
-    // {
-    //     if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
-    //     {
-    //         // If we're in the air, use the jump attack instead
-    //         const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Jump, CoreComponent->CurrentComboIndex);
-    //         if (Attack.AbilityTag.IsValid()) {
-    //             const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-    //             SetIsAttacking(bActivated); // Set the attacking flag to true
-    //         }
-    //     }
-    //     else {
-    //         // Get the first attack of the specified type
-    //         const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Heavy, CoreComponent->CurrentComboIndex);
-    //         if (Attack.AbilityTag.IsValid()) {
-    //             const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-    //             SetIsAttacking(bActivated); // Set the attacking flag to true
-    //         }
-    //     }
-
-    //     // const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Heavy, CoreComponent->CurrentComboIndex);
-    //     // if (GetCharacterMovement() && GetCharacterMovement()->IsFalling())
-    //     // {
-    //     //     // If we're in the air, use the jump attack instead
-    //     //     Attack = CoreComponent->GetAttackByTypeAndIndex(EPGAS_WeaponAttackType::Jump, CoreComponent->CurrentComboIndex);
-    //     // }
-
-    //     // // Get the first attack of the specified type
-    //     // if (Attack.AbilityTag.IsValid()) {
-    //     //     const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-    //     //     SetIsAttacking(bActivated); // Set the attacking flag to true
-    //     // }
-    // }
-
-    // // Reset idle time and animation flag when movement starts
-    // IdleTime = 0.f;
-    // bIdleAnimationPlayed = false;
-}
-
-/*
- * LeftHandLightAttackAction function to handle left hand attack input.
- * This function is called when the IA_LeftHandLightAttack input action is triggered.
-*/
-void APGAS_PlayerCharacter::LeftHandLightAttackAction(const FInputActionValue& Value)
-{
-    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
-    {
-        // Get the first attack of the specified type
-        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndHand(EPGAS_WeaponAttackType::Light, EPGAS_WeaponHand::Left);
-        if (Attack.AbilityTag.IsValid())
-        {
-            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-            SetIsAttacking(bActivated); // Set the attacking flag to true
-        }
-    }
-
-    // Reset idle time and animation flag when movement starts
-    IdleTime = 0.f;
-    bIdleAnimationPlayed = false;
-}
-
-/*
- * LeftHandHeavyAttackAction function to handle left hand attack input.
- * This function is called when the IA_LeftHandHeavyAttack input action is triggered.
-*/
-void APGAS_PlayerCharacter::LeftHandHeavyAttackAction(const FInputActionValue& Value)
-{
-    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
-    {
-        // Get the first attack of the specified type
-        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndHand(EPGAS_WeaponAttackType::Heavy, EPGAS_WeaponHand::Left);
-        if (Attack.AbilityTag.IsValid())
-        {
-            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-            SetIsAttacking(bActivated); // Set the attacking flag to true
-        }
-    }
-
-    // Reset idle time and animation flag when movement starts
-    IdleTime = 0.f;
-    bIdleAnimationPlayed = false;
-}
-
-/**
- * RightHandLightAttackAction function to handle right hand attack input.
- * This function is called when the IA_RightHandLightAttack input action is triggered.
- */
-void APGAS_PlayerCharacter::RightHandLightAttackAction(const FInputActionValue& Value)
-{
-    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
-    {
-        // Get the first attack of the specified type
-        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndHand(EPGAS_WeaponAttackType::Light, EPGAS_WeaponHand::Right);
-        if (Attack.AbilityTag.IsValid())
-        {
-            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-            SetIsAttacking(bActivated); // Set the attacking flag to true
-        }
-    }
-
-    // Reset idle time and animation flag when movement starts
-    IdleTime = 0.f;
-    bIdleAnimationPlayed = false;
-}
-
-/**
- * RightHandHeavyAttackAction function to handle right hand attack input.
- * This function is called when the IA_RightHandHeavyAttack input action is triggered.
- */
-void APGAS_PlayerCharacter::RightHandHeavyAttackAction(const FInputActionValue& Value)
-{
-    if (UPGAS_CombatCoreComponent* CoreComponent = GetCombatCoreComponent())
-    {
-        // Get the first attack of the specified type
-        const FPGAS_AttackType Attack = CoreComponent->GetAttackByTypeAndHand(EPGAS_WeaponAttackType::Heavy, EPGAS_WeaponHand::Right);
-        if (Attack.AbilityTag.IsValid())
-        {
-            const bool bActivated = CoreComponent->ActivateAbilityByTag(Attack.AbilityTag); // Activate the ability
-            SetIsAttacking(bActivated); // Set the attacking flag to true
-        }
-    }
-
-    // Reset idle time and animation flag when movement starts
-    IdleTime = 0.f;
-    bIdleAnimationPlayed = false;
 }
 
 /**
@@ -916,9 +757,9 @@ void APGAS_PlayerCharacter::OnHealthAttributeChanged(const FOnAttributeChangeDat
     // The Data parameter contains the new and old values
     float NewValue = Data.NewValue;
 
-    if (MyPlayerHUD)
+    if (CachedPlayerHUD)
     {
-        MyPlayerHUD->UpdateHealthBar(NewValue, GetMaxHealth());
+        CachedPlayerHUD->UpdateHealthBar(NewValue, GetMaxHealth());
     }
 }
 
@@ -931,9 +772,9 @@ void APGAS_PlayerCharacter::OnStaminaAttributeChanged(const FOnAttributeChangeDa
     // The Data parameter contains the new and old values
     float NewValue = Data.NewValue;
 
-    if (MyPlayerHUD)
+    if (CachedPlayerHUD)
     {
-        MyPlayerHUD->UpdateStaminaBar(NewValue, GetMaxStamina());
+        CachedPlayerHUD->UpdateStaminaBar(NewValue, GetMaxStamina());
     }
 }
 
@@ -946,9 +787,9 @@ void APGAS_PlayerCharacter::OnAdrenalineAttributeChanged(const FOnAttributeChang
     // The Data parameter contains the new and old values
     float NewValue = Data.NewValue;
 
-    if (MyPlayerHUD)
+    if (CachedPlayerHUD)
     {
-        MyPlayerHUD->UpdateAdrenalineBar(NewValue, GetMaxAdrenaline());
+        CachedPlayerHUD->UpdateAdrenalineBar(NewValue, GetMaxAdrenaline());
     }
 }
 
@@ -1070,9 +911,9 @@ void APGAS_PlayerCharacter::HandleHitboxHit(AActor* HitActor, const FHitResult& 
 // Plays a simple camera shake effect
 void APGAS_PlayerCharacter::PlaySimpleShake(float scale)
 {
-    if (APlayerController* PC = Cast<APlayerController>(GetController()))
+    if (CachedPlayerController)
     {
-        if (PC->PlayerCameraManager)
+        if (CachedPlayerController->PlayerCameraManager)
         {
             // Create a dynamic shake instance
             UCameraShakeBase* Shake = NewObject<UCameraShakeBase>();
@@ -1090,7 +931,7 @@ void APGAS_PlayerCharacter::PlaySimpleShake(float scale)
                 Shake->SetRootShakePattern(Pattern);
 
                 // Play shake via PlayerCameraManager
-                UCameraShakeBase* base = PC->PlayerCameraManager->StartCameraShake(Shake->GetClass(), scale);
+                UCameraShakeBase* base = CachedPlayerController->PlayerCameraManager->StartCameraShake(Shake->GetClass(), scale);
             }
         }
     }
