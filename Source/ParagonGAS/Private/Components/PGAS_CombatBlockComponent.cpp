@@ -43,7 +43,6 @@ void UPGAS_CombatBlockComponent::StartBlock()
 	if (!bIsBlocking)
 	{
 		bIsBlocking = true;
-        UE_LOG(LogTemp, Log, TEXT("%s started blocking."), *GetOwner()->GetName());
 
         // Disable movement by removing movement tag
         if (OwnerCharacter && StopMovementOnBlock)

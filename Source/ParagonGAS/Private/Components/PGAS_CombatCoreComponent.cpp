@@ -49,10 +49,6 @@ void UPGAS_CombatCoreComponent::BeginPlay()
 					).AddUObject(this, &UPGAS_CombatCoreComponent::HandleAttackWindowTagChanged);
 
 					RegisteredTagHandles.Add(Handle);
-
-					// UE_LOG(LogTemp, Warning, TEXT("Registered CombatCoreComponent for attack tag: %s (Hand: %d)"),
-					// 	*Attack.AbilityTag.ToString(),
-					// 	static_cast<int32>(Attack.Hand));
 				}
 			}
 
@@ -64,10 +60,29 @@ void UPGAS_CombatCoreComponent::BeginPlay()
 				).AddUObject(this, &UPGAS_CombatCoreComponent::HandleComboWindowTagChanged);
 
 				RegisteredTagHandles.Add(Handle);
-
-				// UE_LOG(LogTemp, Warning, TEXT("Registered CombatCoreComponent for combo tag: %s"), *ComboTag.ToString());
 			}
 		}
+	}
+
+	if (EquippedWeaponClass)
+	{
+		FActorSpawnParameters Params;
+		Params.Owner = GetOwner();
+		Params.Instigator = Cast<APawn>(GetOwner());
+
+		EquippedWeapon = GetWorld()->SpawnActor<APGAS_WeaponBase>(
+			EquippedWeaponClass,
+			GetOwner()->GetActorTransform(),
+			Params
+		);
+
+		// Attach to hand socket (Our characters are Paragon, their weapons are a part of the mesh. Use this if you have a character with weapons as separate actors)
+		// if (ACharacter* CharOwner = Cast<ACharacter>(GetOwner()))
+		// {
+		// 	EquippedWeapon->AttachToComponent(CharOwner->GetMesh(),
+		// 		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+		// 		FName("RightHandSocket")); // change socket name if needed
+		// }
 	}
 
 	CurrentComboIndex = 0; // Initialize combo index
@@ -414,4 +429,26 @@ void UPGAS_CombatCoreComponent::ResetCombo()
 	bComboWindowOpen = false;
 	bInputBuffered = false;
 	GetWorld()->GetTimerManager().ClearTimer(ComboResetTimer);
+}
+
+// ---------------------------
+// Bow Functions
+// ---------------------------
+
+void UPGAS_CombatCoreComponent::DrawBow()
+{
+	if (CachedASC)
+	{
+		// Press the bow attack input
+		CachedASC->AbilityLocalInputPressed(static_cast<int32>(EPGAS_AbilityInputID::BowAttack));
+	}
+}
+
+void UPGAS_CombatCoreComponent::ReleaseBow()
+{
+	if (CachedASC)
+	{
+		// Release the bow attack input
+		CachedASC->AbilityLocalInputReleased(static_cast<int32>(EPGAS_AbilityInputID::BowAttack));
+	}
 }

@@ -56,7 +56,6 @@ void UPGAS_MeleeDamageExecutionCalc::Execute_Implementation(
     UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
     if (!TargetASC)
     {
-        UE_LOG(LogTemp, Warning, TEXT("No Ability System Component found on target actor"));
         return;
     }
 
@@ -64,7 +63,6 @@ void UPGAS_MeleeDamageExecutionCalc::Execute_Implementation(
     UAbilitySystemComponent* InstigatorASC = ExecutionParams.GetSourceAbilitySystemComponent();
     if (!InstigatorASC)
     {
-        UE_LOG(LogTemp, Warning, TEXT("No Ability System Component found on instigator actor"));
         return;
     }
 

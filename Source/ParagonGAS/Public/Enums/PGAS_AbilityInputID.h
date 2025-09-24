@@ -20,7 +20,8 @@
 UENUM(BlueprintType)
 enum class EPGAS_AbilityInputID : uint8
 {
-    None   UMETA(DisplayName = "None"),
-    Sprint UMETA(DisplayName = "Sprint"),
-    Block  UMETA(DisplayName = "Block")
+    None       UMETA(DisplayName = "None"),
+    Sprint     UMETA(DisplayName = "Sprint"),
+    Block      UMETA(DisplayName = "Block"),
+    BowAttack  UMETA(DisplayName = "Bow Attack"),
 };

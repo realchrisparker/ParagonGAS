@@ -148,8 +148,10 @@ __pycache__/
 # Ignore specific folders or files (customize as needed)
 *Content/_Game/Characters/Players/Countess/Anims/Not4Git/
 *Content/_Game/Characters/Players/Wukong/Anims/Not4Git/
+*Content/_Game/Characters/Players/Sparrow/Anims/Not4Git/
 *Content/Dual_Sword/
 *Content/Spear/
+*Content/Archer/
 *Content/ParagonCountess/
 *Content/ParagonSparrow/
 *Content/ParagonSunWukong/

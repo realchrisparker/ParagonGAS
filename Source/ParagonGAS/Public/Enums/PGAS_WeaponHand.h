@@ -39,5 +39,6 @@ enum class EPGAS_WeaponAttackType : uint8
     JumpLight   UMETA(DisplayName = "Jump Light"),
     JumpMedium  UMETA(DisplayName = "Jump Medium"),
     JumpHeavy   UMETA(DisplayName = "Jump Heavy"),
-    Land        UMETA(DisplayName = "Land")
+    Land        UMETA(DisplayName = "Land"),
+    Ranged      UMETA(DisplayName = "Ranged")
 };

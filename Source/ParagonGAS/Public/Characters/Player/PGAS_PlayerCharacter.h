@@ -434,6 +434,14 @@ protected:
     UFUNCTION()
     void ParryAction(const FInputActionInstance& Value);
 
+    /** Called by the IA_BowAttack input action to handle bow attacking. */
+    UFUNCTION()
+    void BowAttackPressedAction(const FInputActionInstance& Value);
+
+    /** Called by the IA_BowAttack input action to handle bow attacking. */
+    UFUNCTION()
+    void BowAttackReleasedAction(const FInputActionInstance& Value);
+
     /*
      * Properties
      */
@@ -506,10 +514,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Lock On"))
     TObjectPtr<class UInputAction> IA_LockOn;
 
-    /**
-     * The Input Action asset for blocking (e.g. "IA_Block").
-     * This is typically set in the editor or loaded in code.
-     */
+    // The Input Action asset for blocking (e.g. "IA_Block").
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Block"))
     TObjectPtr<UInputAction> IA_Block;
 
@@ -524,6 +529,10 @@ protected:
     /** Parry input action */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Parry"))
     TObjectPtr<class UInputAction> IA_Parry;
+
+    /** Bow attack input action */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Input", meta = (DisplayName = "Bow Attack"))
+    TObjectPtr<class UInputAction> IA_BowAttack;
 
     /** The team ID for this character. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI",

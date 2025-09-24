@@ -303,6 +303,11 @@ void APGAS_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
         {
             EnhancedInputComp->BindAction(IA_Parry, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::ParryAction);
         }
+        if (IA_BowAttack)
+        {
+            EnhancedInputComp->BindAction(IA_BowAttack, ETriggerEvent::Started, this, &APGAS_PlayerCharacter::BowAttackPressedAction);
+            EnhancedInputComp->BindAction(IA_BowAttack, ETriggerEvent::Completed, this, &APGAS_PlayerCharacter::BowAttackReleasedAction);
+        }
     }
 }
 
@@ -535,7 +540,7 @@ void APGAS_PlayerCharacter::BlockReleaseAction(const FInputActionValue& Value)
 void APGAS_PlayerCharacter::LightAttackAction(const FInputActionValue& Value)
 {
     const bool bFalling = (GetCharacterMovement() && GetCharacterMovement()->IsFalling());
-    PerformAttack(bFalling ? EPGAS_WeaponAttackType::JumpLight : EPGAS_WeaponAttackType::Light, GetCombatCoreComponent()->CurrentComboIndex);
+    PerformAttack(bFalling ? EPGAS_WeaponAttackType::JumpLight : EPGAS_WeaponAttackType::Light, GetCombatCoreComponent()->GetCurrentComboIndex());
 }
 
 /*
@@ -545,7 +550,7 @@ void APGAS_PlayerCharacter::LightAttackAction(const FInputActionValue& Value)
 void APGAS_PlayerCharacter::HeavyAttackAction(const FInputActionValue& Value)
 {
     const bool bFalling = (GetCharacterMovement() && GetCharacterMovement()->IsFalling());
-    PerformAttack(bFalling ? EPGAS_WeaponAttackType::JumpHeavy : EPGAS_WeaponAttackType::Heavy, GetCombatCoreComponent()->CurrentComboIndex);
+    PerformAttack(bFalling ? EPGAS_WeaponAttackType::JumpHeavy : EPGAS_WeaponAttackType::Heavy, GetCombatCoreComponent()->GetCurrentComboIndex());
 }
 
 /**
@@ -681,6 +686,40 @@ void APGAS_PlayerCharacter::ParryAction(const FInputActionInstance& Value)
     {
         ParryComp->StartParry();
     }
+}
+
+/** Called by the IA_BowAttack input action to handle bow attacking. */
+void APGAS_PlayerCharacter::BowAttackPressedAction(const FInputActionInstance& Value)
+{
+    UE_LOG(LogTemp, Warning, TEXT("BowAttackPressedAction: Bow attack input received"));
+    if (UPGAS_CombatCoreComponent * Core = GetCombatCoreComponent())
+    {
+        Core->DrawBow();
+    }
+    // if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+    // {
+    //     ASC->AbilityLocalInputPressed(static_cast<int32>(EPGAS_AbilityInputID::BowAttack));
+    // }
+
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;
+}
+
+/** Called by the IA_BowAttack input action to handle bow attacking. */
+void APGAS_PlayerCharacter::BowAttackReleasedAction(const FInputActionInstance& Value)
+{
+    UE_LOG(LogTemp, Warning, TEXT("BowAttackReleasedAction: Bow attack input released"));
+    if (UPGAS_CombatCoreComponent* Core = GetCombatCoreComponent())
+    {
+        Core->ReleaseBow();
+    }
+    // if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+    // {
+    //     ASC->AbilityLocalInputReleased(static_cast<int32>(EPGAS_AbilityInputID::BowAttack));
+    // }
+
+    IdleTime = 0.f;
+    bIdleAnimationPlayed = false;  
 }
 
 // --------------------

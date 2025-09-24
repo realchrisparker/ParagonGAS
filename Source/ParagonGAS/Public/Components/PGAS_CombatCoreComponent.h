@@ -25,6 +25,7 @@
 #include "GameplayTagContainer.h"
 #include "Enums/PGAS_WeaponHand.h"
 #include <Structs/PGAS_AttackType.h>
+#include <Weapons/Base/PGAS_WeaponBase.h>
 #include "PGAS_CombatCoreComponent.generated.h"
 
  /*
@@ -80,20 +81,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PGAS|Combat|Attacks")
     TArray<FPGAS_AttackType> AttackTypes;
 
-    // Current combo index in progress
-    UPROPERTY(EditAnywhere, Category = "PGAS|Combat|Combo",
-        meta = (DisplayName = "Current Combo Index",
-            AllowPrivateAccess = "true",
-            BlueprintReadOnly = false,
-            Description = "Current combo index in progress",
-            ToolTip = "Tracks the current step in a combo sequence.")
-    )
-    int32 CurrentComboIndex;
-
-    // Reset time (designer tunable)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Combo")
-    float ComboResetTime = 1.0f;
-
     // The gameplay tag that identifies the combo.
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PGAS|Combat|Combo",
         meta = (DisplayName = "Combo Tag", 
@@ -101,6 +88,9 @@ public:
             ToolTip = "Tag used to identify and chain combo attacks. Must match the combo tag in the ability's montage notify to enable combo windowing.")
     )
     FGameplayTag ComboTag;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PGAS|Combat")
+    TSubclassOf<APGAS_WeaponBase> EquippedWeaponClass;
 
     // ---------------------------
     // Windowing
@@ -179,16 +169,34 @@ public:
     UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
     FPGAS_AttackType GetAttackByTypeAndIndex(EPGAS_WeaponAttackType InType, int32 InIndex) const;
 
+    // ---------------------------
+    // Combo / Bow
+    // ---------------------------
+
     /** Returns the equipped weapon data asset.
      *  If dual wielding, returns the last known attack's weapon data.
      *  If none, returns nullptr.
      */
-    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Weapon")
     UPGAS_WeaponDataAsset* GetEquippedWeaponData() const;
+
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Weapon")
+    APGAS_WeaponBase* GetEquippedWeapon() const { return EquippedWeapon; }
 
     /** Reset the combo state */
     UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Helpers")
     void ResetCombo();
+
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Combo")
+    int32 GetCurrentComboIndex() const { return CurrentComboIndex; }
+
+    /** Start drawing the bow (called when draw input pressed) */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Bow")
+    void DrawBow();
+
+    /** Stop drawing the bow (called when draw input released) */
+    UFUNCTION(BlueprintCallable, Category = "PGAS|Combat|Bow")
+    void ReleaseBow();
 
 protected:
     /*
@@ -213,6 +221,12 @@ private:
     // Reset timer handle
     FTimerHandle ComboResetTimer;
 
+    // Current combo index in progress
+    int32 CurrentComboIndex;
+
+    // Reset time (designer tunable)
+    float ComboResetTime = 1.0f;
+
     // ---------------------------
     // Cached owner pointers
     // ---------------------------
@@ -222,6 +236,9 @@ private:
 
     FPGAS_AttackType LastKnownAttack; // Last known attack
     TArray<FDelegateHandle> RegisteredTagHandles; // Array to hold registered tag handles
+
+    // The currently equipped weapon actor.
+    TObjectPtr<APGAS_WeaponBase> EquippedWeapon;
 
     /*
      * Functions

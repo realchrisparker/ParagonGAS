@@ -206,6 +206,10 @@ void APGAS_CharacterBase::SetupDefaultAbilities()
 				{
 					AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, (int32)EPGAS_AbilityInputID::Block));
 				}
+				else if (DefaultAbilityCDO && DefaultAbilityCDO->GetAssetTags().HasTagExact(FGameplayTag::RequestGameplayTag("Combat.Ranged.Attack.Bow.01")))
+				{
+					AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, (int32)EPGAS_AbilityInputID::BowAttack));
+				}
 				else
 				{
 					AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, INDEX_NONE));
