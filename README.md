@@ -23,6 +23,7 @@ The project uses the free Unreal Paragon characters. Current the characters need
 - Paragon: Wukong (Two-handed Melee Weapon)
 - Paragon: Countess (Two Melee Weapons)
 - Paragon: Sparrow (Two-handed Range Weapon)
+
 You will need to add these to the project in their default directories from the Epic Games Launcher.
 
 # FAB Content Used
@@ -32,6 +33,12 @@ You will need to add these to the project in their default directories from the 
 - Kunai (https://www.fab.com/listings/bd0e0b2a-46c8-4f98-8df9-c8131a16a433)
 - Free Realistic Sword Sound Effects Pack (https://www.fab.com/listings/041c5773-f40e-4ae6-bb8b-8a3f36b20c27)
 - Mixamo Animations
+
+***
+> NOTE: Animations used in the YouTube Videos (Solodev) are not included in this sample. These are paid for assets created by 9CG. Please check out their work and support this excellent creator.
+- https://www.fab.com/listings/02b4b496-4591-4cee-8970-e28c08026eae
+- https://www.fab.com/listings/cce2c969-b84c-4fb8-9fbc-b373d469cfec
+***
 
 # Engine Commands Used
 In version 5.6 used the following:
