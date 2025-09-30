@@ -28,7 +28,7 @@ void UPGAS_GameInstance::Init()
     // Load a Blueprint class dynamically at runtime
     TSubclassOf<APawn> PawnBPClass = LoadClass<APawn>(
         nullptr,
-        TEXT("/Game/_Game/Characters/Players/Sparrow/BP_Sparrow.BP_Sparrow_C")
+        TEXT("/Game/_Game/Characters/Players/Countess/BP_Countess.BP_Countess_C")
     );
 
     if (PawnBPClass)

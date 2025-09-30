@@ -25,10 +25,13 @@
 #include <Enums/PGAS_AbilityInputID.h>
 #include "PGAS_CharacterBase.generated.h"
 
-// Delegates
+/*
+ * Delegates
+ */
 
 // Health change delegate
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChangedSignature, float, DeltaValue, AActor*, Causer);
+
 // Death delegate
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeathSignature);
 

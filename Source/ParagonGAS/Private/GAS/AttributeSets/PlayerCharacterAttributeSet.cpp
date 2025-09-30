@@ -132,6 +132,10 @@ void UPlayerCharacterAttributeSet::PostGameplayEffectExecute(const FGameplayEffe
     }
 }
 
+/**
+ * Adjusts an attribute based on changes to its corresponding maximum attribute.
+ * This ensures that when a maximum attribute changes, the affected attribute is adjusted accordingly.
+ */
 void UPlayerCharacterAttributeSet::AdjustAttributeForMaxChange(
     FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty)
 {

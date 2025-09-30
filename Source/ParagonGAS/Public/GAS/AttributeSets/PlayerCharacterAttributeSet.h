@@ -20,11 +20,6 @@
 #include "AbilitySystemComponent.h"
 #include "PlayerCharacterAttributeSet.generated.h"
 
-#define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
-	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
-	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
-	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
-	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName) \
 
 /**
  * Player Character Attribute Set
@@ -61,43 +56,43 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Health)
 	FGameplayAttributeData Health;
-	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, Health);
+	ATTRIBUTE_ACCESSORS_BASIC(UPlayerCharacterAttributeSet, Health);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Health)
 	FGameplayAttributeData MaxHealth;
-	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, MaxHealth);
+	ATTRIBUTE_ACCESSORS_BASIC(UPlayerCharacterAttributeSet, MaxHealth);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Stamina)
 	FGameplayAttributeData Stamina;
-	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, Stamina);
+	ATTRIBUTE_ACCESSORS_BASIC(UPlayerCharacterAttributeSet, Stamina);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_MaxStamina)
 	FGameplayAttributeData MaxStamina;
-	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, MaxStamina);
+	ATTRIBUTE_ACCESSORS_BASIC(UPlayerCharacterAttributeSet, MaxStamina);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Adrenaline)
 	FGameplayAttributeData Adrenaline;
-	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, Adrenaline);
+	ATTRIBUTE_ACCESSORS_BASIC(UPlayerCharacterAttributeSet, Adrenaline);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_MaxAdrenaline)
 	FGameplayAttributeData MaxAdrenaline;
-	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, MaxAdrenaline);
+	ATTRIBUTE_ACCESSORS_BASIC(UPlayerCharacterAttributeSet, MaxAdrenaline);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_ExperiencePoints)
 	FGameplayAttributeData ExperiencePoints;
-	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, ExperiencePoints);
+	ATTRIBUTE_ACCESSORS_BASIC(UPlayerCharacterAttributeSet, ExperiencePoints);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_MaxExperiencePoints)
 	FGameplayAttributeData MaxExperiencePoints;
-	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, MaxExperiencePoints);
+	ATTRIBUTE_ACCESSORS_BASIC(UPlayerCharacterAttributeSet, MaxExperiencePoints);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_AttackPower)
 	FGameplayAttributeData AttackPower;
-	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, AttackPower);
+	ATTRIBUTE_ACCESSORS_BASIC(UPlayerCharacterAttributeSet, AttackPower);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Defense)
 	FGameplayAttributeData Defense;
-	ATTRIBUTE_ACCESSORS(UPlayerCharacterAttributeSet, Defense);
+	ATTRIBUTE_ACCESSORS_BASIC(UPlayerCharacterAttributeSet, Defense);
 
 protected:
 	/*

@@ -23,11 +23,6 @@
 #include "AbilitySystemComponent.h"
 #include "EnemyAttributeSet.generated.h"
 
-#define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
-	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
-	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
-	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
-	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName) \
 
 /**
  * Enemy Character Attribute Set
@@ -64,19 +59,19 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Health)
 	FGameplayAttributeData Health;
-	ATTRIBUTE_ACCESSORS(UEnemyAttributeSet, Health);
+	ATTRIBUTE_ACCESSORS_BASIC(UEnemyAttributeSet, Health);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Health)
 	FGameplayAttributeData MaxHealth;
-	ATTRIBUTE_ACCESSORS(UEnemyAttributeSet, MaxHealth);
+	ATTRIBUTE_ACCESSORS_BASIC(UEnemyAttributeSet, MaxHealth);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_AttackPower)
 	FGameplayAttributeData AttackPower;
-	ATTRIBUTE_ACCESSORS(UEnemyAttributeSet, AttackPower);
+	ATTRIBUTE_ACCESSORS_BASIC(UEnemyAttributeSet, AttackPower);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Defense)
 	FGameplayAttributeData Defense;
-	ATTRIBUTE_ACCESSORS(UEnemyAttributeSet, Defense);
+	ATTRIBUTE_ACCESSORS_BASIC(UEnemyAttributeSet, Defense);
 
 protected:
 	/*

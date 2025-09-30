@@ -22,9 +22,9 @@
 #include "PGAS_AbilitySystemComponent.generated.h"
 
 /**
- *
+ * Custom Ability System Component.
 */
-UCLASS()
+UCLASS(meta=(DisplayName="PGAS Ability System Component", ShortTooltip="Custom Ability System Component"))
 class PARAGONGAS_API UPGAS_AbilitySystemComponent : public UAbilitySystemComponent
 {
     GENERATED_BODY()
