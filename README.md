@@ -26,6 +26,18 @@ The project uses the free Unreal Paragon characters. Current the characters need
 
 You will need to add these to the project in their default directories from the Epic Games Launcher.
 
+***
+> NOTE: Animations used in the YouTube Videos (Solodev) are not included in this sample. These are paid for assets created by 9CG. Please check out their work and support this excellent creator.
+- https://www.fab.com/listings/02b4b496-4591-4cee-8970-e28c08026eae
+- https://www.fab.com/listings/cce2c969-b84c-4fb8-9fbc-b373d469cfec
+
+This means there are Montages and Animation Sequences that are referenced but not included. You will need to create your own Montages from animation sequences you have, either free or licensed.
+
+Each player character has two Animation Blueprints. The first uses the Paragon animations and blendspaces. The second uses the ones I created for the YouTube video series. Both utilize the base class PGAS_PlayerAnimInstanceBase.h which implements Thread Safe Updates of variables.
+
+To clarify, I chose to do it this way because the provided Paragon fighting animations from Epic did not fully showcase the combat system to it's fullest. This led me to the decision to use licensed animations for the YouTube series. Especially around the concept of chaining attacks to make combos.
+***
+
 # FAB Content Used
 - Paragon: Wukong (https://www.fab.com/listings/27054d0c-c26e-4fe3-b6f9-fa778dfcb8b6)
 - Paragon: Paragon: Countess (https://www.fab.com/listings/0bf014eb-f2ed-4029-adda-81a855eb5220)
@@ -33,12 +45,6 @@ You will need to add these to the project in their default directories from the 
 - Kunai (https://www.fab.com/listings/bd0e0b2a-46c8-4f98-8df9-c8131a16a433)
 - Free Realistic Sword Sound Effects Pack (https://www.fab.com/listings/041c5773-f40e-4ae6-bb8b-8a3f36b20c27)
 - Mixamo Animations
-
-***
-> NOTE: Animations used in the YouTube Videos (Solodev) are not included in this sample. These are paid for assets created by 9CG. Please check out their work and support this excellent creator.
-- https://www.fab.com/listings/02b4b496-4591-4cee-8970-e28c08026eae
-- https://www.fab.com/listings/cce2c969-b84c-4fb8-9fbc-b373d469cfec
-***
 
 # Engine Commands Used
 In version 5.6 used the following:
