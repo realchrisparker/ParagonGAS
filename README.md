@@ -26,7 +26,6 @@ The project uses the free Unreal Paragon characters. Current the characters need
 
 You will need to add these to the project in their default directories from the Epic Games Launcher.
 
-***
 > NOTE: Animations used in the YouTube Videos (Solodev) are not included in this sample. These are paid for assets created by 9CG. Please check out their work and support this excellent creator.
 - https://www.fab.com/listings/02b4b496-4591-4cee-8970-e28c08026eae
 - https://www.fab.com/listings/cce2c969-b84c-4fb8-9fbc-b373d469cfec
