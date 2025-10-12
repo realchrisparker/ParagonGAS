@@ -1,5 +1,5 @@
 # Paragon GAS
-Paragon GAS (P-GAS) is an open-world gameplay ability system sample that teaches developers how to use several of Unreal Engine features together to build a playable world using free FAB store assets.
+Paragon GAS (P-GAS) is a gameplay ability system sample that teaches developers how to use several of Unreal Engine features together to build a GAS-powered combat system using free FAB store assets.
 
 Unreal Engine Version: 5.6.1
 
@@ -8,11 +8,9 @@ Unreal Engine Version: 5.6.1
 ***
 
 ## Epic Unreal Features
-- Open World
 - Gameplay Ability System and Gameplay Tags
 - Gameplay Ability System Combat System
 - StateTree (with EQS)
-- Asset Registry
 - Custom Tools (New Item Menu Category, New Items, and Editor)
 - Custom Subsystems
 - Thread Safe Animation
