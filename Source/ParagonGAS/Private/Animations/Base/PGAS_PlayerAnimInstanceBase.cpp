@@ -80,6 +80,9 @@ void UPGAS_PlayerAnimInstanceBase::NativeThreadSafeUpdateAnimation(float DeltaSe
          * Update speed.
         */
         Speed = GetOwningPawn()->GetVelocity().Length();
+        float CharacterMaxSpeed = GetMovementComponent()->GetMaxSpeed();
+        UE_LOG(LogTemp, Warning, TEXT("CharacterMaxSpeed: %f"), CharacterMaxSpeed);
+        Speed = FMath::Clamp(Speed, 0.0f, CharacterMaxSpeed); // Clamp Speed to a character maximum.
 
         /**
          * Update Roll, Pitch, and Yaw based on the owning pawn's rotation.

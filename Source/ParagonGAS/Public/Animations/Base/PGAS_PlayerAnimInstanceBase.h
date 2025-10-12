@@ -18,8 +18,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Animations/Base/PGAS_AnimInstanceBase.h"
-#include "Characters/Player/PGAS_PlayerCharacter.h"
+#include "KismetAnimationLibrary.h"
+#include <Animations/Base/PGAS_AnimInstanceBase.h>
+#include <Characters/Player/PGAS_PlayerCharacter.h>
 #include "PGAS_PlayerAnimInstanceBase.generated.h"
 
 /**
