@@ -25,6 +25,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include <Interfaces/IAnimation.h>
 #include <Enums/PGAS_Direction.h>
+#include <Enums/PGAS_CharacterAnimState.h>
 #include "PGAS_AnimInstanceBase.generated.h"
 
 
@@ -119,6 +120,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	EPGAS_Direction eDirection;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animation")
+	bool IsCrouched;
+
+	// Current high-level character animation state (Mostly used for Motion Matching and Chooser Tables)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animation")
+	EPGAS_CharacterAnimState CharacterAnimState = EPGAS_CharacterAnimState::StandingIdle;
 
 protected:
 	/*

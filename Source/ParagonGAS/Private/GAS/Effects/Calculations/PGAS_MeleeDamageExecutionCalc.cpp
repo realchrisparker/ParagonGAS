@@ -94,6 +94,7 @@ void UPGAS_MeleeDamageExecutionCalc::Execute_Implementation(
     ////=========================================
     //// Get Base Damage from SetByCaller or GE  
     ////=========================================
+    
     // Get from SetByCaller if present
     float SetByCallerDamage = Spec.GetSetByCallerMagnitude(DamageTag, false, -1.f);
     if (SetByCallerDamage > 0.f)
@@ -120,8 +121,6 @@ void UPGAS_MeleeDamageExecutionCalc::Execute_Implementation(
     float SourceAttackPower = 0.0f;
     ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(AttackPowerDef, EvalParams, SourceAttackPower);
 
-    UE_LOG(LogTemp, Warning, TEXT("Melee Damage Execution: Source Attack Power = %f"), SourceAttackPower);
-
     float TargetDefense = 0.0f;
     ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DefenseDef, EvalParams, TargetDefense);
 
@@ -132,19 +131,13 @@ void UPGAS_MeleeDamageExecutionCalc::Execute_Implementation(
         UE_LOG(LogTemp, Warning, TEXT("Melee Damage Execution: Target is blocking, Defense increased to %f"), TargetDefense);
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("Melee Damage Execution: Target Defense = %f"), TargetDefense);
-
     ////==========================================================================
     //// Calculate final damage                                                   
     //// This is a simple calculation: Damage = BaseDamage + AttackPower - Defense
     ////==========================================================================
 
-    UE_LOG(LogTemp, Warning, TEXT("Melee Damage Execution: Base Damage = %f"), BaseDamage);
-
     float FinalDamage = BaseDamage + SourceAttackPower - TargetDefense;
     FinalDamage = FMath::Max(FinalDamage, 0.0f); // Ensure no negative damage
-
-    UE_LOG(LogTemp, Warning, TEXT("Melee Damage Execution: Final Damage = %f"), FinalDamage);
 
     // Apply as negative to health (damage)
     OutExecutionOutput.AddOutputModifier(

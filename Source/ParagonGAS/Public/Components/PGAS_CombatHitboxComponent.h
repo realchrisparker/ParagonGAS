@@ -83,6 +83,10 @@ public:
      * Properties
      */
 
+     // Number of substeps to interpolate between frames
+    UPROPERTY(EditAnywhere, Category = "PGAS|Hitbox")
+    int32 SubstepCount = 2; // 2–4 is usually plenty
+
     /** Broadcast when a hit is registered. */
     UPROPERTY(BlueprintAssignable, Category = "PGAS|Hitbox")
     FPGAS_OnSimpleHitSignature OnHitboxHit;
@@ -128,10 +132,6 @@ private:
     // Previous frame socket positions
     FVector PrevStartLoc = FVector::ZeroVector;
     FVector PrevEndLoc = FVector::ZeroVector;
-
-    // Number of substeps to interpolate between frames
-    UPROPERTY(EditAnywhere, Category = "PGAS|Hitbox")
-    int32 SubstepCount = 2; // 2–4 is usually plenty
 
     // Prevent hitting same actor multiple times in one swing
     TSet<TWeakObjectPtr<AActor>> AlreadyHitActors;

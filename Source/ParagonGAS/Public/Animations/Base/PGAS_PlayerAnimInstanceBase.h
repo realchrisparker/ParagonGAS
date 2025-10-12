@@ -47,6 +47,16 @@ public:
 	 * Properties
 	*/
 
+	/** Maximum speed (cm/s) considered as walking (Jog starts after this) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation|Speed Thresholds",
+		meta = (ClampMin = "0.0", ClampMax = "600.0", Tooltip = "Maximum speed (cm/s) considered as walking (Jog starts after this)", DisplayName = "Walk Max Speed"))
+	float WalkMaxSpeed = 180.0f;
+
+	/** Maximum speed (cm/s) considered as jogging (Run starts after this) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation|Speed Thresholds",
+		meta = (ClampMin = "0.0", ClampMax = "600.0", Tooltip = "Maximum speed (cm/s) considered as jogging (Run starts after this)", DisplayName = "Jog Max Speed"))
+	float JogMaxSpeed = 400.0f;
+
 protected:
 	/*
 	 * Functions

@@ -28,6 +28,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffectTypes.h"
 #include "GenericTeamAgentInterface.h"
+#include "CharacterTrajectoryComponent.h"
 #include <Characters/Base/PGAS_CharacterBase.h>
 #include <Controllers/Player/PGAS_PlayerController.h>
 #include <Game/PGAS_PlayerState.h>
@@ -319,6 +320,13 @@ public:
         return ParryComponent;
     }
 
+    // Returns the Trajectory Component for this character
+    // This component handles trajectory prediction and advanced movement for the character.
+    UCharacterTrajectoryComponent* GetCharacterTrajectoryComponent() const
+    {
+        return CharacterTrajectory;
+    }
+
     /*
      * Properties
      */
@@ -577,6 +585,10 @@ private:
     // Combat parry component for handling parrying mechanics
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS Combat System", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UPGAS_CombatParryComponent> ParryComponent = nullptr;
+
+    // Trajectory component for motion matching and advanced movement
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Trajectory", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UCharacterTrajectoryComponent> CharacterTrajectory = nullptr;
 
     // Attribute Set for managing character attributes (health, mana, etc.)
     // This is where you define your character's attributes like health, mana, etc.

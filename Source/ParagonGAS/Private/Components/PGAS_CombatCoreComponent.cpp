@@ -250,25 +250,16 @@ void UPGAS_CombatCoreComponent::HandleAttackWindowTagChanged(const FGameplayTag 
 
 	if (!FoundAttack)
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("CombatCoreComponent: Received event for unregistered tag %s"), *Tag.ToString());
 		return;
 	}
 
 	if (NewCount > 0)
 	{
 		OnCombatWindowOpen.Broadcast(*FoundAttack);
-		// UE_LOG(LogTemp, Log, TEXT("Combat Window Opened: %s | Hand: %d | Weapon: %s"),
-			// *FoundAttack->AbilityTag.ToString(),
-			// static_cast<int32>(FoundAttack->Hand),
-			// FoundAttack->WeaponData ? *FoundAttack->WeaponData->GetName() : TEXT("None"));
 	}
 	else
 	{
 		OnCombatWindowClose.Broadcast(*FoundAttack);
-		// UE_LOG(LogTemp, Log, TEXT("Combat Window Closed: %s | Hand: %d | Weapon: %s"),
-			// *FoundAttack->AbilityTag.ToString(),
-			// static_cast<int32>(FoundAttack->Hand),
-			// FoundAttack->WeaponData ? *FoundAttack->WeaponData->GetName() : TEXT("None"));
 	}
 }
 
@@ -278,13 +269,11 @@ void UPGAS_CombatCoreComponent::HandleComboWindowTagChanged(const FGameplayTag T
 	{
 		OnComboWindowOpen.Broadcast(LastKnownAttack);
 		bComboWindowOpen = true;
-		// UE_LOG(LogTemp, Log, TEXT("Combo Window Opened: %s"), *Tag.ToString());
 	}
 	else
 	{
 		OnComboWindowClose.Broadcast(LastKnownAttack);
 		bComboWindowOpen = false;
-		// UE_LOG(LogTemp, Log, TEXT("Combo Window Closed: %s"), *Tag.ToString());
 	}
 }
 

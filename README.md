@@ -1,5 +1,5 @@
 # Paragon GAS
-Paragon GAS (P-GAS) is an open-world gameplay ability system sample game that teaches developers how to use several of Unreal Engine features together to build a playable world using free FAB store assets.
+Paragon GAS (P-GAS) is an open-world gameplay ability system sample that teaches developers how to use several of Unreal Engine features together to build a playable world using free FAB store assets.
 
 Unreal Engine Version: 5.6.1
 
@@ -19,7 +19,7 @@ Unreal Engine Version: 5.6.1
 - Custom Anim Notifiers (Windowing, etc.)
 
 ## Setup
-The project uses the free Unreal Paragon characters. Current the characters needed to compile/run sampe are;
+The project uses the free Unreal Paragon characters. Current the characters needed to compile/run sample are;
 - Paragon: Wukong (Two-handed Melee Weapon)
 - Paragon: Countess (Two Melee Weapons)
 - Paragon: Sparrow (Two-handed Range Weapon)

@@ -27,7 +27,9 @@ public class ParagonGAS : ModuleRules
 			"ApplicationCore",
 			"PropertyBindingUtils",
 			"Niagara",
-			"EngineCameras"
+			"EngineCameras",
+			"MotionTrajectory",
+        	"PoseSearch"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {

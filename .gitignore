@@ -145,13 +145,17 @@ node_modules/
 __pycache__/
 *.pyc
 
-# Ignore specific folders or files (customize as needed)
+# Ignore specific folders or files (customize as needed) (Many are paid assets and can't be shared)
 *Content/_Game/Characters/Players/Countess/Anims/Not4Git/
 *Content/_Game/Characters/Players/Wukong/Anims/Not4Git/
 *Content/_Game/Characters/Players/Sparrow/Anims/Not4Git/
+*Content/_Game/Characters/Players/Twinblast/Anims/Not4Git/
+*Content/_Game/Characters/Players/Twinblast/Anims/Sequences/
 *Content/Dual_Sword/
 *Content/Spear/
 *Content/Archer/
 *Content/ParagonCountess/
 *Content/ParagonSparrow/
 *Content/ParagonSunWukong/
+*Content/ParagonTwinblast/
+*Content/MaleLocomotionSet/

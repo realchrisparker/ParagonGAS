@@ -125,10 +125,67 @@ void UPGAS_PlayerAnimInstanceBase::NativeThreadSafeUpdateAnimation(float DeltaSe
         */
         IsAccelerating = GetMovementComponent()->GetCurrentAcceleration().Size() > 2.0f;
 
-        // Update YawDelta based on the difference from the last tick
-        // YawDelta = Yaw - RotationLastTick.Yaw;
-        // RotationLastTick = PawnRotation;
-
+        // Update full body flag based on the "FullBody" curve value
         FullBody = GetCurveValue(FName("FullBody")) > 0.0f;
+
+        // Update IsCrouched based on the owning pawn's crouch state
+        IsCrouched = GetOwningCharacter()->bIsCrouched;
+
+        // ============================
+        // Determine CharacterAnimState
+        // ============================
+        if (IsInAir) // In Air
+        {
+            CharacterAnimState = EPGAS_CharacterAnimState::InAir;
+        }
+        else if (IsBlocking)
+        {
+            if (Speed < 10.f)
+            {
+                CharacterAnimState = EPGAS_CharacterAnimState::BlockingIdle;
+            }
+            else if (Speed < WalkMaxSpeed)
+            {
+                CharacterAnimState = EPGAS_CharacterAnimState::BlockingWalking;
+            }
+            else if (Speed < JogMaxSpeed)
+            {
+                CharacterAnimState = EPGAS_CharacterAnimState::BlockingJogging;
+            }
+            else
+            {
+                CharacterAnimState = EPGAS_CharacterAnimState::BlockingRunning;
+            }
+        }
+        else if (IsCrouched)
+        {
+            if (Speed < 10.f)
+            {
+                CharacterAnimState = EPGAS_CharacterAnimState::CrouchedIdle;
+            }
+            else
+            {
+                CharacterAnimState = EPGAS_CharacterAnimState::CrouchedWalking;
+            }
+        }
+        else // Standing & not blocking
+        {
+            if (Speed < 10.f)
+            {
+                CharacterAnimState = EPGAS_CharacterAnimState::StandingIdle;
+            }
+            else if (Speed < WalkMaxSpeed)
+            {
+                CharacterAnimState = EPGAS_CharacterAnimState::Walking;
+            }
+            else if (Speed < JogMaxSpeed)
+            {
+                CharacterAnimState = EPGAS_CharacterAnimState::Jogging;
+            }
+            else
+            {
+                CharacterAnimState = EPGAS_CharacterAnimState::Running;
+            }
+        }
     }
 }

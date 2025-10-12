@@ -94,7 +94,10 @@ APGAS_PlayerCharacter::APGAS_PlayerCharacter()
 
     // Create the parry component.
     ParryComponent = CreateDefaultSubobject<UPGAS_CombatParryComponent>(TEXT("Combat Parry Component"));
-    
+
+    // Create the trajectory component.
+    CharacterTrajectory = CreateDefaultSubobject<UCharacterTrajectoryComponent>(TEXT("Character Trajectory Component"));
+
     /**
      * Set up the character's attribute set.
      * This is where you define your character's attributes like health, mana, etc.
