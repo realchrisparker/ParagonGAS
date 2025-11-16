@@ -24,7 +24,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "KismetAnimationLibrary.h"
-#include "Shakes/PerlinNoiseCameraShakePattern.h"
 #include <GAS/Abilities/PGAS_GameplayAbility_Montage.h>
 #include <GAS/Effects/PGAS_GE_InstantStaminaReduction.h>
 #include <GAS/Effects/PGAS_GE_InfiniteStaminaReduction.h>
@@ -946,35 +945,12 @@ void APGAS_PlayerCharacter::HandleHitboxHit(AActor* HitActor, const FHitResult& 
     // Camera shake on hit if enabled for this attack type
     if (AttackType.CausesCameraShake)
     {
-        PlaySimpleShake(50.0f);
-    }
-}
-
-// Plays a simple camera shake effect
-void APGAS_PlayerCharacter::PlaySimpleShake(float scale)
-{
-    if (CachedPlayerController)
-    {
-        if (CachedPlayerController->PlayerCameraManager)
+        if (CachedPlayerController && CachedPlayerController->PlayerCameraManager)
         {
-            // Create a dynamic shake instance
-            UCameraShakeBase* Shake = NewObject<UCameraShakeBase>();
-
-            // Add a Perlin noise pattern to it
-            if (UPerlinNoiseCameraShakePattern* Pattern = NewObject<UPerlinNoiseCameraShakePattern>(Shake))
-            {
-                Pattern->X.Amplitude = 5.f;
-                Pattern->X.Frequency = 25.f;
-                Pattern->Y.Amplitude = 5.f;
-                Pattern->Y.Frequency = 25.f;
-                Pattern->Pitch.Amplitude = 2.f;
-                Pattern->Pitch.Frequency = 20.f;
-
-                Shake->SetRootShakePattern(Pattern);
-
-                // Play shake via PlayerCameraManager
-                UCameraShakeBase* base = CachedPlayerController->PlayerCameraManager->StartCameraShake(Shake->GetClass(), scale);
-            }
+            CachedPlayerController->PlayerCameraManager->StartCameraShake(
+                UPGAS_CameraShake_HitImpact::StaticClass(),
+                50.0f
+            );
         }
     }
 }

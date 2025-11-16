@@ -30,15 +30,9 @@ UPGAS_EnemyAnimInstanceBase::UPGAS_EnemyAnimInstanceBase(const FObjectInitialize
 // Called when the animation instance is destorying
 void UPGAS_EnemyAnimInstanceBase::BeginDestroy()
 {
+    CachedMovementComponent = nullptr; // Clear cached movement component pointer
+    
     Super::BeginDestroy();
-
-    try
-    {
-        CachedMovementComponent = nullptr; // Clear cached movement component pointer
-    }
-    catch (...)
-    {
-    }
 }
 
 // Initialize the animation instance
@@ -55,6 +49,7 @@ void UPGAS_EnemyAnimInstanceBase::NativeInitializeAnimation()
 }
 
 // Called when the animation instance updates
+// This function is called on the game thread. Safe to access UObject properties directly.
 void UPGAS_EnemyAnimInstanceBase::NativeUpdateAnimation(float DeltaSeconds)
 {
     Super::NativeUpdateAnimation(DeltaSeconds);
@@ -73,32 +68,32 @@ void UPGAS_EnemyAnimInstanceBase::NativeUpdateAnimation(float DeltaSeconds)
 
         // Get rotation
         Rotation = OwningPawn->GetActorRotation();
-    }
-}
 
-// Called when the animation instance updates thread safe
-void UPGAS_EnemyAnimInstanceBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
-{
-    Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
-
-    // Update animation properties based on the movement component
-    if (CachedMovementComponent || OwningPawn)
-    {
         // Get is in air state
         IsInAir = CachedMovementComponent->IsFalling();
 
         // Get velocity
         Velocity = CachedMovementComponent->Velocity;
 
-        // Get speed and movement state
+        // Get speed
         Speed = CachedMovementComponent->Velocity.Size();
-        IsMoving = Speed > 0.0f;
-
-        // Calculate direction using rotation    
-        Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, OwningPawnActorRotation); // returns -180..180 (0=fwd, +90=right, -90=left)
-
-        // Roll & Pitch, normalize to 0.0001
-        Roll = FMath::Clamp(Rotation.Roll, -0.0001f, 0.0001f);
-        Pitch = FMath::Clamp(Rotation.Pitch, -0.0001f, 0.0001f);
     }
+}
+
+// Called when the animation instance updates thread safe
+// This function is thread-safe and can be called from any thread. Only use thread-safe operations here, do not access UObject properties directly.
+// Use cached pointers and data only.
+void UPGAS_EnemyAnimInstanceBase::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
+{
+    Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
+
+    // Get movement state
+    IsMoving = Speed > 0.0f;
+
+    // Calculate direction using rotation    
+    Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, OwningPawnActorRotation); // returns -180..180 (0=fwd, +90=right, -90=left)
+
+    // Roll & Pitch, normalize to 0.0001
+    Roll = FMath::Clamp(Rotation.Roll, -0.0001f, 0.0001f);
+    Pitch = FMath::Clamp(Rotation.Pitch, -0.0001f, 0.0001f);
 }

@@ -30,16 +30,10 @@ UPGAS_AnimInstanceBase::UPGAS_AnimInstanceBase(const FObjectInitializer& ObjectI
 // Called when the animation instance is destorying
 void UPGAS_AnimInstanceBase::BeginDestroy()
 {
+    CachedMovementComponent = nullptr; // Clear cached movement component pointer
+    OwningPawn = nullptr; // Clear cached owning pawn pointer
+    
     Super::BeginDestroy();
-
-    try
-    {
-        CachedMovementComponent = nullptr; // Clear cached movement component pointer
-        OwningPawn = nullptr; // Clear cached owning pawn pointer
-    }
-    catch (...)
-    {
-    }
 }
 
 // Initialize the animation instance

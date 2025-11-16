@@ -42,6 +42,7 @@
 #include <Components/PGAS_CombatDodgeComponent.h>
 #include <Components/PGAS_CombatParryComponent.h>
 #include <UserWidgets/PGAS_InGame_HUD.h>
+#include <Other/PGAS_CameraShake_HitImpact.h>
 #include "PGAS_PlayerCharacter.generated.h"
 
 class UNiagaraSystem;
@@ -690,7 +691,4 @@ private:
      * @param ComboIndex - The index of the combo attack to perform
      */
     void PerformAttack(EPGAS_WeaponAttackType AttackType, int32 ComboIndex);
-
-    // Plays a simple camera shake effect
-    void PlaySimpleShake(float scale = 1.0f);
 };

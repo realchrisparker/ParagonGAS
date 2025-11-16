@@ -61,7 +61,7 @@ public:
 	FGameplayAttributeData Health;
 	ATTRIBUTE_ACCESSORS_BASIC(UEnemyAttributeSet, Health);
 
-	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Health)
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_MaxHealth)
 	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS_BASIC(UEnemyAttributeSet, MaxHealth);
 
